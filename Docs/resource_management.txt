@@ -1,0 +1,21 @@
+资源管理中心
+{
+    资源分配器(resource allocator)
+    资源管理器(resource manager)
+}
+
+资源分配器(resource allocator)
+{
+    resource
+    {
+        alloc(size);
+    }
+}
+
+资源管理器(resource manager)
+{
+    pool
+    {
+        init();
+    }
+}

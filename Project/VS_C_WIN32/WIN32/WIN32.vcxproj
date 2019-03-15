@@ -1,0 +1,515 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{69919066-5E5C-4387-B097-A94BD08FEB75}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>WIN32</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\..\..\Libraries\Check\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Info\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Crypto\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Convert\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\trace\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Lua\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Mbed\tls;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\common\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\battery\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\buzzer\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\lcd\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\keys\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\leds\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\relay\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\serial\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\sensor\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\basic\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\eeprom\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\rtc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\flash\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\power\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Kernel\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Tasks\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Comm\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Core\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Functions\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_1107\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlms\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt645\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt698\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_hdlc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Timed\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Keyboard\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Calendar\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Disconnect\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Console\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Display\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Logger\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Utilities\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\..\..\Libraries\Check\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Info\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Crypto\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Convert\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\trace\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Lua\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Mbed\tls;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\common\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\battery\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\buzzer\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\lcd\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\keys\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\leds\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\relay\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\serial\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\sensor\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\basic\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\eeprom\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\rtc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\flash\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\power\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Kernel\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Tasks\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Comm\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Core\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Functions\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_1107\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlms\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt645\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt698\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_hdlc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Timed\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Keyboard\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Calendar\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Disconnect\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Console\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Display\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Logger\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Utilities\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\..\..\Libraries\Check\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Info\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Crypto\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Convert\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\trace\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Lua\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Mbed\tls;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\common\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\battery\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\buzzer\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\lcd\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\keys\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\leds\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\relay\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\serial\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\sensor\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\basic\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\eeprom\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\rtc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\flash\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\power\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Kernel\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Tasks\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Comm\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Core\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Functions\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_1107\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlms\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt645\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt698\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_hdlc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Timed\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Keyboard\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Calendar\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Disconnect\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Console\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Display\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Logger\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Utilities\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\..\..\Libraries\Check\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Info\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Crypto\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Convert\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\trace\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Lua\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Libraries\Mbed\tls;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\common\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\battery\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\buzzer\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\lcd\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\keys\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\leds\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\relay\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\serial\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\sensor\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\basic\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\eeprom\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\rtc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\flash\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Devices\power\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Kernel\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Tasks\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Comm\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Core\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\Functions\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_1107\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlms\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt645\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_dlt698\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Protocols\proto_hdlc\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Timed\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Keyboard\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Calendar\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Disconnect\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Console\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Display\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Logger\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Metering\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\Tasks\Utilities\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_DEPRECATE" /D "_WINSOCK_DEPRECATED_NO_WARNINGS" /D "LUA_ANSI" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_DEPRECATE" /D "_WINSOCK_DEPRECATED_NO_WARNINGS" /D "LUA_ANSI" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_DEPRECATE" /D "_WINSOCK_DEPRECATED_NO_WARNINGS" /D "LUA_ANSI" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_DEPRECATE" /D "_WINSOCK_DEPRECATED_NO_WARNINGS" /D "LUA_ANSI" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Devices\basic\Src\cpu.c" />
+    <ClCompile Include="..\..\..\Devices\basic\Src\delay.c" />
+    <ClCompile Include="..\..\..\Devices\basic\Src\jiffy.c" />
+    <ClCompile Include="..\..\..\Devices\basic\Src\power.c" />
+    <ClCompile Include="..\..\..\Devices\battery\Src\battery.c" />
+    <ClCompile Include="..\..\..\Devices\buzzer\Src\buzzer.c" />
+    <ClCompile Include="..\..\..\Devices\common\Src\comm_socket.c" />
+    <ClCompile Include="..\..\..\Devices\eeprom\Src\eeprom.c" />
+    <ClCompile Include="..\..\..\Devices\eeprom\Src\eeprom_1.c" />
+    <ClCompile Include="..\..\..\Devices\eeprom\Src\eeprom_2.c" />
+    <ClCompile Include="..\..\..\Devices\flash\Src\flash.c" />
+    <ClCompile Include="..\..\..\Devices\keys\Src\keys.c" />
+    <ClCompile Include="..\..\..\Devices\lcd\Src\lcd.c" />
+    <ClCompile Include="..\..\..\Devices\leds\Src\leds.c" />
+    <ClCompile Include="..\..\..\Devices\metering\Src\meter.c" />
+    <ClCompile Include="..\..\..\Devices\relay\Src\relay.c" />
+    <ClCompile Include="..\..\..\Devices\rtc\Src\rtc.c" />
+    <ClCompile Include="..\..\..\Devices\sensor\Src\button.c" />
+    <ClCompile Include="..\..\..\Devices\sensor\Src\magnetic.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\console.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\uart3.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\uart4.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\uart1.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\uart2.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\rs485_1.c" />
+    <ClCompile Include="..\..\..\Devices\serial\Src\rs485_2.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lapi.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lauxlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lbaselib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lcode.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ldblib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ldebug.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ldo.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ldump.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lfunc.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lgc.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\linit.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\liolib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\liptlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\llex.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lmathlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lmem.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\loadlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lobject.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lopcodes.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\loslib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lparser.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lpwrlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lstate.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lstring.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lstrlib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ltable.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ltablib.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\ltm.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lundump.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lvm.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\lzio.c" />
+    <ClCompile Include="..\..\..\Libraries\Lua\Src\print.c" />
+    <ClCompile Include="..\..\..\Tasks\Calendar\Src\vm_calendar.c" />
+    <ClCompile Include="..\..\..\Tasks\Comm\Src\vm_comm.c" />
+    <ClCompile Include="..\..\..\Tasks\Disconnect\Src\vm_disconnect.c" />
+    <ClCompile Include="..\..\..\Tasks\Display\Src\vm_display.c" />
+    <ClCompile Include="..\..\..\Tasks\Keyboard\Src\vm_keyboard.c" />
+    <ClCompile Include="..\..\..\Tasks\Logger\Src\vm_logger.c" />
+    <ClCompile Include="..\..\..\Tasks\Metering\Src\vm_metering.c" />
+    <ClCompile Include="..\..\..\Tasks\Utilities\Src\vm_xmodem.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Kernel\Src\disk.c" />
+    <ClCompile Include="..\..\..\Kernel\Src\heap.c" />
+    <ClCompile Include="..\..\..\Kernel\Src\kernel.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\Docs\00_planning.txt" />
+    <Text Include="..\..\..\Docs\00_readme.txt" />
+    <Text Include="..\..\..\Docs\metering.txt" />
+    <Text Include="..\..\..\Docs\mid_fatfs.txt" />
+    <Text Include="..\..\..\Docs\mid_lzo.txt" />
+    <Text Include="..\..\..\Docs\mid_mxml.txt" />
+    <Text Include="..\..\..\Docs\resource_management.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Libraries\Convert\Src\axdr.c" />
+    <ClCompile Include="..\..\..\Libraries\Convert\Src\bcd.c" />
+    <ClCompile Include="..\..\..\Libraries\Info\Src\info.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\aes.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\aesni.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\arc4.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\aria.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\asn1parse.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\asn1write.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\base64.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\bignum.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\blowfish.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\camellia.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ccm.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\certs.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\chacha20.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\chachapoly.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\cipher.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\cipher_wrap.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\cmac.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ctr_drbg.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\debug.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\des.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\dhm.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ecdh.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ecdsa.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ecjpake.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ecp.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ecp_curves.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\entropy.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\entropy_poll.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\error.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\gcm.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\havege.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\hkdf.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\hmac_drbg.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\md.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\md2.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\md4.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\md5.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\md_wrap.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\memory_buffer_alloc.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\net_sockets.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\nist_kw.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\oid.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\padlock.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pem.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pk.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pkcs11.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pkcs12.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pkcs5.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pkparse.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pkwrite.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\pk_wrap.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\platform.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\platform_util.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\poly1305.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ripemd160.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\rsa.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\rsa_internal.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\sha1.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\sha256.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\sha512.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_cache.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_ciphersuites.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_cli.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_cookie.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_srv.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_ticket.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\ssl_tls.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\threading.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\timing.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\version.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\version_features.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509write_crt.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509write_csr.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509_create.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509_crl.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509_crt.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\x509_csr.c" />
+    <ClCompile Include="..\..\..\Libraries\Mbed\tls\library\xtea.c" />
+    <ClCompile Include="..\..\..\Libraries\trace\Src\trace.c" />
+    <ClCompile Include="..\..\..\Libraries\Check\Src\crc.c" />
+    <ClCompile Include="..\..\..\Libraries\Check\Src\ecc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Tasks\Calendar\Src\task_calendar.c" />
+    <ClCompile Include="..\..\..\Tasks\Comm\Src\task_comm.c" />
+    <ClCompile Include="..\..\..\Tasks\Console\Src\task_console.c" />
+    <ClCompile Include="..\..\..\Tasks\Disconnect\Src\task_disconnect.c" />
+    <ClCompile Include="..\..\..\Tasks\Display\Src\task_display.c" />
+    <ClCompile Include="..\..\..\Tasks\Keyboard\Src\task_keyboard.c" />
+    <ClCompile Include="..\..\..\Tasks\Logger\Src\task_logger.c" />
+    <ClCompile Include="..\..\..\Tasks\Metering\Src\task_metering.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\Core\Src\task_protocol.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\Core\Src\vm_protocol.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_association.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_clock.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_data.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_extendedregister.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_hdlc_setup.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_register.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\dlms_association.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\dlms_lexicon.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\dlms_utilities.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\hdlc_datalink.c" />
+    <ClCompile Include="..\..\..\Tasks\Protocols\proto_dlms\Src\proto_dlms.c" />
+    <ClCompile Include="..\..\..\Tasks\Tasks\Src\tasks.c" />
+    <ClCompile Include="..\..\..\Tasks\Timed\Src\task_timed.c" />
+    <ClCompile Include="..\..\..\Tasks\Timed\Src\vm_timed.c" />
+    <ClCompile Include="..\..\..\Tasks\Utilities\Src\task_xmodem.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

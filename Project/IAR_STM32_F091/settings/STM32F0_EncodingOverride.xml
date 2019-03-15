@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<userOverrides>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Devices\basic\Src\cpu.c</path>
+    <encoding>System</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Kernel\Inc\kernel.h</path>
+    <encoding>System</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Kernel\Src\kernel.c</path>
+    <encoding>System</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Display\Src\aligned_display.c</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Display\Src\proto_display.c</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Metering\Src\aligned_metering.c</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Metering\Src\proto_metering.c</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Protocols\Inc\dlms\proto_dlms.h</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Protocols\proto_dlms\Inc\proto_dlms.h</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Protocols\proto_dlms\Inc\types_dlms.h</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
+    <path>F:\Works\Projects\2016_06_02_Test_STM32_uClibc\STM32F091_SCHED\Tasks\Tasks\Inc\callback.h</path>
+    <encoding>System</encoding>
+  </override>
+  <override>
+    <path>G:\VirtualDisk\Share\STM32F091_SCHED\Tasks\Tasks\Inc\callback.h</path>
+    <encoding>UTF-8</encoding>
+  </override>
+</userOverrides>
+
+
