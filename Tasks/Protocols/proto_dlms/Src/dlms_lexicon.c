@@ -128,7 +128,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -168,7 +168,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -208,7 +208,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -248,7 +248,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -288,7 +288,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -328,7 +328,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -368,7 +368,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
@@ -408,7 +408,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
@@ -448,7 +448,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         /** 属性 */
         {\
             /** 属性二 */
-            {"FuncMetering", 0, "", 0,    /** 函数表，函数序号 */ \
+            {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
                 M_ID2UINT(M_P_ENERGY, M_QUAD_23, M_PHASE_T, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \

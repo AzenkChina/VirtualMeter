@@ -29,7 +29,7 @@
 #define HDLC_CONFIG_MAX_CHANNEL         ((uint8_t)(4))
 
 //定义应用层接口（s, info, length, buffer, max buffer length, filled buffer length）
-#define HDLC_CONFIG_APPL_REQUEST(s,i,l,b,m,f)   dlms_entrance(s,i,l,b,m,f)
+#define HDLC_CONFIG_APPL_REQUEST(s,i,l,b,m,f)   dlms_gateway(s,i,l,b,m,f)
 
 /* Private typedef -----------------------------------------------------------*/
 enum __hdlc_link_status

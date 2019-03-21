@@ -16,7 +16,7 @@
 /**	
   * @brief 应用层多包分包器
   */
-struct __dlms_serializer
+struct __dlms_sequencer
 {
     struct
     {

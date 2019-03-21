@@ -641,7 +641,7 @@ static void dlms_appl_request(struct __dlms_association *asso,
 /**	
   * @brief 
   */
-void dlms_entrance(uint8_t sap,
+void dlms_gateway(uint8_t sap,
                         const uint8_t *info,
                         uint16_t length,
                         uint8_t *buffer,

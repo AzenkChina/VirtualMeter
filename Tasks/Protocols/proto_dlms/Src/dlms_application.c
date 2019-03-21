@@ -261,7 +261,7 @@ static void dlms_closure_counter_clear(void)
     current_entry->row.counter = 0;
 }
 
-const struct __dlms_serializer serializer = 
+const struct __dlms_sequencer sequencer = 
 {
     .block                  = 
     {

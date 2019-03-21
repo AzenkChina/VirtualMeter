@@ -15,7 +15,7 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void dlms_entrance(uint8_t sap,
+extern void dlms_gateway(uint8_t sap,
                           const uint8_t *info,
                           uint16_t length,
                           uint8_t *buffer,

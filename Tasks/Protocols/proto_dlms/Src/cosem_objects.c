@@ -11,10 +11,11 @@
 /** 在这里添加所有任务模块输出的基础函数列表对应头文件 */
 #include "cosem_objects_association.h"
 #include "cosem_objects_clock.h"
-#include "cosem_objects_hdlc_setup.h"
 #include "cosem_objects_data.h"
-#include "cosem_objects_register.h"
 #include "cosem_objects_extendedregister.h"
+#include "cosem_objects_hdlc_setup.h"
+#include "cosem_objects_register.h"
+
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -22,7 +23,7 @@
 /** 在这里添加所有任务模块输出的基础函数列表 */
 static const TypeObjectPackage *ObjectPackageTable[] = 
 {
-    (TypeObjectPackage *)0,
+    (TypeObjectPackage *)&CosemObjectsRegister,
 };
 
 /* Private macro -------------------------------------------------------------*/
