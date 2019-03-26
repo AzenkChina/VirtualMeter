@@ -89,26 +89,36 @@ static void *ThreadLuaVM(void *arg)
 static DWORD CALLBACK ThreadLuaVM(PVOID pvoid)
 #endif
 {
-	int Err = -1;
+	static int Err;
 	lua_State *L;
-	
+
+	Err = -1;
+
 	if(strlen(script_path) == 0)
 	{
+#if defined ( __linux )
+		return((void *)&Err);
+#else
 		return(Err);
+#endif
 	}
 	
-    L = luaL_newstate(); /* 建立Lua运行环境 */
+	L = luaL_newstate(); /* 建立Lua运行环境 */
     
-    if(!L)
-    {
-    	memset(script_path, 0, sizeof(script_path));
-        return(Err);
-    }
+	if(!L)
+	{
+		memset(script_path, 0, sizeof(script_path));
+#if defined ( __linux )
+		return((void *)&Err);
+#else
+		return(Err);
+#endif
+	}
     
-    luaL_openlibs(L);
-    luaL_opentrees(L);
-    Err = luaL_dofile(L, script_path); /* 运行Lua脚本 */
-    lua_close(L);
+	luaL_openlibs(L);
+	luaL_opentrees(L);
+	Err = luaL_dofile(L, script_path); /* 运行Lua脚本 */
+	lua_close(L);
     
 #if defined ( __linux )
 	sleep(1);
@@ -116,9 +126,13 @@ static DWORD CALLBACK ThreadLuaVM(PVOID pvoid)
 	Sleep(1000);
 #endif
     
-    memset(script_path, 0, sizeof(script_path));
+	memset(script_path, 0, sizeof(script_path));
     
-    return(Err);
+#if defined ( __linux )
+	return((void *)&Err);
+#else
+	return(Err);
+#endif
 }
 
 

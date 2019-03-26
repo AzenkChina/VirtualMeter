@@ -26,7 +26,7 @@ static struct __wake_time
 } wake_time;
 
 /* Private function prototypes -----------------------------------------------*/
-CALLBACK_DECL(display_key_changed);
+CALLBACK_SLOT(display_key_changed);
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -56,7 +56,7 @@ static void key_changed(uint16_t id, enum __key_status status)
         event.id = id;
         event.status = status;
         
-        CALLBACK_EXEC(display_key_changed, &event);
+        CALLBACK_TRIGGER(display_key_changed, &event);
     }
 }
 

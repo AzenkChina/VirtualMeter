@@ -1209,4 +1209,4 @@ static void keyboard_callback(void *args)
     }
 }
 
-CALLBACK_DEF(display_key_changed, keyboard_callback);
+CALLBACK_CONNECT(display_key_changed, keyboard_callback);
