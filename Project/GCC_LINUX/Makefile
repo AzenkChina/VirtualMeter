@@ -23,7 +23,7 @@ clean: clean-custom
 
 $(BIN): $(OBJ)
 	$(shell /usr/bin/env mkdir -p exe)
-	$(CC) $(OBJ) -o $(BIN) $(LIBS) -no-pie
+	$(CC) $(OBJ) -o $(BIN) $(LIBS)
 	$(STRIP) $(BIN)
 
 obj/heap.o: ../../Kernel/Src/heap.c
