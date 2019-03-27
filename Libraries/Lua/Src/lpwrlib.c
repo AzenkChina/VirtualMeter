@@ -590,9 +590,9 @@ static int pwr_stop(lua_State *L)
 	Configs.Running = 0;
 	
 #if defined ( __linux )
-	sleep(100*1000);
+	sleep(1);
 #else
-	Sleep(100);
+	Sleep(1000);
 #endif
 	
 	
@@ -601,9 +601,9 @@ static int pwr_stop(lua_State *L)
 		memset(OutData, 0, sizeof(OutData));
 		emitter.write(sock, &src, (uint8_t *)OutData, sizeof(OutData));
 #if defined ( __linux )
-		sleep(100*1000);
+		sleep(1);
 #else
-		Sleep(100);
+		Sleep(1000);
 #endif
 		emitter.close(sock);
         sock = INVALID_SOCKET;
