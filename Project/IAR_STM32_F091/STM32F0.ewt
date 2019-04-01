@@ -2749,7 +2749,16 @@
           <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_clock.c</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_data.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_extendedregister.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_hdlc_setup.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_register.c</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</name>

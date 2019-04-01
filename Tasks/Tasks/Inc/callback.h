@@ -38,7 +38,7 @@
 
 #endif
 
-
+//执行一个回调
 #define CALLBACK_TRIGGER(name, args)			callback_##name((void *)args)
 
 /* Exported types ------------------------------------------------------------*/
