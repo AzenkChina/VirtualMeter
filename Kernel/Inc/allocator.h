@@ -27,9 +27,6 @@ enum __disk_aria
   */
 struct __disk
 {
-    uint32_t                    (*alloc)(enum __disk_aria aria, const char *name, uint32_t size);
-    void                        (*free)(const char *name);
-    uint32_t                    (*seek)(const char *name);
     uint32_t                    (*read)(const char *name, uint32_t offset, uint32_t count, void *buff);
     uint32_t                    (*write)(const char *name, uint32_t offset, uint32_t count, const void *buff);
     uint32_t                    (*copy)(const char *dst, const char *src, uint32_t count);
