@@ -12,7 +12,7 @@
           
           
           
-        <Column0>422</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>431</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -35,7 +35,7 @@
     <Windows>
       
       
-    <Wnd2>
+    <Wnd0>
         <Tabs>
           <Tab>
             <Identity>TabID-8316-13335</Identity>
@@ -43,11 +43,11 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Middleware</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Middleware</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Tasks</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd2><Wnd3>
+      <SelectedTab>0</SelectedTab></Wnd0><Wnd2>
         <Tabs>
           <Tab>
             <Identity>TabID-6747-13364</Identity>
@@ -69,20 +69,20 @@
           </Tab>
         <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab></Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd3></Windows>
+      <SelectedTab>0</SelectedTab></Wnd2></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_types.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>293</YPos2><SelStart2>5802</SelStart2><SelEnd2>5802</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\hdlc_datalink.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>693</YPos2><SelStart2>19117</SelStart2><SelEnd2>19117</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_association.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>273</YPos2><SelStart2>3112</SelStart2><SelEnd2>3112</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_association.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>5</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>141</YPos2><SelStart2>3132</SelStart2><SelEnd2>3132</SelEnd2></Tab><ActiveTab>4</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_application.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>17</YPos2><SelStart2>803</SelStart2><SelEnd2>803</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\proto_dlms.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>64</YPos2><SelStart2>2194</SelStart2><SelEnd2>2194</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_types.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>290</YPos2><SelStart2>5802</SelStart2><SelEnd2>5802</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\hdlc_datalink.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>693</YPos2><SelStart2>19117</SelStart2><SelEnd2>19117</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_association.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>273</YPos2><SelStart2>3112</SelStart2><SelEnd2>3112</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_association.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>5</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>141</YPos2><SelStart2>3132</SelStart2><SelEnd2>3132</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_application.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>17</YPos2><SelStart2>803</SelStart2><SelEnd2>803</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\proto_dlms.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>155</YPos2><SelStart2>4444</SelStart2><SelEnd2>4444</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Kernel\Src\disk.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>15</YPos2><SelStart2>2927</SelStart2><SelEnd2>3427</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Kernel\Inc\allocator.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>37</YPos2><SelStart2>2076</SelStart2><SelEnd2>2076</SelEnd2></Tab><ActiveTab>8</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-01098EC0><key>iaridepm.enu1</key></Toolbar-01098EC0></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>496</Bottom><Right>496</Right><x>-2</x><y>-2</y><xscreen>120</xscreen><yscreen>148</yscreen><sizeHorzCX>75141</sizeHorzCX><sizeHorzCY>174528</sizeHorzCY><sizeVertCX>311835</sizeVertCX><sizeVertCY>587264</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>307</Bottom><Right>1599</Right><x>-2</x><y>-2</y><xscreen>1601</xscreen><yscreen>309</yscreen><sizeHorzCX>1002505</sizeHorzCX><sizeHorzCY>364387</sizeHorzCY><sizeVertCX>75141</sizeVertCX><sizeVertCY>174528</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-00B58628><key>iaridepm.enu1</key></Toolbar-00B58628></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>621</Bottom><Right>505</Right><x>-2</x><y>-2</y><xscreen>123</xscreen><yscreen>161</yscreen><sizeHorzCX>75692</sizeHorzCX><sizeHorzCY>175190</sizeHorzCY><sizeVertCX>312000</sizeVertCX><sizeVertCY>677911</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>253</Bottom><Right>1627</Right><x>-2</x><y>-2</y><xscreen>1629</xscreen><yscreen>255</yscreen><sizeHorzCX>1002462</sizeHorzCX><sizeHorzCY>277476</sizeHorzCY><sizeVertCX>75692</sizeVertCX><sizeVertCY>175190</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

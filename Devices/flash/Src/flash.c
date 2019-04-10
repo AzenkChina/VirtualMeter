@@ -65,16 +65,12 @@
 /* Private macro -------------------------------------------------------------*/
 //Page size
 #define AT45_PAGE_SIZE          ((uint32_t)(512))
-//Page amount
-#define AT45_PAGE_AMOUNT        ((uint32_t)(8192))
-
 //Block size
 #define AT45_BLOCK_SIZE         ((uint32_t)(512))
 //Block amount
-#define AT45_PAGE_AMOUNT        ((uint32_t)(8192))
-
+#define AT45_BLOCK_AMOUNT        ((uint32_t)(8192))
 //Chip size
-#define AT45_CHIP_SIZE          ((uint32_t)(AT45_PAGE_SIZE * AT45_PAGE_AMOUNT))
+#define AT45_CHIP_SIZE          ((uint32_t)(AT45_BLOCK_SIZE * AT45_BLOCK_AMOUNT))
 
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
@@ -191,20 +187,24 @@ static void flash_suspend(void)
     status = DEVICE_SUSPENDED;
 }
 
+
+
+
+
 /**
   * @brief  
   */
-static uint32_t flash_readpage(uint32_t page, uint8_t * buffer)
+static uint32_t flash_readblock(uint32_t block, uint8_t * buffer)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 	uint32_t addr_sent = 0;
     
-    if(page >= AT45_PAGE_AMOUNT)
+    if(block >= AT45_BLOCK_AMOUNT)
     {
         return(0);
     }
     
-    addr_sent = (page << 10); 
+    addr_sent = (block << 10); 
     addr_sent |= 0x00C00000;
     
     spi2.select(0);
@@ -223,15 +223,15 @@ static uint32_t flash_readpage(uint32_t page, uint8_t * buffer)
     spi2.octet.write(0xff);
     
 	//开始读数据
-    spi2.read(AT45_PAGE_SIZE, buffer);
+    spi2.read(AT45_BLOCK_SIZE, buffer);
     
 	spi2.release(0);
     
-    return(AT45_PAGE_SIZE);
+    return(AT45_BLOCK_SIZE);
 #else
     FILE *fp;
     
-    if(page >= AT45_PAGE_AMOUNT)
+    if(page >= AT45_BLOCK_SIZE)
     {
         return(0);
     }
@@ -255,8 +255,8 @@ static uint32_t flash_readpage(uint32_t page, uint8_t * buffer)
         return(0);
     }
     
-    fseek(fp, (page * AT45_PAGE_SIZE), 0);
-    fread(buffer, 1, AT45_PAGE_SIZE, fp);
+    fseek(fp, (block * AT45_BLOCK_SIZE), 0);
+    fread(buffer, 1, AT45_BLOCK_SIZE, fp);
     fclose(fp);
 	
 #if defined ( __linux )
@@ -265,28 +265,28 @@ static uint32_t flash_readpage(uint32_t page, uint8_t * buffer)
 	Sleep(40);
 #endif
 	
-    return(AT45_PAGE_SIZE);
+    return(AT45_BLOCK_SIZE);
 #endif
 }
 
 /**
   * @brief  
   */
-static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
+static uint32_t flash_writeblock(uint32_t block, const uint8_t *buffer)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 	uint32_t addr_sent = 0;
     uint8_t status;
     uint8_t count_try = 50;
     
-    if(page >= AT45_PAGE_AMOUNT)
+    if(block >= AT45_BLOCK_AMOUNT)
     {
         return(0);
     }
     
     spi2.select(0);
     
-    addr_sent = (page << 10);
+    addr_sent = (block << 10);
     addr_sent |= 0x00C00000;
     
 	//写入命令
@@ -297,7 +297,7 @@ static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
 	spi2.octet.write(0);
 	spi2.octet.write(0);
     
-    spi2.write(AT45_PAGE_SIZE, (const uint8_t *)buffer);
+    spi2.write(AT45_BLOCK_SIZE, (const uint8_t *)buffer);
     
 	spi2.release(0);
     
@@ -313,7 +313,7 @@ static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
 	spi2.octet.write(addr_sent>>8);
 	spi2.octet.write(addr_sent);
     
-    spi2.write(AT45_PAGE_SIZE, (const uint8_t *)buffer);
+    spi2.write(AT45_BLOCK_SIZE, (const uint8_t *)buffer);
     
 	spi2.release(0);
     
@@ -334,15 +334,15 @@ static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
         return(0);
     }
     
-    return(AT45_PAGE_SIZE);
+    return(AT45_BLOCK_SIZE);
     
 #else
     
     FILE *fp;
-    uint8_t current_page[AT45_PAGE_SIZE];
+    uint8_t current_page[AT45_BLOCK_SIZE];
     uint16_t cnt;
     
-    if(page >= AT45_PAGE_AMOUNT)
+    if(block >= AT45_BLOCK_AMOUNT)
     {
         return(0);
     }
@@ -368,16 +368,16 @@ static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
     
     memset((void *)current_page, 0, sizeof(current_page));
     
-    fseek(fp, (page * AT45_PAGE_SIZE), 0);
-    fread(current_page, 1, AT45_PAGE_SIZE, fp);
+    fseek(fp, (block * AT45_BLOCK_SIZE), 0);
+    fread(current_page, 1, AT45_BLOCK_SIZE, fp);
     
-    for(cnt=0; cnt<AT45_PAGE_SIZE; cnt++)
+    for(cnt=0; cnt<AT45_BLOCK_SIZE; cnt++)
     {
     	current_page[cnt] &= buffer[cnt];
     }
     
-    fseek(fp, (page * AT45_PAGE_SIZE), 0);
-    fwrite(current_page, 1, AT45_PAGE_SIZE, fp);
+    fseek(fp, (block * AT45_BLOCK_SIZE), 0);
+    fwrite(current_page, 1, AT45_BLOCK_SIZE, fp);
     fflush(fp);
     fclose(fp);
 	
@@ -387,14 +387,14 @@ static uint32_t flash_writepage(uint32_t page, const uint8_t *buffer)
 	Sleep(60);
 #endif
     
-    return(AT45_PAGE_SIZE);
+    return(AT45_BLOCK_SIZE);
 #endif
 }
 
 /**
   * @brief  
   */
-static uint32_t flash_erasepage(uint32_t page)
+static uint32_t flash_eraseblock(uint32_t block)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
     return(0);
@@ -403,7 +403,7 @@ static uint32_t flash_erasepage(uint32_t page)
     FILE *fp;
     char *mem = (char *)0;
     
-    if(page >= AT45_PAGE_AMOUNT)
+    if(block >= AT45_BLOCK_AMOUNT)
     {
         return(0);
     }
@@ -427,17 +427,17 @@ static uint32_t flash_erasepage(uint32_t page)
         return(0);
     }
     
-    mem = malloc(AT45_PAGE_SIZE);
+    mem = malloc(AT45_BLOCK_SIZE);
     
     if(!mem)
     {
         return(0);
     }
     
-    memset((void *)mem, 0xff, AT45_PAGE_SIZE);
+    memset((void *)mem, 0xff, AT45_BLOCK_SIZE);
     
-    fseek(fp, (page * AT45_PAGE_SIZE), 0);
-    fwrite(mem, 1, AT45_PAGE_SIZE, fp);
+    fseek(fp, (block * AT45_BLOCK_SIZE), 0);
+    fwrite(mem, 1, AT45_BLOCK_SIZE, fp);
     fflush(fp);
     fclose(fp);
     
@@ -449,18 +449,39 @@ static uint32_t flash_erasepage(uint32_t page)
 	Sleep(40);
 #endif
     
-    return(AT45_PAGE_SIZE);
+    return(AT45_BLOCK_SIZE);
 #endif
+}
+
+/**
+  * @brief  
+  */
+static uint32_t flash_readpage(uint32_t block, uint8_t page, uint8_t * buffer)
+{
+    if(page)
+    {
+        return(0);
+    }
+    
+    return(flash_readblock(block, buffer));
+}
+
+/**
+  * @brief  
+  */
+static uint32_t flash_writepage(uint32_t block, uint8_t page, const uint8_t *buffer)
+{
+    if(page)
+    {
+        return(0);
+    }
+    
+    return(flash_writeblock(block, buffer));
 }
 
 static uint32_t flash_pagesize(void)
 {
     return(AT45_PAGE_SIZE);
-}
-
-static uint32_t flash_pageamount(void)
-{
-    return(AT45_PAGE_AMOUNT);
 }
 
 static uint32_t flash_blocksize(void)
@@ -470,7 +491,7 @@ static uint32_t flash_blocksize(void)
 
 static uint32_t flash_blockmount(void)
 {
-    return(AT45_PAGE_AMOUNT);
+    return(AT45_BLOCK_AMOUNT);
 }
 
 static uint32_t flash_chipsize(void)
@@ -558,15 +579,14 @@ const struct __flash flash =
     
     .block          = 
     {
-        .read       = flash_readpage,
-        .write      = flash_writepage,
-        .erase      = flash_erasepage,
+        .read       = flash_readblock,
+        .write      = flash_writeblock,
+        .erase      = flash_eraseblock,
     },
     
     .info           = 
     {
         .pagesize   = flash_pagesize,
-        .pageamount = flash_pageamount,
         .blocksize  = flash_blocksize,
         .blockmount = flash_blockmount,
         .chipsize   = flash_chipsize,
