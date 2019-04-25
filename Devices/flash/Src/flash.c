@@ -231,7 +231,7 @@ static uint32_t flash_readblock(uint32_t block, uint8_t * buffer)
 #else
     FILE *fp;
     
-    if(page >= AT45_BLOCK_SIZE)
+    if(block >= AT45_BLOCK_SIZE)
     {
         return(0);
     }

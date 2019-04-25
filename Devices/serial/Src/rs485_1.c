@@ -80,27 +80,31 @@ static enum __dev_status rs485_status(void)
   */
 static void rs485_init(enum __dev_state state)
 {
+	UART_USED.control.init(state);
+/////////////////////////////////////////////
+    //for test
+    UART_USED.parity.set(PARI_NONE);
+/////////////////////////////////////////////
+	
+    serial_state.status = BUS_IDLE;
+    serial_state.mode = SERIAL_AUTO;
+    serial_state.rx_buff = (uint8_t *)0;
+    serial_state.rx_buff_size = 0;
+    serial_state.rx_w_index = 0;
+    serial_state.rx_frame_length = 0;
+    serial_state.tx_buff = (uint8_t *)0;;
+    serial_state.tx_buff_size = 0;
+    serial_state.tx_data_size = 0;
+    serial_state.timeout_config = 50;
+    serial_state.timeout_rx_counter = 0;
+    serial_state.timeout_tx_counter = 0;
+    
 	if(state == DEVICE_NORMAL)
 	{
-		UART_USED.control.init(state);
-		
-		serial_state.status = BUS_IDLE;
-		serial_state.mode = SERIAL_AUTO;
-		serial_state.rx_buff = (uint8_t *)0;
-		serial_state.rx_buff_size = 0;
-		serial_state.rx_w_index = 0;
-		serial_state.rx_frame_length = 0;
-		serial_state.tx_buff = (uint8_t *)0;;
-		serial_state.tx_buff_size = 0;
-		serial_state.tx_data_size = 0;
-		serial_state.timeout_config = 100;
-		serial_state.timeout_rx_counter = 0;
-		serial_state.timeout_tx_counter = 0;
-		
 		UART_USED.handler.filling(recv_callback);
-		
-	    status = DEVICE_INIT;
 	}
+    
+    status = DEVICE_INIT;
 }
 
 /**
@@ -120,7 +124,7 @@ static void rs485_suspend(void)
 	serial_state.tx_buff = (uint8_t *)0;;
 	serial_state.tx_buff_size = 0;
 	serial_state.tx_data_size = 0;
-	serial_state.timeout_config = 100;
+	serial_state.timeout_config = 50;
 	serial_state.timeout_rx_counter = 0;
 	serial_state.timeout_tx_counter = 0;
 	
@@ -135,53 +139,62 @@ static void rs485_suspend(void)
   */
 static void rs485_runner(uint16_t msecond)
 {
+    //接收没有超时
 	if(serial_state.timeout_rx_counter < serial_state.timeout_config)
 	{
 		serial_state.timeout_rx_counter += msecond;
 	}
+    //接收超时
 	else
 	{
+        //如果接收缓冲中有数据
 		if(serial_state.rx_w_index)
 		{
+            //如果数据帧长度没有被赋值
 			if(!(serial_state.rx_frame_length))
 			{
+                //赋值数据帧长度
 				serial_state.rx_frame_length = serial_state.rx_w_index;
 			}
+            //如果数据帧长度已赋值
 			else
 			{
-				serial_state.timeout_rx_counter += msecond;
-				
-				if(serial_state.timeout_rx_counter > ((uint32_t)(serial_state.timeout_config)*2))
+				//等待1秒后，复位接收写地址
+				if(serial_state.timeout_rx_counter < ((uint32_t)(serial_state.timeout_config) + 1000))
 				{
-					serial_state.rx_w_index = 0;
+                    serial_state.timeout_rx_counter += msecond;
+                    if(serial_state.timeout_rx_counter >= ((uint32_t)(serial_state.timeout_config) + 1000))
+                    {
+                        serial_state.rx_w_index = 0;
+                    }
 				}
 			}
 		}
 	}
 	
-	
+	//发送正在延时
 	if(serial_state.timeout_tx_counter < serial_state.timeout_config)
 	{
 		serial_state.timeout_tx_counter += msecond;
 	}
+    //发送延时完成
 	else
 	{
+        //串口状态忙
 		if(UART_USED.status() != BUS_IDLE)
 		{
 			return;
 		}
 		
+        //串口状态已空闲，如果总线状态忙，则复位总线状态
 		if(serial_state.status == BUS_TRANSFER)
 		{
+            serial_state.status = BUS_IDLE;
 			serial_state.tx_data_size = 0;
 		}
 		
-		if(!(serial_state.tx_data_size))
-		{
-			serial_state.status = BUS_IDLE;
-			return;
-		}
-		else
+        //有数据等待传输
+		if(serial_state.tx_data_size)
 		{
 			serial_state.status = BUS_TRANSFER;
 			UART_USED.write(serial_state.tx_data_size, serial_state.tx_buff);
@@ -213,6 +226,7 @@ static uint16_t rs485_read(uint8_t *buffer, uint16_t max_size)
 	
 	memcpy((void *)buffer, (const void *)serial_state.rx_buff, length);
 	
+	serial_state.rx_w_index = 0;
 	serial_state.rx_frame_length = 0;
 	
 	return(length);

@@ -98,7 +98,6 @@ static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, ui
 	uint8_t cnt;
     uint16_t length;
 	
-	//退出所有协议栈
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
 		length = proto_table[cnt]->protocol.read(descriptor, buff, size, param);
@@ -120,7 +119,6 @@ static uint16_t proto_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 	uint8_t cnt;
     uint16_t length;
 	
-	//退出所有协议栈
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
 		length = proto_table[cnt]->protocol.write(descriptor, buff, size);
@@ -139,6 +137,13 @@ static uint16_t proto_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
   */
 static uint16_t proto_stream_in(uint8_t channel, const uint8_t *frame, uint16_t length)
 {
+	uint8_t cnt;
+	
+	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
+	{
+		proto_table[cnt]->protocol.stream.in(channel, frame, length);
+	}
+    
     return(0);
 }
 
@@ -147,6 +152,19 @@ static uint16_t proto_stream_in(uint8_t channel, const uint8_t *frame, uint16_t 
   */
 static uint16_t proto_stream_out(uint8_t channel, uint8_t *buff, uint16_t length)
 {
+	uint8_t cnt;
+    uint16_t result;
+	
+	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
+	{
+		result = proto_table[cnt]->protocol.stream.out(channel, buff, length);
+        
+        if(result)
+        {
+            return(result);
+        }
+	}
+    
     return(0);
 }
 

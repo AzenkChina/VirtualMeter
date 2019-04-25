@@ -87,7 +87,6 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	    	if(received_byte)
 	    	{
 	    		received_byte(buff[cnt]);
-                usleep(1*1000);
 	    	}
 	    }
 		
@@ -121,6 +120,8 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	        continue;
 	    }
 	    
+        read_size = 0;
+        
 	    if(comstat.cbInQue > 0)
 	    {
 			if(!ReadFile(hcomm, buff, comstat.cbInQue, &read_size, NULL))
@@ -137,14 +138,10 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	    	if(received_byte)
 	    	{
 	    		received_byte(buff[cnt]);
-                Sleep(1);
 	    	}
 	    }
 		
-		read_size = 0;
-	    
 	    bus_status = BUS_IDLE;
-	    
 	}
 	
 	return(0);
@@ -257,7 +254,7 @@ static void uart_init(enum __dev_state state)
 	
 	dcb.DCBlength = sizeof(DCB);
 	
-    if(SetCommState(hcomm, &dcb))
+    if(!SetCommState(hcomm, &dcb))
 	{
         CancelIo(hcomm);
         CloseHandle(hcomm);
@@ -503,7 +500,7 @@ static enum __baud uart_baudrate_set(enum __baud baudrate)
 	
 	dcb.BaudRate = ((uint16_t)baudrate) * 100;
 	
-    if(SetCommState(hcomm, &dcb))
+    if(!SetCommState(hcomm, &dcb))
 	{
 		return(uart_baud);
 	}
@@ -613,7 +610,7 @@ static enum __parity uart_parity_set(enum __parity parity)
 		}
   	}
 	
-    if(SetCommState(hcomm, &dcb))
+    if(!SetCommState(hcomm, &dcb))
 	{
 		return(uart_parity);
 	}
@@ -734,7 +731,7 @@ static enum __stop uart_stop_set(enum __stop stop)
 		}
   	}
 	
-    if(SetCommState(hcomm, &dcb))
+    if(!SetCommState(hcomm, &dcb))
 	{
 		return(uart_stop);
 	}

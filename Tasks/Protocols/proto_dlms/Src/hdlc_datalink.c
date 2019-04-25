@@ -14,12 +14,12 @@
 /* Private define ------------------------------------------------------------*/
 //HDLC配置参数
 
-//服务端地址长度，取值： 1, 2, 4
+//服务端地址长度，取值：1, 2, 4
 #define HDLC_CONFIG_ADDR_LENGTH         2
 
 //有效荷载长度
 #define HDLC_CONFIG_INFO_LEN_MIN        ((uint16_t)(64)) // >=32
-#define HDLC_CONFIG_INFO_LEN_DEFULT     ((uint16_t)(128))
+#define HDLC_CONFIG_INFO_LEN_DEFAULT    ((uint16_t)(128))
 #define HDLC_CONFIG_INFO_LEN_MAX        ((uint16_t)(220)) // >=128
 
 //链路超时时间
@@ -28,14 +28,22 @@
 //支持的通道数
 #define HDLC_CONFIG_MAX_CHANNEL         ((uint8_t)(4))
 
-//定义应用层接口（s, info, length, buffer, max buffer length, filled buffer length）
-#define HDLC_CONFIG_APPL_REQUEST(s,i,l,b,m,f)   dlms_gateway(s,i,l,b,m,f)
+//定义外部接口
+//应用层请求（s, info, length, buffer, max buffer length, filled buffer length）
+#define HDLC_CONFIG_APPL_REQUEST(s,i,l,b,m,f)   dlms_asso_gateway(s,i,l,b,m,f)
+//应用层断开
+#define HDLC_CONFIG_APPL_RELEASE(s)             dlms_asso_cleanup(s)
+//应用层最大报文长度
+#define HDLC_CONFIG_APPL_MTU()                  (dlms_asso_mtu() + 64)
+//获取本机地址
+#define HDLC_CONFIG_LOCAL_ADDRESS()				0x0001
 
 /* Private typedef -----------------------------------------------------------*/
 enum __hdlc_link_status
 {
     LINK_DISCONNECTED = 0,
     LINK_CONNECTED,
+    LINK_MARK,
 };
 
 enum __hdlc_errors
@@ -167,7 +175,6 @@ static struct __hdlc_link hdlc_links[HDLC_CONFIG_MAX_CHANNEL];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
 /**
   * @brief 计算字节数据流的 CRC16
   * @param  cp 数据流地址
@@ -220,6 +227,7 @@ static uint8_t add_chk(uint8_t *in, uint16_t length, uint8_t *out)
   */
 static uint8_t add_address(uint8_t *out)
 {
+	uint16_t address = HDLC_CONFIG_LOCAL_ADDRESS();
 #ifndef HDLC_CONFIG_ADDR_LENGTH
 #error hdld server address length is not defined.
 #endif
@@ -227,24 +235,28 @@ static uint8_t add_address(uint8_t *out)
 #if (HDLC_CONFIG_ADDR_LENGTH == 1)
     if(out)
     {
-        //...
-        out[0] = 0x21;
+        out[0] = address & 0xff;
+		out[0] <<= 1;
+		out[0] |= 0x01;
     }
 #elif (HDLC_CONFIG_ADDR_LENGTH == 2)
     if(out)
     {
-        //...
-        out[0] = 0x00;
-        out[1] = 0x21;
+		out[0] = 0x02;
+        out[1] = address & 0xff;
+		out[1] <<= 1;
+		out[1] |= 0x01;
     }
 #elif (HDLC_CONFIG_ADDR_LENGTH == 4)
     if(out)
     {
-        //...
         out[0] = 0x00;
         out[1] = 0x02;
-        out[2] = 0x00;
-        out[3] = 0x21;
+        out[2] = (address >> 7) & 0xff;
+		out[2] <<= 1;
+        out[3] = address & 0xff;
+		out[3] <<= 1;
+		out[3] |= 0x01;
     }
 #else
 #error hdld server address length is not fits.
@@ -334,6 +346,8 @@ static enum __hdlc_errors decode_hdlc_frame(const uint8_t *frame, \
     //控制域
     hdlc_desc->ctrl = (uint8_t *)(frame + frame_read);
     hdlc_desc->poll = (*(uint8_t *)(frame + frame_read) & 0x10) >> 4;
+    hdlc_desc->rrr = (*(uint8_t *)(frame + frame_read) & 0xE0) >> 5;
+    hdlc_desc->sss = (*(uint8_t *)(frame + frame_read) & 0x0E) >> 1;
     frame_read += 1;
     
     //HDLC帧头校验
@@ -510,31 +524,31 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
     
     //获取 发送数据缓冲区
-    link->send.data = (uint8_t *)heap.salloc(dlms_asso_mtu() + 64);
+    link->send.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU());
     if(!link->send.data)
     {
         return(HDLC_ERR_NOMEM);
     }
     
-    link->send.length = dlms_asso_mtu() + 32;
+    link->send.length = HDLC_CONFIG_APPL_MTU();
     
     //获取 接收数据缓冲区
-    link->recv.data = (uint8_t *)heap.salloc(dlms_asso_mtu() + 64);
+    link->recv.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU());
     if(!link->recv.data)
     {
         heap.free(link->send.data);
         return(HDLC_ERR_NOMEM);
     }
     
-    link->recv.length = dlms_asso_mtu() + 32;
+    link->recv.length = HDLC_CONFIG_APPL_MTU();
     
     //初始化默认窗口大小
     link->ws_recv = 1;
     link->ws_trans = 1;
     
     //初始化默认收发帧长度
-    link->max_len_recv = HDLC_CONFIG_INFO_LEN_DEFULT;
-    link->max_len_trans = HDLC_CONFIG_INFO_LEN_DEFULT;
+    link->max_len_recv = HDLC_CONFIG_INFO_LEN_DEFAULT;
+    link->max_len_trans = HDLC_CONFIG_INFO_LEN_DEFAULT;
     
     //初始化超时时间
     link->link_inactive_timer = HDLC_CONFIG_INACTIVE_TIMEOUT;
@@ -561,6 +575,12 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
         return(HDLC_ERR_NOMEM);
     }
     
+    if(link->link_status != LINK_DISCONNECTED)
+    {
+        //取消应用层连接
+        HDLC_CONFIG_APPL_RELEASE(link->client_address);
+    }
+    
     if(link->recv.data)
     {
         heap.free(link->recv.data);
@@ -569,12 +589,6 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
     if(link->send.data)
     {
         heap.free(link->send.data);
-    }
-    
-    if(link->link_status == LINK_CONNECTED)
-    {
-        //取消应用层连接
-        HDLC_CONFIG_APPL_REQUEST(link->client_address, 0, 0, 0, 0, 0);
     }
     
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
@@ -910,7 +924,7 @@ static enum __hdlc_errors request_snrm(struct __hdlc_link *link, \
   * @param  
   * @retval 
   */
-static enum __hdlc_errors request_i(struct __hdlc_link *link, \
+static enum __hdlc_errors request_info(struct __hdlc_link *link, \
                           const struct __hdlc_frame_desc *hdlc_desc)
 {
     uint16_t frame_encode = 0;
@@ -952,7 +966,6 @@ static enum __hdlc_errors request_i(struct __hdlc_link *link, \
         link->sss -= 1;
         link->sss &= 0x07;
         link->rrr = link->rrr_confirming;
-        
     }
     else if(hdlc_desc->sss != ((link->csss + 1) & 0x07))
     {
@@ -965,7 +978,7 @@ static enum __hdlc_errors request_i(struct __hdlc_link *link, \
     link->rrr_confirming = link->rrr;
     
     //多包接收处理
-    if((link->recv.filled + hdlc_desc->length_info) > (dlms_asso_mtu() + 32))
+    if((link->recv.filled + hdlc_desc->length_info) > HDLC_CONFIG_APPL_MTU())
     {
         //多包接收数据已经溢出
         link->recv.filled = 0;
@@ -979,6 +992,8 @@ static enum __hdlc_errors request_i(struct __hdlc_link *link, \
     
     if(hdlc_desc->segment)
     {
+        link->csss = hdlc_desc->sss;
+        link->rrr_confirming = link->rrr;
         link->rrr += 1;
         link->rrr &= 0x07;
         //RR
@@ -1230,6 +1245,7 @@ static enum __hdlc_errors request_disc(struct __hdlc_link *link, \
     if(link->link_status == LINK_CONNECTED)
     {
         *(link->send.segment.data+frame_encode) = 0x73;
+        link->link_status = LINK_MARK;
     }
     else
     {
@@ -1284,7 +1300,7 @@ static enum __hdlc_errors request_ui(struct __hdlc_link *link, \
 static enum __hdlc_errors request_unknown(struct __hdlc_link *link, \
                            const struct __hdlc_frame_desc *hdlc_desc)
 {
-    return(HDLC_ERR_NODEF);
+    return(encode_frmr(hdlc_desc, link, FRMR_OPCODE));
 }
 
 
@@ -1347,8 +1363,15 @@ void hdlc_tick(uint16_t tick)
     
     for(cnt=0; cnt<HDLC_CONFIG_MAX_CHANNEL; cnt++)
     {
-        if(hdlc_links[cnt].link_status != LINK_CONNECTED)
+        if(hdlc_links[cnt].link_status == LINK_DISCONNECTED)
         {
+            continue;
+        }
+        
+        if(hdlc_links[cnt].link_status == LINK_MARK)
+        {
+            //断开连接
+            link_cleanup(&hdlc_links[cnt]);
             continue;
         }
         
@@ -1411,7 +1434,7 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
             //I Frame Received
             if(hdlc_links[channel].link_status == LINK_CONNECTED)
             {
-                hdlc_errors = request_i(&hdlc_links[channel], &frame_desc);
+                hdlc_errors = request_info(&hdlc_links[channel], &frame_desc);
             }
         }
         else

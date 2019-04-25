@@ -33,12 +33,12 @@ static void dlms_loop(void)
 
 static void dlms_exit(void)
 {
-	
+	hdlc_init();
 }
 
 static void dlms_reset(void)
 {
-	
+	hdlc_init();
 }
 
 static enum __task_status dlms_status(void)

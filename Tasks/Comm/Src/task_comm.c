@@ -252,7 +252,7 @@ static void comm_init(void)
     	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
     	{
     		port_table[cnt].serial->control.init(DEVICE_NORMAL);
-    		port_table[cnt].serial->timeout.set(200);
+    		port_table[cnt].serial->timeout.set(50);
     		port_table[cnt].serial->rxbuff.set((buff+BUFF_SIZE*(1+cnt*2+0)), BUFF_SIZE);
     		port_table[cnt].serial->txbuff.set((buff+BUFF_SIZE*(1+cnt*2+1)), BUFF_SIZE);
     	}
@@ -261,6 +261,17 @@ static void comm_init(void)
 	    
 	    status = TASK_INIT;
     }
+    else
+	{
+    	//初始化所有串行总线
+    	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
+    	{
+    		port_table[cnt].serial->control.init(DEVICE_LOWPOWER);
+    		port_table[cnt].serial->timeout.set(50);
+    		port_table[cnt].serial->rxbuff.remove();
+    		port_table[cnt].serial->txbuff.remove();
+    	}
+	} 
 }
 
 /**
