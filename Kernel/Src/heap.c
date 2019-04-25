@@ -111,8 +111,9 @@ static void heap_recycle(void)
     {
         if((p->magic == magic) || (p->magic == 0))
         {
-            TRACE(TRACE_INFO, "Heap salloc memory freed automatically, magic: %08X.", p->magic);
-            
+        	TRACE(TRACE_INFO,\
+			"Heap salloc memory freed automatically, magic: %08X, address: %08X.",\
+			p->magic, p);
         	if(p != slist)
         	{
             	previous->next = p->next;
@@ -158,19 +159,25 @@ static void *heap_salloc(uint32_t size)
     
     if((lock & HEAP_UNLOCK_ALLOC) != HEAP_UNLOCK_ALLOC)
     {
-        TRACE(TRACE_ERR, "Heap salloc failed (lock not available), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (lock not available), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
     if(!task_trace.belong())
     {
-        TRACE(TRACE_ERR, "Heap salloc failed (task id invalid), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (task id invalid), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
     if(!size)
     {
-        TRACE(TRACE_ERR, "Heap salloc failed (size invalid), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (size invalid), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
@@ -189,14 +196,14 @@ static void *heap_salloc(uint32_t size)
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic pop
 #endif
-
-        
         p = p->next;
     }
     
     if((mem_allcoked + size) > MAX_SHEAP_PER_TASK)
     {
-        TRACE(TRACE_ERR, "Heap salloc failed (heap overflow), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (heap overflow), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
@@ -204,7 +211,9 @@ static void *heap_salloc(uint32_t size)
     address = malloc(size + sizeof(struct __mem_entry));
     if(!address)
     {
-        TRACE(TRACE_ERR, "Heap salloc failed (system memory overflow), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (system memory overflow), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
@@ -222,6 +231,12 @@ static void *heap_salloc(uint32_t size)
 	((struct __mem_entry *)address)->size = size;
     ((struct __mem_entry *)address)->next = slist;
     slist = ((struct __mem_entry *)address);
+    
+    TRACE(TRACE_INFO,\
+	"Heap salloc success, magic: %08X, address: %08X, size: %08X.",\
+	task_trace.belong(),\
+	address,\
+	size);
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push
@@ -254,7 +269,9 @@ static void *heap_dalloc(uint32_t size)
     
     if(!size)
     {
-        TRACE(TRACE_ERR, "Heap dalloc failed (size invalid), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap dalloc failed (size invalid), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
@@ -266,14 +283,18 @@ static void *heap_dalloc(uint32_t size)
     
     if((mem_allcoked + size) > MAX_DHEAP)
     {
-        TRACE(TRACE_ERR, "Heap dalloc failed (heap overflow), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap dalloc failed (heap overflow), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
     address = malloc(size + sizeof(struct __mem_entry));
     if(!address)
     {
-        TRACE(TRACE_ERR, "Heap dalloc failed (system memory overflow), magic: %08X.", task_trace.belong());
+        TRACE(TRACE_ERR,\
+		"Heap dalloc failed (system memory overflow), magic: %08X.",\
+		task_trace.belong());
         return((void *)0);
     }
     
@@ -291,6 +312,12 @@ static void *heap_dalloc(uint32_t size)
 	((struct __mem_entry *)address)->size = size;
     ((struct __mem_entry *)address)->next = dlist;
     dlist = ((struct __mem_entry *)address);
+    
+    TRACE(TRACE_INFO,\
+	"Heap dalloc success, magic: %08X, address: %08X, size: %08X.",\
+	task_trace.belong(),\
+	address,\
+	size);
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push
@@ -337,7 +364,11 @@ static void heap_free(void *address)
         if((unsigned long)address >= ((unsigned long)p + sizeof(struct __mem_entry)) && \
             (unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size))
         {
-            TRACE(TRACE_INFO, "Heap dalloc memory freed manually, magic: %08X.", p->magic);
+            TRACE(TRACE_INFO,\
+			"Heap dalloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
+			p->magic,
+			p,
+			p->size);
             
         	if(p != dlist)
         	{
@@ -394,7 +425,11 @@ static void heap_free(void *address)
     {
         if((p->magic == magic) || (p->magic == 0))
         {
-            TRACE(TRACE_INFO, "Heap salloc memory freed manually, magic: %08X.", p->magic);
+            TRACE(TRACE_INFO,\
+			"Heap salloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
+			p->magic,
+			p,
+			p->size);
             
         	if(p != slist)
         	{
@@ -425,6 +460,11 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 {
     struct __mem_entry *p = slist;
     
+    if(!dst || !src)
+    {
+    	return(0);
+	}
+    
     while(p)
     {
 #if defined ( __GNUC__ )
@@ -435,7 +475,9 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 		if((((unsigned long)dst) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
 		(((unsigned long)dst + count) > ((unsigned long)p)))
 		{
-            TRACE(TRACE_ERR, "Heap copy address conflict, magic: %08X.", task_trace.belong());
+            TRACE(TRACE_ERR,\
+			"Heap copy address conflict, magic: %08X.",\
+			task_trace.belong());
 			return(0);
 		}
 
@@ -457,7 +499,9 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 		if((((unsigned long)dst) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
 		(((unsigned long)dst + count) > ((unsigned long)p)))
 		{
-            TRACE(TRACE_ERR, "Heap copy address conflict, magic: %08X.", task_trace.belong());
+            TRACE(TRACE_ERR,\
+			"Heap copy address conflict, magic: %08X.",\
+			task_trace.belong());
 			return(0);
 		}
 
@@ -479,6 +523,11 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 {
     struct __mem_entry *p = slist;
     
+    if(!address)
+    {
+    	return(0);
+	}
+    
     while(p)
     {
 #if defined ( __GNUC__ )
@@ -489,7 +538,9 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 		if((((unsigned long)address) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
 		(((unsigned long)address + count) > ((unsigned long)p)))
 		{
-            TRACE(TRACE_ERR, "Heap set address conflict, magic: %08X.", task_trace.belong());
+            TRACE(TRACE_ERR,\
+			"Heap set address conflict, magic: %08X.",\
+			task_trace.belong());
 			return(0);
 		}
 
@@ -511,7 +562,9 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 		if((((unsigned long)address) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
 		(((unsigned long)address + count) > ((unsigned long)p)))
 		{
-            TRACE(TRACE_ERR, "Heap set address conflict, magic: %08X.", task_trace.belong());
+            TRACE(TRACE_ERR,\
+			"Heap set address conflict, magic: %08X.",\
+			task_trace.belong());
 			return(0);
 		}
 

@@ -7,10 +7,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "power.h"
 
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) 
-#include "stm32f0xx.h"
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #include "meter.h"
+#else
+#include "stm32f0xx.h"
 #endif
 
 
@@ -24,10 +24,7 @@ static enum __power_status status_current = SUPPLY_BATTERY;
 /* Private functions ---------------------------------------------------------*/
 static enum __power_status power_check(void)
 {
-    //...检测电源状态
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) 
-    return(SUPPLY_AC);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     if(is_powered())
     {
         return(SUPPLY_AC);
@@ -36,8 +33,10 @@ static enum __power_status power_check(void)
     {
         return(SUPPLY_BATTERY);
     }
+#else
+	//检测电源状态
+    return(SUPPLY_AC);
 #endif
-
 }
 
 
@@ -49,7 +48,13 @@ static enum __power_status power_check(void)
   */
 static void power_init(void)
 {
-    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	meter.control.init(DEVICE_NORMAL);
+	mdelay(500);
+	meter.control.suspend();
+#else
+	//初始化电源检测功能
+#endif
 }
 
 
