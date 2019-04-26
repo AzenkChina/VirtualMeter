@@ -55,8 +55,7 @@ ShowTimeSum=1
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 0 "STD_CODE2" "{$PROJ_DIR$\..\..\Kernel\Src\heap.c}.267.5" 0 0 1 "" 0 ""
-Count=1
+Count=0
 [Interrupts]
 Enabled=1
 [MemConfig]

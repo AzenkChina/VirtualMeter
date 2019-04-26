@@ -354,6 +354,11 @@ static void heap_free(void *address)
     struct __mem_entry *previous;
     unsigned long magic;
     
+    if(!address)
+    {
+    	return;
+	}
+    
     p = dlist;
     previous = dlist;
     
@@ -466,7 +471,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 {
     struct __mem_entry *p = slist;
     
-    if(!dst || !src)
+    if(!dst || !src || !count)
     {
     	return(0);
 	}
@@ -529,7 +534,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 {
     struct __mem_entry *p = slist;
     
-    if(!address)
+    if(!address || !count)
     {
     	return(0);
 	}

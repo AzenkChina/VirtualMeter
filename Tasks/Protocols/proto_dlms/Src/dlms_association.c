@@ -125,14 +125,26 @@ struct __aarq_request
 //定义外部接口
 //COSEM层请求（data, info, length, buffer, max buffer length, filled buffer length）
 #define DLMS_CONFIG_COSEM_REQUEST(d,i,l,b,m,f)  dlms_appl_entrance(d,i,l,b,m,f)
+////验证密码（info）
+//#define DLMS_CONFIG_PASSWD_VALID(i)            0
+////加载认证密钥（info）
+//#define DLMS_CONFIG_LOAD_AKEY(i)                ;
+////加载加密密钥（info）
+//#define DLMS_CONFIG_LOAD_EKEY(i)                ;
+////加载本机system title（info）
+//#define DLMS_CONFIG_LOAD_TITLE(i)               ;
+
+////////////////////////////////////////////////////////////////////////////
+//DEBUG
 //验证密码（info）
-#define DLMS_CONFIG_PASSWD_VERIFY(i)            0
+#define DLMS_CONFIG_PASSWD_VALID(i)            (!(memcmp(i, "0000000000000000", 16) == 0))
 //加载认证密钥（info）
-#define DLMS_CONFIG_LOAD_AKEY(i)                ;
+#define DLMS_CONFIG_LOAD_AKEY(i)                memcpy(i, "\x45\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
 //加载加密密钥（info）
-#define DLMS_CONFIG_LOAD_EKEY(i)                ;
+#define DLMS_CONFIG_LOAD_EKEY(i)                memcpy(i, "\x41\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
 //加载本机system title（info）
-#define DLMS_CONFIG_LOAD_TITLE(i)               ;
+#define DLMS_CONFIG_LOAD_TITLE(i)               memcpy(i, "\x53\x08\x57\x53\x44\x30\x30\x30\x30\x30", 10)
+///////////////////////////////////////////////////////////////////////////
 
 /* Private macro -------------------------------------------------------------*/
 #define DLMS_SAP_AMOUNT             ((uint8_t)(sizeof(sap_support_list) / sizeof(struct __sap)))
@@ -202,68 +214,69 @@ static void parse_aarq_frame(const uint8_t *info, uint16_t length, struct __aarq
 			}
             case 0xA1: //APPLICATION-CONTEXT-NAME
 			{
-                 request->application_context_name = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->application_context_name = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0xA6: //AP-title(calling)
 			{
-                 request->calling_AP_title = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->calling_AP_title = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0xA7: //AE-qualifier-identifier(calling)
 			{
-                 request->calling_AE_qualifier = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->calling_AE_qualifier = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0xA8: //AP-invocation-identifier(calling)
 			{
-                 request->calling_AP_invocation_id = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->calling_AP_invocation_id = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0xA9: //AE-invocation-identifier(calling)
 			{
-                 request->calling_AE_invocation_id = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->calling_AE_invocation_id = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0x8A: //ACSE-requirement
 			{
-                 request->sender_acse_requirements = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->sender_acse_requirements = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0x8B: //Mechanism-name
 			{
-                 request->mechanism_name = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->mechanism_name = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0x9D: //implementation-information
             case 0xBD: //按绿皮书应是0x9D,而CTI软件里是0xBD
 			{
-                 request->implementation_information = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->implementation_information = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             case 0xAC: //Authentication-value
 			{
-                 request->calling_authentication_value = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->calling_authentication_value = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
             }
             case 0xBE: //Association-information
 			{
-                 request->user_information = (info + frame_decoded);
-                 frame_decoded += *(info + frame_decoded + 1) + 2;
+                request->user_information = (info + frame_decoded);
+                frame_decoded += *(info + frame_decoded + 1) + 2;
 				break;
 			}
             default: //error
 			{
-                return;
+                frame_decoded += *(info + frame_decoded + 1) + 2;
+				break;
 			}
         }
     }
@@ -318,7 +331,7 @@ static void encode_object_identifier(const uint8_t *info, struct __object_identi
 static void parse_user_information(const uint8_t *info, struct __dlms_association *asso)
 {
     uint8_t offset;
-    uint8_t cnt; 
+    uint8_t cnt;
     const uint8_t *msg = info;
     uint8_t *output = (void *)0;
     uint8_t *add = (void *)0;
@@ -339,6 +352,13 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
     
     if((info[4] == 0x21) && ((info[5] + 4) == info[1]))
     {
+		//加载 local_AP_title
+		DLMS_CONFIG_LOAD_TITLE(asso->localtitle);
+		//加载 ekay
+		DLMS_CONFIG_LOAD_EKEY(asso->ekey);
+		//加载 akey
+		DLMS_CONFIG_LOAD_AKEY(asso->akey);
+    	
         asso->info.sc = info[6];
         
         mbedtls_gcm_init(&ctx);
@@ -384,17 +404,17 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                                                12,
                                                add,
                                                (info[5] + asso->akey[1] - 5 - 12),
-                                               &info[5 + (info[5] - 12)],
+                                               &info[5 + (info[5] - 12 + 1)],
                                                12,
                                                &info[11],
                                                output);
-                msg = &info[5];
+                msg = &info[7];
                 break;
             }
             case 0x20:
             {
                 //仅加密
-                output = heap.dalloc(info[5]);
+                output = heap.dalloc(info[5] + 4);
                 if(!output)
                 {
                     ret = -1;
@@ -426,14 +446,14 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                                                &info[5 + info[5]],
                                                0,
                                                &info[11],
-                                               output);
+                                               (output + 4));
                 msg = output;
                 break;
             }
             case 0x30:
             {
                 //加密加认证
-                output = heap.dalloc(info[5]);
+                output = heap.dalloc(info[5] + 4);
                 if(!output)
                 {
                     ret = -1;
@@ -464,10 +484,10 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                                                12,
                                                add,
                                                (1 + asso->akey[1]),
-                                               &info[5 + (info[5] - 12)],
+                                               &info[5 + (info[5] - 12 + 1)],
                                                12,
                                                &info[11],
-                                               output);
+                                               (output + 4));
                 msg = output;
                 break;
             }
@@ -630,34 +650,31 @@ static void dlms_asso_none(struct __dlms_association *asso,
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
-    else if(memcmp(&request->application_context_name[4], (buffer + *filled_length + 4), 7) != 0)
+	else if(memcmp(&request->application_context_name[4], (buffer + *filled_length + 4), 7) != 0)
     {
         encode_object_identifier((buffer + *filled_length + 4), &asso->appl_name);
         asso->diagnose = FAILURE_NO_REASION;
     }
-    else
-    {
-        if(asso->info.dedkey[0])
-        {
-            asso->diagnose = FAILURE_CONTEXT_NAME;
-        }
-        else
-        {
-            asso->status = ASSOCIATED;
-        }
-    }
     
     *filled_length += 11;
     
-    if(asso->info.version < 6)
+	if(asso->info.dedkey[0])
+    {
+        asso->diagnose = FAILURE_CONTEXT_NAME;
+    }
+    else if(asso->info.version < 6)
+    {
+        asso->diagnose = FAILURE_CONTEXT_NAME;
+    }
+    else if(asso->info.max_pdu <= 0x0b)
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
     
-    if(asso->info.max_pdu <= 0x0b)
-    {
-        asso->diagnose = FAILURE_CONTEXT_NAME;
-    }
+	if(asso->diagnose == SUCCESS_NOSEC_LLS)
+	{
+		asso->status = ASSOCIATED;
+	}
     
     //association-result
     *(buffer + *filled_length + 0) = 0xA2;
@@ -846,7 +863,7 @@ static void dlms_asso_low(struct __dlms_association *asso,
         else
         {
             heap.copy(asso->akey, &request->calling_authentication_value[2], request->calling_authentication_value[1]);
-            if(!DLMS_CONFIG_PASSWD_VERIFY(asso->akey))
+            if(!DLMS_CONFIG_PASSWD_VALID(asso->akey))
             {
                 //拒绝建立链接
                 asso->diagnose = FAILURE_CONTEXT_NAME;
@@ -878,29 +895,26 @@ static void dlms_asso_low(struct __dlms_association *asso,
         encode_object_identifier((buffer + *filled_length + 4), &asso->appl_name);
         asso->diagnose = FAILURE_NO_REASION;
     }
-    else
-    {
-        if(asso->info.dedkey[0])
-        {
-            asso->diagnose = FAILURE_CONTEXT_NAME;
-        }
-        else
-        {
-            asso->status = ASSOCIATED;
-        }
-    }
     
     *filled_length += 11;
     
-    if(asso->info.version < 6)
+    if(asso->info.dedkey[0])
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
-    
-    if(asso->info.max_pdu <= 0x0b)
+	else if(asso->info.version < 6)
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
+    else if(asso->info.max_pdu <= 0x0b)
+    {
+        asso->diagnose = FAILURE_CONTEXT_NAME;
+    }
+	
+	if(asso->diagnose == SUCCESS_NOSEC_LLS)
+	{
+		asso->status = ASSOCIATED;
+	}
     
     //association-result
     *(buffer + *filled_length + 0) = 0xA2;
@@ -1089,7 +1103,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
     uint8_t *input = (void *)0;
     uint8_t *add = (void *)0;
     uint8_t input_length;
-    uint8_t version = 0;
+    uint8_t fail_version = 0;
     
     *(buffer + 0) = (uint8_t)AARE;
     *(buffer + 1) = 0x00;
@@ -1110,8 +1124,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
         }
         else
         {
-            asso->diagnose = FAILURE_NO_REASION;
-            version = 0xff;
+            fail_version = 0xff;
         }
     }
     
@@ -1174,10 +1187,6 @@ static void dlms_asso_high(struct __dlms_association *asso,
         encode_object_identifier((buffer + *filled_length + 4), &asso->appl_name);
         asso->diagnose = FAILURE_NO_REASION;
     }
-    else
-    {
-        asso->status = ASSOCIATION_PENDING;
-    }
     
     *filled_length += 11;
     
@@ -1185,11 +1194,16 @@ static void dlms_asso_high(struct __dlms_association *asso,
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
-    
-    if(asso->info.max_pdu <= 0x0b)
+    else if(asso->info.max_pdu <= 0x0b)
     {
         asso->diagnose = FAILURE_CONTEXT_NAME;
     }
+    
+	if(asso->diagnose == SUCCESS_NOSEC_LLS)
+	{
+		asso->diagnose = SUCCESS_HLS;
+		asso->status = ASSOCIATION_PENDING;
+	}
     
     //association-result
     *(buffer + *filled_length + 0) = 0xA2;
@@ -1210,11 +1224,11 @@ static void dlms_asso_high(struct __dlms_association *asso,
     //associate-source-diagnostic
     *(buffer + *filled_length + 0) = 0xA3;
     *(buffer + *filled_length + 1) = 0x05;
-    if(version)
+    if(fail_version)
     {
         asso->diagnose = FAILURE_NO_REASION;
     }
-    if((asso->diagnose == FAILURE_NO_REASION) && (version))
+    if((asso->diagnose == FAILURE_NO_REASION) && (fail_version))
     {
         *(buffer + *filled_length + 2) = 0xA2;
     }
@@ -1498,25 +1512,23 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
         encode_object_identifier((request.application_context_name + 4), &asso->appl_name);
     }
     
-    if(asso->appl_name.id == 3)
+    //保存 calling_AP_title
+    if(request.calling_AP_title)
     {
-        //有效性判断，context_id 为 3 时，必须提供 calling_AP_title
-        if(!request.calling_AP_title)
+    	//保存 calling_AP_title
+        if(request.calling_AP_title[1] > 10)
         {
-            return;
+            heap.copy(asso->callingtitle, &request.calling_AP_title[2], 10);
         }
-        
-        if(request.calling_AP_title[1] != 10)
+        else
         {
-            return;
-        }
-        
-        //保存 calling_AP_title
-        heap.copy(asso->callingtitle, &request.calling_AP_title[2], request.calling_AP_title[1]);
-		//加载 local_AP_title
-        DLMS_CONFIG_LOAD_TITLE(asso->localtitle);
-        //加载 ekay
-        DLMS_CONFIG_LOAD_EKEY(asso->ekey);
+        	heap.copy(asso->callingtitle, &request.calling_AP_title[2], request.calling_AP_title[1]);
+		}
+		
+        if(asso->callingtitle[1] > 0x08)
+        {
+        	asso->callingtitle[1] = 0x08;
+		}
     }
     
     //保存 user_information
@@ -1529,7 +1541,7 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
     //2 16 756 5 8 2 x
     if(request.mechanism_name)
     {
-        encode_object_identifier((request.mechanism_name + 4), &asso->mech_name);
+        encode_object_identifier((request.mechanism_name + 2), &asso->mech_name);
     }
     
     //通过 mechanism_name 来判别要建立什么级别的连接
@@ -1567,8 +1579,6 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
             if(asso->sap.level == DLMS_ACCESS_HIGH)
             {
                 //高级别认证
-                //加载 akey
-                DLMS_CONFIG_LOAD_AKEY(asso->akey);
                 dlms_asso_high(asso, &request, buffer, buffer_length, filled_length);
             }
             break;
@@ -1652,7 +1662,6 @@ void dlms_asso_gateway(uint8_t sap,
     uint8_t cnt;
     const struct __sap *sap_support = (void *)0;
     uint8_t id = (sap >> 1);
-    struct __dlms_association *asso = (void *)0;
     
     //有效性判断
     if((!info) || (!length) || (!buffer) || (!buffer_length) || (!filled_length))
@@ -1660,23 +1669,10 @@ void dlms_asso_gateway(uint8_t sap,
         return;
     }
     
+    //清零返回报文长度
     *filled_length = 0;
-    
-    //查询SAP是否在支持的SAP列表中
-    for(cnt=0; cnt<DLMS_SAP_AMOUNT; cnt++)
-    {
-        if(sap_support_list[cnt].id == id)
-        {
-            sap_support = &sap_support_list[cnt];
-            break;
-        }
-    }
-    
-    //没有查询到支持的SAP
-    if(!sap_support)
-    {
-        return;
-    }
+    //清零当前连接指针
+    asso_current = (void *)0;
     
     //查询SAP是否已完成协商
     for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
@@ -1688,60 +1684,92 @@ void dlms_asso_gateway(uint8_t sap,
         
         if(asso_list[cnt]->sap.id == id)
         {
-            asso = asso_list[cnt];
+            asso_current = asso_list[cnt];
         }
     }
     
-    //SAP不在已完成的协商列表中，生成一个新的SAP对象
-    if(!asso)
-    {
-        for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
-        {
-            if(!asso_list[cnt])
-            {
-                asso_list[cnt] = heap.salloc(sizeof(struct __dlms_association));
-                if(!asso_list[cnt])
-                {
-                    return;
-                }
-                
-                asso = asso_list[cnt];
-                heap.set(asso, 0, sizeof(struct __dlms_association));
-                asso->sap = *sap_support;
-                break;
-            }
-        }
-        
-        //SAP对象生成失败
-        if(!asso)
-        {
-            return;
-        }
-        
-        //初始化FC
-        srand((unsigned int)jiffy.value());
-        asso->fc = (uint32_t)rand();
-    }
-    
-    asso_current = asso;
     //解析报文
     switch(*info)
     {
         case AARQ:
         {
-            dlms_asso_aarq(asso, info, length, buffer, buffer_length, filled_length);
+		    //SAP不在已完成的协商列表中，生成一个新的SAP对象
+		    if(!asso_current)
+		    {
+			    //查询SAP是否在支持的SAP列表中
+			    for(cnt=0; cnt<DLMS_SAP_AMOUNT; cnt++)
+			    {
+			        if(sap_support_list[cnt].id == id)
+			        {
+			            sap_support = &sap_support_list[cnt];
+			            break;
+			        }
+			    }
+			    
+			    //没有查询到支持的SAP
+			    if(!sap_support)
+			    {
+			        return;
+			    }
+			    
+			    //查询一个未被占用的节点
+		        for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
+		        {
+		            if(!asso_list[cnt])
+		            {
+		                asso_list[cnt] = heap.salloc(sizeof(struct __dlms_association));
+		                if(!asso_list[cnt])
+		                {
+		                    return;
+		                }
+		                
+		                asso_current = asso_list[cnt];
+		                heap.set(asso_current, 0, sizeof(struct __dlms_association));
+		                break;
+		            }
+		        }
+		        
+		        //SAP对象生成失败
+		        if(!asso_current)
+		        {
+		            return;
+		        }
+		    }
+        	
+		    //清理连接状态
+		    if(asso_current->appl)
+		    {
+		        heap.free(asso_current->appl);
+		    }
+    		heap.set(asso_current, 0, sizeof(struct __dlms_association));
+    		asso_current->sap = *sap_support;
+    		
+	        //初始化FC
+	        srand((unsigned int)jiffy.value());
+	        asso_current->fc = (uint32_t)rand();
+    		
+            dlms_asso_aarq(asso_current, info, length, buffer, buffer_length, filled_length);
             break;
         }
         case RLRQ:
         {
-            dlms_asso_rlrq(asso, info, length, buffer, buffer_length, filled_length);
+        	if(!asso_current)
+        	{
+        		return;
+			}
+            dlms_asso_rlrq(asso_current, info, length, buffer, buffer_length, filled_length);
             break;
         }
         default:
         {
-            if(asso->status != NON_ASSOCIATED)
+        	if(!asso_current)
+        	{
+        		return;
+			}
+			
+            if(asso_current->status != NON_ASSOCIATED)
             {
-                dlms_appl_request(asso, info, length, buffer, buffer_length, filled_length);
+                dlms_appl_request(asso_current, info, length, buffer, buffer_length, filled_length);
             }
             break;
         }
