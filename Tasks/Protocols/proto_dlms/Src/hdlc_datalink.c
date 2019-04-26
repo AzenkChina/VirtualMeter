@@ -575,12 +575,6 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
         return(HDLC_ERR_NOMEM);
     }
     
-    if(link->link_status != LINK_DISCONNECTED)
-    {
-        //取消应用层连接
-        HDLC_CONFIG_APPL_RELEASE(link->client_address);
-    }
-    
     if(link->recv.data)
     {
         heap.free(link->recv.data);
@@ -589,6 +583,12 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
     if(link->send.data)
     {
         heap.free(link->send.data);
+    }
+    
+    if(link->link_status != LINK_DISCONNECTED)
+    {
+        //取消应用层连接
+        HDLC_CONFIG_APPL_RELEASE(link->client_address);
     }
     
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));

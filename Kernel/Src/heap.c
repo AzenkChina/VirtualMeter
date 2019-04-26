@@ -112,8 +112,11 @@ static void heap_recycle(void)
         if((p->magic == magic) || (p->magic == 0))
         {
         	TRACE(TRACE_INFO,\
-			"Heap salloc memory freed automatically, magic: %08X, address: %08X.",\
-			p->magic, p);
+			"Heap salloc memory freed automatically, magic: %08X, address: %08X, size: %08X.",\
+			p->magic,\
+            p,\
+            p->size + sizeof(struct __mem_entry));
+            
         	if(p != slist)
         	{
             	previous->next = p->next;
@@ -236,7 +239,7 @@ static void *heap_salloc(uint32_t size)
 	"Heap salloc success, magic: %08X, address: %08X, size: %08X.",\
 	task_trace.belong(),\
 	address,\
-	size);
+	size + sizeof(struct __mem_entry));
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push
@@ -317,7 +320,7 @@ static void *heap_dalloc(uint32_t size)
 	"Heap dalloc success, magic: %08X, address: %08X, size: %08X.",\
 	task_trace.belong(),\
 	address,\
-	size);
+	size + sizeof(struct __mem_entry));
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push
@@ -362,13 +365,13 @@ static void heap_free(void *address)
     while(p)
     {
         if((unsigned long)address >= ((unsigned long)p + sizeof(struct __mem_entry)) && \
-            (unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size))
+		(unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size))
         {
             TRACE(TRACE_INFO,\
 			"Heap dalloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
-			p->magic,
-			p,
-			p->size);
+			p->magic,\
+			p,\
+			p->size + sizeof(struct __mem_entry));
             
         	if(p != dlist)
         	{
@@ -408,10 +411,6 @@ static void heap_free(void *address)
 #endif
 
 	magic = (unsigned long)task_trace.belong();
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
     
     if(!magic)
     {
@@ -423,13 +422,15 @@ static void heap_free(void *address)
     
     while(p)
     {
-        if((p->magic == magic) || (p->magic == 0))
+        if((unsigned long)address >= ((unsigned long)p + sizeof(struct __mem_entry)) && \
+		(unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size) && \
+		((p->magic == magic) || (p->magic == 0)))
         {
             TRACE(TRACE_INFO,\
 			"Heap salloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
-			p->magic,
-			p,
-			p->size);
+			p->magic,\
+			p,\
+			p->size + sizeof(struct __mem_entry));
             
         	if(p != slist)
         	{
@@ -451,6 +452,11 @@ static void heap_free(void *address)
             p = p->next;
         }
     }
+    
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
+
 }
 
 /**
