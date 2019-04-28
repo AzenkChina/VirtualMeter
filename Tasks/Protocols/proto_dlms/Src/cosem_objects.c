@@ -24,6 +24,7 @@
 static const TypeObjectPackage *ObjectPackageTable[] = 
 {
     (TypeObjectPackage *)&CosemObjectsRegister,
+    (TypeObjectPackage *)&CosemObjectsAssociation,
 };
 
 /* Private macro -------------------------------------------------------------*/

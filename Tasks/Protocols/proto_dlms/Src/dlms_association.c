@@ -10,6 +10,7 @@
 #include "jiffy.h"
 #include "dlms_association.h"
 #include "dlms_application.h"
+#include "axdr.h"
 #include "mbedtls/gcm.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -137,7 +138,7 @@ struct __aarq_request
 ////////////////////////////////////////////////////////////////////////////
 //DEBUG
 //验证密码（info）
-#define DLMS_CONFIG_PASSWD_VALID(i)            (!(memcmp(i, "0000000000000000", 16) == 0))
+#define DLMS_CONFIG_PASSWD_VALID(i)            ((memcmp(i, "\x80\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18) == 0))
 //加载认证密钥（info）
 #define DLMS_CONFIG_LOAD_AKEY(i)                memcpy(i, "\x45\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
 //加载加密密钥（info）
@@ -182,17 +183,24 @@ static struct __dlms_association *asso_current = (void *)0;
   */
 static void parse_aarq_frame(const uint8_t *info, uint16_t length, struct __aarq_request *request)
 {
-    uint16_t frame_length = *(info + 1);
-    uint16_t frame_decoded = 2;
+    uint16_t frame_length = 0;
+    uint16_t frame_decoded = 0;
     
     if(!request)
     {
         return;
     }
     
+    frame_decoded = 1 + axdr.length.decode((info + 1), &frame_length);
+    
+    if(frame_decoded < 2)
+    {
+        return;
+    }
+    
     heap.set(request, 0, sizeof(struct __aarq_request));
     
-    if(length != (frame_length + 2))
+    if(length != (frame_length + frame_decoded))
     {
         return;
     }
@@ -323,6 +331,45 @@ static void encode_object_identifier(const uint8_t *info, struct __object_identi
     object_identifier->ua = *(info + 4);
     object_identifier->context = *(info + 5);
     object_identifier->id = *(info + 6);
+}
+
+/**
+  * @brief 解析 ObjectIdentifier, 输出 7字节
+  */
+static void decode_object_identifier(const struct __object_identifier *object_identifier, uint8_t *info)
+{
+    if(!info)
+    {
+        return;
+    }
+    
+    if(!object_identifier)
+    {
+        return;
+    }
+    
+    heap.set(info, 0, 7);
+    
+    *(info + 0) = object_identifier->joint_iso_ctt * 40 + object_identifier->country;
+
+    if(object_identifier->name & 0x0080)
+    {
+        *(info + 2) = (uint8_t)(object_identifier->name & 0x007f);
+        *(info + 1) = (uint8_t)(object_identifier->name >> 8);
+        *(info + 1) <<= 1;
+        *(info + 1) |= 0x81;
+    }
+    else
+    {
+        *(info + 2) = (uint8_t)(object_identifier->name & 0x007f);
+        *(info + 1) = (uint8_t)(object_identifier->name >> 8);
+        *(info + 1) |= 0x80;
+    }
+
+    *(info + 3) = object_identifier->organization;
+    *(info + 4) = object_identifier->ua;
+    *(info + 5) = object_identifier->context;
+    *(info + 6) = object_identifier->id;
 }
 
 /**
@@ -740,7 +787,7 @@ static void dlms_asso_none(struct __dlms_association *asso,
         *(buffer + *filled_length + 7) = 0x03;
         *filled_length += 8;
     }
-    else if(asso->diagnose == FAILURE_CONTEXT_NAME)
+    else if((asso->diagnose == FAILURE_CONTEXT_NAME) || (asso->diagnose == FAILURE_NO_REASION))
     {
         *(buffer + *filled_length + 7) = 0x00;
         *filled_length += 8;
@@ -827,6 +874,24 @@ static void dlms_asso_low(struct __dlms_association *asso,
         {
             asso->diagnose = FAILURE_NO_REASION;
             version = 0xff;
+        }
+    }
+    
+    //mechanism_name
+    if(!request->mechanism_name)
+    {
+        //拒绝建立链接
+        asso->diagnose = FAILURE_CONTEXT_NAME;
+    }
+    else
+    {
+        if(memcmp(&request->mechanism_name[2], "\x60\x85\x74\x05\x08\x02", 6) != 0)
+        {
+            asso->diagnose = FAILURE_CONTEXT_NAME;
+        }
+        else if(asso->mech_name.id != 1)
+        {
+            asso->diagnose = FAILURE_CONTEXT_NAME;
         }
     }
     
@@ -954,6 +1019,17 @@ static void dlms_asso_low(struct __dlms_association *asso,
     
     *filled_length += 7;
     
+    //AP-invocation-identifier called
+    if(request->calling_AP_title)
+    {
+        *(buffer + *filled_length + 0) = 0xA4;
+        *(buffer + *filled_length + 1) = 0x0A;
+        *(buffer + *filled_length + 2) = 0x04;
+        *(buffer + *filled_length + 3) = 0x08;
+        dlms_asso_localtitle(buffer + *filled_length + 4);
+        *filled_length += 12;
+    }
+    
     //user-information
     input = heap.dalloc(16);
     
@@ -977,7 +1053,7 @@ static void dlms_asso_low(struct __dlms_association *asso,
         *(input + 3) = 0x03;
         input_length = 4;
     }
-    else if(asso->diagnose == FAILURE_CONTEXT_NAME)
+    else if((asso->diagnose == FAILURE_CONTEXT_NAME) || (asso->diagnose == FAILURE_NO_REASION))
     {
         *(input + 3) = 0x00;
         input_length = 4;
@@ -1128,6 +1204,24 @@ static void dlms_asso_high(struct __dlms_association *asso,
         }
     }
     
+    //mechanism_name
+    if(!request->mechanism_name)
+    {
+        //拒绝建立链接
+        asso->diagnose = FAILURE_CONTEXT_NAME;
+    }
+    else
+    {
+        if(memcmp(&request->mechanism_name[2], "\x60\x85\x74\x05\x08\x02", 6) != 0)
+        {
+            asso->diagnose = FAILURE_CONTEXT_NAME;
+        }
+        else if(asso->mech_name.id != 5)
+        {
+            asso->diagnose = FAILURE_CONTEXT_NAME;
+        }
+    }
+    
     //sender_acse_requirements
     //LLS或者HLS，认证标识必须置位
     if(!request->sender_acse_requirements)
@@ -1244,6 +1338,50 @@ static void dlms_asso_high(struct __dlms_association *asso,
     *filled_length += 7;
     
     
+    //AP-invocation-identifier called
+    if(request->calling_AP_title)
+    {
+        *(buffer + *filled_length + 0) = 0xA4;
+        *(buffer + *filled_length + 1) = 0x0A;
+        *(buffer + *filled_length + 2) = 0x04;
+        *(buffer + *filled_length + 3) = 0x08;
+        dlms_asso_localtitle(buffer + *filled_length + 4);
+        *filled_length += 12;
+    }
+    
+    if(asso->diagnose == SUCCESS_HLS)
+    {
+        //sender-acse-requirements (HLS)
+        if(request->sender_acse_requirements)
+        {
+            if(*(request->sender_acse_requirements + 3) & 0x80)
+            {
+                //responder-acse-requirements
+                *(buffer + *filled_length + 0) = 0x88;
+                *(buffer + *filled_length + 1) = 0x02;
+                *(buffer + *filled_length + 2) = 0x07;
+                *(buffer + *filled_length + 3) = 0x80;
+                *filled_length += 4;
+                
+                //mechanism-name
+                *(buffer + *filled_length + 0) = 0x89;
+                *(buffer + *filled_length + 1) = 0x07;
+                decode_object_identifier(&asso->mech_name, (buffer + *filled_length + 2));
+                
+                *filled_length += 9;
+                
+                //responding-authentication-value
+                //产生 StoC
+                *(buffer + *filled_length + 0) = 0xAA;
+                *(buffer + *filled_length + 1) = 0x12;
+                *(buffer + *filled_length + 2) = 0x80;
+                *(buffer + *filled_length + 3) = 0x10;
+                dlms_asso_random(16, (buffer + *filled_length + 4));
+                memcpy(asso->stoc, (buffer + *filled_length + 2), (2 + 16));
+                *filled_length += (4 + 16);
+            }
+        }
+    }
     
     //user-information
     input = heap.dalloc(16);
@@ -1268,7 +1406,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
         *(input + 3) = 0x03;
         input_length = 4;
     }
-    else if(asso->diagnose == FAILURE_CONTEXT_NAME)
+    else if((asso->diagnose == FAILURE_CONTEXT_NAME) || (asso->diagnose == FAILURE_NO_REASION))
     {
         *(input + 3) = 0x00;
         input_length = 4;
@@ -1512,6 +1650,10 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
         encode_object_identifier((request.application_context_name + 4), &asso->appl_name);
     }
     
+    //...判断 application-context 是否支持
+    //when the proposed application-context does not fit the application-context supported by the server, 
+    //the server may respond with the application-context name proposed or the application-context-name supported.
+    
     //保存 calling_AP_title
     if(request.calling_AP_title)
     {
@@ -1539,12 +1681,6 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
     
     //保存 mechanism_name
     //2 16 756 5 8 2 x
-    if(request.mechanism_name)
-    {
-        encode_object_identifier((request.mechanism_name + 2), &asso->mech_name);
-    }
-    
-    //通过 mechanism_name 来判别要建立什么级别的连接
     //x=0 最低等级连接，不需要认证，此时 mechanism_name 可以没有
     //x=1 低等级连接，使用密码来认证
     //x=2 高等级连接，使用自定义加密算法来认证
@@ -1554,36 +1690,26 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
     //x=6 高等级连接，使用SHA-256加密算法来认证
     //x=7 高等级连接，使用_ECDSA加密算法来认证
     //目前支持 0  1  5
-    switch(asso->mech_name.id)
+    if(request.mechanism_name)
     {
-        case 0:
-            if(asso->sap.level == DLMS_ACCESS_LOWEST)
-            {
-                //无认证
-                dlms_asso_none(asso, &request, buffer, buffer_length, filled_length);
-            }
-            break;
-        case 1:
-            if(asso->sap.level == DLMS_ACCESS_LOW)
-            {
-                //低级别认证
-                dlms_asso_low(asso, &request, buffer, buffer_length, filled_length);
-            }
-            break;
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-            if(asso->sap.level == DLMS_ACCESS_HIGH)
-            {
-                //高级别认证
-                dlms_asso_high(asso, &request, buffer, buffer_length, filled_length);
-            }
-            break;
-        default:
-            break;
+        encode_object_identifier((request.mechanism_name + 2), &asso->mech_name);
+    }
+    
+    //通过 sap 来判别要建立什么级别的连接
+    if(asso->sap.level == DLMS_ACCESS_LOWEST)
+    {
+        //无认证
+        dlms_asso_none(asso, &request, buffer, buffer_length, filled_length);
+    }
+    else if(asso->sap.level == DLMS_ACCESS_LOW)
+    {
+        //低级别认证
+        dlms_asso_low(asso, &request, buffer, buffer_length, filled_length);
+    }
+    else if(asso->sap.level == DLMS_ACCESS_HIGH)
+    {
+        //高级别认证
+        dlms_asso_high(asso, &request, buffer, buffer_length, filled_length);
     }
 }
 
@@ -1693,25 +1819,25 @@ void dlms_asso_gateway(uint8_t sap,
     {
         case AARQ:
         {
+		    //查询SAP是否在支持的SAP列表中
+		    for(cnt=0; cnt<DLMS_SAP_AMOUNT; cnt++)
+		    {
+		        if(sap_support_list[cnt].id == id)
+		        {
+		            sap_support = &sap_support_list[cnt];
+		            break;
+		        }
+		    }
+		    
+		    //没有查询到支持的SAP
+		    if(!sap_support)
+		    {
+		        return;
+		    }
+		    
 		    //SAP不在已完成的协商列表中，生成一个新的SAP对象
 		    if(!asso_current)
 		    {
-			    //查询SAP是否在支持的SAP列表中
-			    for(cnt=0; cnt<DLMS_SAP_AMOUNT; cnt++)
-			    {
-			        if(sap_support_list[cnt].id == id)
-			        {
-			            sap_support = &sap_support_list[cnt];
-			            break;
-			        }
-			    }
-			    
-			    //没有查询到支持的SAP
-			    if(!sap_support)
-			    {
-			        return;
-			    }
-			    
 			    //查询一个未被占用的节点
 		        for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
 		        {
@@ -1836,19 +1962,21 @@ uint16_t dlms_asso_mtu(void)
   */
 uint8_t dlms_asso_callingtitle(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
     
-    if(asso_current->callingtitle[1] != 8)
+    if(asso_current->callingtitle[1] >= 8)
     {
-        return(0);
+        heap.copy(buffer, &asso_current->callingtitle[2], 8);
+        return(8);
     }
-    
-    heap.copy(buffer, &asso_current->callingtitle[2], 8);
-    
-    return(8);
+    else
+    {
+        heap.copy(buffer, &asso_current->callingtitle[2], asso_current->callingtitle[1]);
+        return(asso_current->callingtitle[1]);
+    }
 }
 
 /**
@@ -1856,7 +1984,7 @@ uint8_t dlms_asso_callingtitle(uint8_t *buffer)
   */
 uint8_t dlms_asso_modify_callingtitle(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -1872,10 +2000,12 @@ uint8_t dlms_asso_modify_callingtitle(uint8_t *buffer)
   */
 uint8_t dlms_asso_localtitle(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
+    
+    heap.set(buffer, 0, 8);
     
     if(asso_current->localtitle[1] != 8)
     {
@@ -1892,7 +2022,7 @@ uint8_t dlms_asso_localtitle(uint8_t *buffer)
   */
 uint8_t dlms_asso_stoc(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -1912,7 +2042,7 @@ uint8_t dlms_asso_stoc(uint8_t *buffer)
   */
 uint8_t dlms_asso_ctos(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -1965,7 +2095,7 @@ uint8_t dlms_asso_sc(void)
   */
 uint8_t dlms_asso_fc(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -1985,7 +2115,7 @@ uint8_t dlms_asso_fc(uint8_t *buffer)
   */
 uint8_t dlms_asso_akey(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2005,7 +2135,7 @@ uint8_t dlms_asso_akey(uint8_t *buffer)
   */
 uint8_t dlms_asso_ekey(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2025,7 +2155,7 @@ uint8_t dlms_asso_ekey(uint8_t *buffer)
   */
 uint8_t dlms_asso_dedkey(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2045,7 +2175,7 @@ uint8_t dlms_asso_dedkey(uint8_t *buffer)
   */
 uint8_t dlms_asso_applname(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2060,7 +2190,7 @@ uint8_t dlms_asso_applname(uint8_t *buffer)
   */
 uint8_t dlms_asso_mechname(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2075,7 +2205,7 @@ uint8_t dlms_asso_mechname(uint8_t *buffer)
   */
 uint8_t dlms_asso_contextinfo(uint8_t *buffer)
 {
-    if(!asso_current)
+    if(!asso_current || !buffer)
     {
         return(0);
     }
@@ -2109,4 +2239,38 @@ uint8_t dlms_asso_suit(void)
     }
     
     return(asso_current->sap.suit);
+}
+
+/**
+  * @brief 获取 随机字符串
+  */
+void dlms_asso_random(uint8_t length, uint8_t *buffer)
+{
+    uint16_t val;
+    uint8_t cnt;
+    uint8_t loop = (length + 2) / 2;
+    
+    if(!length || !buffer)
+    {
+        return;
+    }
+    
+    srand((unsigned int)jiffy.value());
+    
+    for(cnt=0; cnt<loop; cnt++)
+    {
+        val = (uint16_t)rand();
+        
+        if((cnt*2 + 0) >= length)
+        {
+            break;
+        }
+        buffer[cnt*2 + 0] = (((val >> 0) & 0xff) % 74) + 48;
+        
+        if((cnt*2 + 1) < length)
+        {
+            break;
+        }
+        buffer[cnt*2 + 1] = (((val >> 8) & 0xff) % 74) + 48;
+    }
 }

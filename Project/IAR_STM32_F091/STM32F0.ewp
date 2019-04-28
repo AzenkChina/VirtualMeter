@@ -2623,6 +2623,9 @@
           <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_register.c</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_security_setup.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</name>
         </file>
         <file>

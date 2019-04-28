@@ -34,7 +34,7 @@
 //应用层断开
 #define HDLC_CONFIG_APPL_RELEASE(s)             dlms_asso_cleanup(s)
 //应用层最大报文长度
-#define HDLC_CONFIG_APPL_MTU()                  (dlms_asso_mtu() + 64)
+#define HDLC_CONFIG_APPL_MTU()                  dlms_asso_mtu()
 //获取本机地址
 #define HDLC_CONFIG_LOCAL_ADDRESS()				0x0001
 
@@ -524,7 +524,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
     
     //获取 发送数据缓冲区
-    link->send.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU());
+    link->send.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU() + 32);
     if(!link->send.data)
     {
         return(HDLC_ERR_NOMEM);
@@ -533,7 +533,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     link->send.length = HDLC_CONFIG_APPL_MTU();
     
     //获取 接收数据缓冲区
-    link->recv.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU());
+    link->recv.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU() + 32);
     if(!link->recv.data)
     {
         heap.free(link->send.data);
