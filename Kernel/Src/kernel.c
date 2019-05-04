@@ -225,9 +225,17 @@ int main(void)
         exit(0);
     }
     
-    printf("Press any key to start emulater.\n");
-	_getch();
-	printf("Emulater started.\n");
+    if((argc > 1) && (strcmp(argv[1], "reboot") == 0))
+    {
+		printf("\nEmulater reboot done.\n");
+	}
+	else
+	{
+	    printf("Press any key to start emulater.\n");
+		_getch();
+		printf("Emulater started.\n");
+	}
+		
     proc_self = argv[0];
 #elif defined ( __linux )
     const unsigned char *lock = "/tmp/virtual_meter.pid";
@@ -257,9 +265,17 @@ int main(void)
     sprintf(mypid, "%ld", (long)getpid());
     write(fd, mypid, strlen(mypid) + 1);
     
-    printf("Press any key to start emulater.\n");
-	getchar();
-	printf("Emulater started.\n");
+    if((argc > 1) && (strcmp(argv[1], "reboot") == 0))
+    {
+		printf("\nEmulater reboot done.\n");
+	}
+	else
+	{
+	    printf("Press enter to start emulater.\n");
+		getchar();
+		printf("Emulater started.\n");
+	}
+	
     proc_self = argv[0];
 #endif
     

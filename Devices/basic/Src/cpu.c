@@ -12,6 +12,7 @@
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
 #include <windows.h>
+#include <process.h>
 #include "jiffy.h"
 #elif defined ( __linux )
 #include <pthread.h>
@@ -146,26 +147,14 @@ static enum __cpu_endian cpu_core_endian(void)
   */
 static void cpu_core_reset(void)
 {
-#if defined ( _WIN32 ) || defined ( _WIN64 )
-	STARTUPINFO si = { 0 };
-	si.cb = sizeof(si);
-	PROCESS_INFORMATION pi;
-	
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(!proc_self)
 	{
 		exit(0);
 	}
 	
-    CreateProcess(proc_self,NULL,NULL,NULL,TRUE,0,NULL,NULL,&si,&pi);
+    execl(proc_self, proc_self, "reboot", NULL);
     exit(0);
-#elif defined ( __linux )
-	if(!proc_self)
-	{
-		exit(0);
-	}
-	
-	execl(proc_self, proc_self, NULL);
-	exit(0);
 #else
     NVIC_SystemReset();
 #endif
