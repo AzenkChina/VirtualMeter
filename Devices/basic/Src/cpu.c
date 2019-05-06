@@ -12,7 +12,6 @@
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
 #include <windows.h>
-#include <process.h>
 #include "jiffy.h"
 #elif defined ( __linux )
 #include <pthread.h>
@@ -150,14 +149,20 @@ static void cpu_core_reset(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(!proc_self)
 	{
+		TRACE(TRACE_ERR, "Program command damaged.");
 		exit(0);
 	}
-	
+    
+#if defined ( __linux )
     execl(proc_self, proc_self, "reboot", NULL);
+#else
+    ShellExecute(NULL, "open", proc_self, "reboot", NULL, SW_SHOW);
+#endif
     exit(0);
 #else
     NVIC_SystemReset();
 #endif
+	TRACE(TRACE_ERR, "Rebooting faild.");
 }
 
 /**

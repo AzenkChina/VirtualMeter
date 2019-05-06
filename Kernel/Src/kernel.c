@@ -219,7 +219,7 @@ int main(void)
     }
     else
     {
-        printf("Mutex Create failed!\n");
+        printf("Mutex create failed!\n");
         CloseHandle(hMutex);
 		_getch();
         exit(0);
@@ -246,7 +246,7 @@ int main(void)
     fd = open(lock, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
     if(fd < 0)
     {
-        printf("can't create a lock.\n");
+        printf("Lock create failed!\n");
         exit(1);
     }
     

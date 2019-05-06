@@ -308,6 +308,7 @@ static void tasks_reset(void)
         }
     }
     
+    cpu.watchdog.feed();
     TRACE(TRACE_INFO, "Tasks reset.");
 }
 
