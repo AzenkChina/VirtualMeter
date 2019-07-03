@@ -368,24 +368,16 @@ struct __flash
     
     struct
     {
-        uint32_t                    (*read)(uint32_t block, uint8_t page, uint8_t *buffer); //读一个页
-        uint32_t                    (*write)(uint32_t block, uint8_t page, const uint8_t *buffer); //写一个页
-        
-    }                               page;
-    
-    struct
-    {
-        uint32_t                    (*read)(uint32_t block, uint8_t *buffer); //读一个块
-        uint32_t                    (*write)(uint32_t block, const uint8_t *buffer); //写一个块
+        uint32_t                    (*read)(uint32_t block, uint16_t offset, uint16_t size, uint8_t *buffer); //读一个块
+        uint32_t                    (*write)(uint32_t block, uint16_t offset, uint16_t size, const uint8_t *buffer); //写一个块
         uint32_t                    (*erase)(uint32_t block); //擦除一个块
         
     }                               block;
     
     struct
     {
-        uint32_t                    (*pagesize)(void); //页大小
         uint32_t                    (*blocksize)(void); //块大小
-        uint32_t                    (*blockmount)(void); //块数量
+        uint32_t                    (*blockcount)(void); //块数量
         uint32_t                    (*chipsize)(void); //芯片大小
         
     }                               info;

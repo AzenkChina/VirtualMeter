@@ -486,9 +486,13 @@ static const struct __cosem_entry_register cosem_class_register[] =
 
 
 /**
-  * @brief  输入由报文解析出来的 struct __cosem_request_desc 结构，定位 aligned 函数属于哪个表以及索引号
+  * @brief  输入由报文解析出来的 struct __cosem_request_desc 结构，定位函数属于哪个表以及索引号
   */
-void dlms_lex_parse(const struct __cosem_request_desc *desc, const char **table, uint8_t *index, uint32_t *param, union __dlms_right *right)
+void dlms_lex_parse(const struct __cosem_request_desc *desc,
+                    const char **table,
+                    uint8_t *index,
+                    uint32_t *param,
+                    union __dlms_right *right)
 {
     uint8_t *Table = (uint8_t *)0;
     uint16_t amount = 0;

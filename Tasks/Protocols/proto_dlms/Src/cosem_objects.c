@@ -21,14 +21,14 @@
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /** 在这里添加所有任务模块输出的基础函数列表 */
-static const TypeObjectPackage *ObjectPackageTable[] = 
+static const ObjectCluster *ObjectClusterTable[] = 
 {
-    (TypeObjectPackage *)&CosemObjectsRegister,
-    (TypeObjectPackage *)&CosemObjectsAssociation,
+    (ObjectCluster *)&CosemObjectsRegister,
+    (ObjectCluster *)&CosemObjectsAssociation,
 };
 
 /* Private macro -------------------------------------------------------------*/
-#define FUNC_LIST_AMOUNT        ((uint16_t)(sizeof(ObjectPackageTable) / sizeof(TypeObjectPackage *)))
+#define FUNC_LIST_AMOUNT        ((uint16_t)(sizeof(ObjectClusterTable) / sizeof(ObjectCluster *)))
 
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -49,27 +49,27 @@ TypeObject CosemObjectsQuery(const char *table, uint8_t index)
     
     for(cnt=0; cnt<FUNC_LIST_AMOUNT; cnt++)
     {
-    	if(!ObjectPackageTable[cnt])
+    	if(!ObjectClusterTable[cnt])
     	{
     		continue;
 		}
 		
-    	if(!ObjectPackageTable[cnt]->Name)
+    	if(!ObjectClusterTable[cnt]->Name)
     	{
     		continue;
 		}
 		
-        if(strcmp(table, ObjectPackageTable[cnt]->Name) != 0)
+        if(strcmp(table, ObjectClusterTable[cnt]->Name) != 0)
         {
             continue;
         }
         
-        if(index >= ObjectPackageTable[cnt]->Amount)
+        if(index >= ObjectClusterTable[cnt]->Amount)
         {
             return((TypeObject)0);
         }
         
-        return(ObjectPackageTable[cnt]->Func[index]);
+        return(ObjectClusterTable[cnt]->Func[index]);
     }
     
     return((TypeObject)0);

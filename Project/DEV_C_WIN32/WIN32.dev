@@ -9,9 +9,9 @@ Libs=
 PrivateResource=WIN32_private.rc
 ResourceIncludes=
 MakeIncludes=
-Compiler=_@@_
-CppCompiler=
-Linker=-l ws2_32_@@_-lWinmm_@@_
+Compiler=-ffunction-sections_@@_-fdata-sections_@@_
+CppCompiler=-ffunction-sections_@@_-fdata-sections_@@_
+Linker=-lws2_32_@@_-lWinmm_@@_-Wl,--gc-sections_@@_
 IsCpp=0
 Icon=WIN32.ico
 ExeOutput=exe
@@ -1830,30 +1830,10 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit188]
-FileName=..\..\Libraries\LibTom\Math\bn_mp_prime_is_prime.c
-CompileCpp=0
-Folder=Libraries/LibTom/Math
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit189]
-FileName=..\..\Libraries\LibTom\Math\bn_mp_prime_miller_rabin.c
-CompileCpp=0
-Folder=Libraries/LibTom/Math
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
 [Unit190]
-FileName=..\..\Libraries\LibTom\Math\bn_mp_prime_next_prime.c
+FileName=..\..\Libraries\Mbed\lfs\Src\lfs_port.c
 CompileCpp=0
-Folder=Libraries/LibTom/Math
+Folder=Libraries/Mbed/lfs
 Compile=1
 Link=1
 Priority=1000

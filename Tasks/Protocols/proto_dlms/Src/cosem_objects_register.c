@@ -21,7 +21,7 @@
 /**	
   * @brief 读取二次侧瞬时量
   */
-static TypeObjectErrs MeteringReadSecondaryInstant(TypeObjectParam *P)
+static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 {
     enum __axdr_type type;
     uint32_t param = 0;
@@ -85,7 +85,7 @@ static const TypeObject ObjectList[] =
 /**	
   * @brief 对象包，用于注册
   */
-const TypeObjectPackage CosemObjectsRegister = 
+const ObjectCluster CosemObjectsRegister = 
 {
     .Name = "Register",
     .Amount = sizeof(ObjectList) / sizeof(TypeObject),

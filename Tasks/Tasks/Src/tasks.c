@@ -145,8 +145,8 @@ static void tasks_init(void)
                 heap_ctrl.unlock(HEAP_UNLOCK_ALLOC);
                 disk_ctrl.unlock();
                 task_tables[cnt].task->init();
-                heap_ctrl.lock();
                 disk_ctrl.lock();
+                heap_ctrl.lock();
 #if defined ( __TASKS_MONITOR )
                 __monitor_stop_init(cnt);
 #endif
@@ -206,7 +206,9 @@ static void tasks_loop(void)
                 __monitor_start(cnt);
 #endif
                 heap_ctrl.unlock((enum __heap_unlock)(HEAP_UNLOCK_ALLOC | HEAP_UNLOCK_FREE));
+                disk_ctrl.unlock();
                 task_tables[cnt].task->loop();
+                disk_ctrl.lock();
                 heap_ctrl.lock();
 #if defined ( __TASKS_MONITOR )
                 __monitor_stop_loop(cnt);
@@ -250,7 +252,9 @@ static void tasks_exit(void)
                 __monitor_start(cnt);
 #endif
                 heap_ctrl.unlock(HEAP_UNLOCK_FREE);
+                disk_ctrl.unlock();
                 task_tables[cnt].task->exit();
+                disk_ctrl.lock();
                 heap_ctrl.lock();
                 heap_ctrl.recycle();
 #if defined ( __TASKS_MONITOR )

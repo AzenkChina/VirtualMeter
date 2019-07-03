@@ -14,6 +14,6 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const TypeObjectPackage CosemObjectsRegister;
+extern const ObjectCluster CosemObjectsRegister;
 
 #endif /* __COSEM_OBJECTS_REGISTER_H__ */

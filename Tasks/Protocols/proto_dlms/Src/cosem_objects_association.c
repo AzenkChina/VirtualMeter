@@ -20,7 +20,7 @@
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNSetSecret(TypeObjectParam *P)
+static ObjectErrs AssociationLNSetSecret(ObjectPara *P)
 {
     
 }
@@ -28,7 +28,7 @@ static TypeObjectErrs AssociationLNSetSecret(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetApplicationContextName(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetApplicationContextName(ObjectPara *P)
 {
     
 }
@@ -36,7 +36,7 @@ static TypeObjectErrs AssociationLNGetApplicationContextName(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetxDLMSContextInfo(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetxDLMSContextInfo(ObjectPara *P)
 {
     
 }
@@ -44,7 +44,7 @@ static TypeObjectErrs AssociationLNGetxDLMSContextInfo(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetAuthenticationMechanismName(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetAuthenticationMechanismName(ObjectPara *P)
 {
     
 }
@@ -52,7 +52,7 @@ static TypeObjectErrs AssociationLNGetAuthenticationMechanismName(TypeObjectPara
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetAssociationStatus(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetAssociationStatus(ObjectPara *P)
 {
     
 }
@@ -60,7 +60,7 @@ static TypeObjectErrs AssociationLNGetAssociationStatus(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNActionreplyToHLSAuthentication(TypeObjectParam *P)
+static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
 {
     
 }
@@ -68,7 +68,7 @@ static TypeObjectErrs AssociationLNActionreplyToHLSAuthentication(TypeObjectPara
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetObjectList(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
 {
     
 }
@@ -76,7 +76,7 @@ static TypeObjectErrs AssociationLNGetObjectList(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNGetAssociatedPartnersID(TypeObjectParam *P)
+static ObjectErrs AssociationLNGetAssociatedPartnersID(ObjectPara *P)
 {
     
 }
@@ -84,7 +84,7 @@ static TypeObjectErrs AssociationLNGetAssociatedPartnersID(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNSecuritySetupReference(TypeObjectParam *P)
+static ObjectErrs AssociationLNSecuritySetupReference(ObjectPara *P)
 {
     
 }
@@ -92,7 +92,7 @@ static TypeObjectErrs AssociationLNSecuritySetupReference(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNUserList(TypeObjectParam *P)
+static ObjectErrs AssociationLNUserList(ObjectPara *P)
 {
     
 }
@@ -100,7 +100,7 @@ static TypeObjectErrs AssociationLNUserList(TypeObjectParam *P)
 /**	
   * @brief 
   */
-static TypeObjectErrs AssociationLNCurrentUser(TypeObjectParam *P)
+static ObjectErrs AssociationLNCurrentUser(ObjectPara *P)
 {
     
 }
@@ -129,7 +129,7 @@ static const TypeObject ObjectList[] =
 /**	
   * @brief 对象包，用于注册
   */
-const TypeObjectPackage CosemObjectsAssociation = 
+const ObjectCluster CosemObjectsAssociation = 
 {
     .Name = "Association",
     .Amount = sizeof(ObjectList) / sizeof(TypeObject),

@@ -124,8 +124,8 @@ struct __aarq_request
 #define DLMS_CONFIG_MAX_ASSO                    ((uint8_t)(6))
 
 //定义外部接口
-//COSEM层请求（data, info, length, buffer, max buffer length, filled buffer length）
-#define DLMS_CONFIG_COSEM_REQUEST(d,i,l,b,m,f)  dlms_appl_entrance(d,i,l,b,m,f)
+//COSEM层请求（info, length, buffer, max buffer length, filled buffer length）
+#define DLMS_CONFIG_COSEM_REQUEST(i,l,b,m,f)  dlms_appl_entrance(i,l,b,m,f)
 ////验证密码（info）
 //#define DLMS_CONFIG_PASSWD_VALID(i)            0
 ////加载认证密钥（info）
@@ -157,7 +157,7 @@ struct __aarq_request
 static const struct __sap sap_support_list[] = 
 {
     //内容依次为
-    ///客户端地址
+    //客户端地址
     //支持的 conformance
     //使用的 objectlist 的标识
     //认证等级
@@ -445,6 +445,11 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                 heap.copy(iv, &asso->callingtitle[2], 8);
                 heap.copy(&iv[8], &info[7], 4);
                 
+                if(ret)
+                {
+                    break;
+                }
+                
                 ret = mbedtls_gcm_auth_decrypt(&ctx,
                                                0,
                                                iv,
@@ -483,6 +488,11 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                 }
                 heap.copy(iv, &asso->callingtitle[2], 8);
                 heap.copy(&iv[8], &info[7], 4);
+                
+                if(ret)
+                {
+                    break;
+                }
                 
                 ret = mbedtls_gcm_auth_decrypt(&ctx,
                                                (info[5] - 5),
@@ -524,6 +534,11 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                 }
                 heap.copy(iv, &asso->callingtitle[2], 8);
                 heap.copy(&iv[8], &info[7], 4);
+                
+                if(ret)
+                {
+                    break;
+                }
                 
                 ret = mbedtls_gcm_auth_decrypt(&ctx,
                                                (info[5] - 5 - 12),
@@ -647,7 +662,7 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
 /**	
   * @brief 
   */
-static void dlms_asso_none(struct __dlms_association *asso,
+static void asso_aarq_none(struct __dlms_association *asso,
                            const struct __aarq_request *request,
                            uint8_t *buffer,
                            uint16_t buffer_length,
@@ -840,7 +855,7 @@ static void dlms_asso_none(struct __dlms_association *asso,
 /**	
   * @brief 
   */
-static void dlms_asso_low(struct __dlms_association *asso,
+static void asso_aarq_low(struct __dlms_association *asso,
                           const struct __aarq_request *request,
                           uint8_t *buffer,
                           uint16_t buffer_length,
@@ -1110,7 +1125,7 @@ static void dlms_asso_low(struct __dlms_association *asso,
                                  asso->ekey[1]*8);
         
         if(ret != 0)
-                goto asso_low_enc_faild;
+                goto enc_faild;
         
         ret = mbedtls_gcm_crypt_and_tag(&ctx,
                                         MBEDTLS_GCM_ENCRYPT,
@@ -1124,7 +1139,7 @@ static void dlms_asso_low(struct __dlms_association *asso,
                                         0,
                                         (void *)0);
         if(ret != 0)
-                goto asso_low_enc_faild;
+                goto enc_faild;
         
         mbedtls_gcm_free(&ctx);
         
@@ -1148,7 +1163,7 @@ static void dlms_asso_low(struct __dlms_association *asso,
     heap.free(input);
     return;
     
-asso_low_enc_faild:
+enc_faild:
     mbedtls_gcm_free(&ctx);
     heap.free(input);
     *(buffer + *filled_length + 0) = 0xBE;
@@ -1166,7 +1181,7 @@ asso_low_enc_faild:
 /**	
   * @brief 
   */
-static void dlms_asso_high(struct __dlms_association *asso,
+static void asso_aarq_high(struct __dlms_association *asso,
                            const struct __aarq_request *request,
                            uint8_t *buffer,
                            uint16_t buffer_length,
@@ -1464,7 +1479,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
                                  asso->ekey[1]*8);
         
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         add = heap.dalloc(1 + asso->akey[1] + input_length);
         add[0] = asso->info.sc;
@@ -1485,7 +1500,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
         heap.free(add);
         
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         mbedtls_gcm_free(&ctx);
         
@@ -1518,7 +1533,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
                                  asso->ekey[1]*8);
         
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         ret = mbedtls_gcm_crypt_and_tag(&ctx,
                                         MBEDTLS_GCM_ENCRYPT,
@@ -1532,7 +1547,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
                                         0,
                                         (void *)0);
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         mbedtls_gcm_free(&ctx);
         
@@ -1563,7 +1578,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
                                  asso->ekey[1]*8);
         
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         add = heap.dalloc(1 + asso->akey[1]);
         add[0] = asso->info.sc;
@@ -1583,7 +1598,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
         heap.free(add);
         
         if(ret != 0)
-                goto asso_high_enc_faild;
+                goto enc_faild;
         
         mbedtls_gcm_free(&ctx);
         
@@ -1609,7 +1624,7 @@ static void dlms_asso_high(struct __dlms_association *asso,
     heap.free(input);
     return;
     
-asso_high_enc_faild:
+enc_faild:
     mbedtls_gcm_free(&ctx);
     heap.free(input);
     *(buffer + *filled_length + 0) = 0xBE;
@@ -1628,12 +1643,12 @@ asso_high_enc_faild:
 /**	
   * @brief 
   */
-static void dlms_asso_aarq(struct __dlms_association *asso,
-                           const uint8_t *info,
-                           uint16_t length,
-                           uint8_t *buffer,
-                           uint16_t buffer_length,
-                           uint16_t *filled_length)
+static void asso_aarq(struct __dlms_association *asso,
+                      const uint8_t *info,
+                      uint16_t length,
+                      uint8_t *buffer,
+                      uint16_t buffer_length,
+                      uint16_t *filled_length)
 {
     struct __aarq_request request;
     
@@ -1649,10 +1664,6 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
     {
         encode_object_identifier((request.application_context_name + 4), &asso->appl_name);
     }
-    
-    //...判断 application-context 是否支持
-    //when the proposed application-context does not fit the application-context supported by the server, 
-    //the server may respond with the application-context name proposed or the application-context-name supported.
     
     //保存 calling_AP_title
     if(request.calling_AP_title)
@@ -1699,29 +1710,29 @@ static void dlms_asso_aarq(struct __dlms_association *asso,
     if(asso->sap.level == DLMS_ACCESS_LOWEST)
     {
         //无认证
-        dlms_asso_none(asso, &request, buffer, buffer_length, filled_length);
+        asso_aarq_none(asso, &request, buffer, buffer_length, filled_length);
     }
     else if(asso->sap.level == DLMS_ACCESS_LOW)
     {
         //低级别认证
-        dlms_asso_low(asso, &request, buffer, buffer_length, filled_length);
+        asso_aarq_low(asso, &request, buffer, buffer_length, filled_length);
     }
     else if(asso->sap.level == DLMS_ACCESS_HIGH)
     {
         //高级别认证
-        dlms_asso_high(asso, &request, buffer, buffer_length, filled_length);
+        asso_aarq_high(asso, &request, buffer, buffer_length, filled_length);
     }
 }
 
 /**	
   * @brief 
   */
-static void dlms_asso_rlrq(struct __dlms_association *asso,
-                           const uint8_t *info,
-                           uint16_t length,
-                           uint8_t *buffer,
-                           uint16_t buffer_length,
-                           uint16_t *filled_length)
+static void asso_rlrq(struct __dlms_association *asso,
+                      const uint8_t *info,
+                      uint16_t length,
+                      uint8_t *buffer,
+                      uint16_t buffer_length,
+                      uint16_t *filled_length)
 {
     uint8_t cnt;
     
@@ -1757,14 +1768,13 @@ static void dlms_asso_rlrq(struct __dlms_association *asso,
 /**	
   * @brief 
   */
-static void dlms_appl_request(struct __dlms_association *asso,
-                              const uint8_t *info,
-                              uint16_t length,
-                              uint8_t *buffer,
-                              uint16_t buffer_length,
-                              uint16_t *filled_length)
+static void asso_request(const uint8_t *info,
+                         uint16_t length,
+                         uint8_t *buffer,
+                         uint16_t buffer_length,
+                         uint16_t *filled_length)
 {
-    DLMS_CONFIG_COSEM_REQUEST(&asso->appl, info, length, buffer, buffer_length, filled_length);
+    DLMS_CONFIG_COSEM_REQUEST(info, length, buffer, buffer_length, filled_length);
 }
 
 
@@ -1874,7 +1884,7 @@ void dlms_asso_gateway(uint8_t sap,
 	        srand((unsigned int)jiffy.value());
 	        asso_current->fc = (uint32_t)rand();
     		
-            dlms_asso_aarq(asso_current, info, length, buffer, buffer_length, filled_length);
+            asso_aarq(asso_current, info, length, buffer, buffer_length, filled_length);
             break;
         }
         case RLRQ:
@@ -1883,7 +1893,7 @@ void dlms_asso_gateway(uint8_t sap,
         	{
         		return;
 			}
-            dlms_asso_rlrq(asso_current, info, length, buffer, buffer_length, filled_length);
+            asso_rlrq(asso_current, info, length, buffer, buffer_length, filled_length);
             break;
         }
         default:
@@ -1895,7 +1905,7 @@ void dlms_asso_gateway(uint8_t sap,
 			
             if(asso_current->status != NON_ASSOCIATED)
             {
-                dlms_appl_request(asso_current, info, length, buffer, buffer_length, filled_length);
+                asso_request(info, length, buffer, buffer_length, filled_length);
             }
             break;
         }
@@ -2239,6 +2249,43 @@ uint8_t dlms_asso_suit(void)
     }
     
     return(asso_current->sap.suit);
+}
+
+/**
+  * @brief 获取 应用层 附属缓冲
+  */
+void * dlms_asso_storage(void)
+{
+    if(!asso_current)
+    {
+        return(0);
+    }
+    
+    return(asso_current->appl);
+}
+
+/**
+  * @brief 申请 应用层 附属缓冲
+  */
+void * dlms_asso_attach_storage(uint16_t size)
+{
+    if(!asso_current || !size)
+    {
+        return(0);
+    }
+    
+    if(asso_current->appl)
+    {
+        heap.free(asso_current->appl);
+    }
+    
+    asso_current->appl = heap.salloc(size);
+    if(asso_current->appl)
+    {
+        heap.set(asso_current->appl, 0, size);
+    }
+    
+    return(asso_current->appl);
 }
 
 /**

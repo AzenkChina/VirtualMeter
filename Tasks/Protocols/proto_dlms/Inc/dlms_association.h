@@ -40,6 +40,8 @@ extern uint8_t dlms_asso_mechname(uint8_t *buffer);
 extern uint8_t dlms_asso_contextinfo(uint8_t *buffer);
 extern enum __dlms_access_level dlms_asso_level(void);
 extern uint8_t dlms_asso_suit(void);
+extern void * dlms_asso_storage(void);
+extern void * dlms_asso_attach_storage(uint16_t size);
 extern void dlms_asso_random(uint8_t length, uint8_t *buffer);
 
 #endif /* __DLMS_ASSOCIATION_H__ */

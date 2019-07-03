@@ -421,6 +421,9 @@ static void console_exit(void)
   */
 static void console_reset(void)
 {
+    console.handler.remove();
+    console.control.suspend();
+    
     TRACE(TRACE_INFO, "Task console reset.");
 }
 

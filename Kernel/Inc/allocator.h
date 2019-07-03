@@ -13,24 +13,12 @@
 
 /* Exported types ------------------------------------------------------------*/
 /**
-  * @brief  存储器分类
-  */
-enum __disk_aria
-{
-    DISK_SAFE = 0x03,//双备份区域
-    DISK_FREQ = 0x0c,//长寿命区域
-    DISK_WIDE = 0x30,//大容量区域
-};
-
-/**
   * @brief  存储器接口
   */
-struct __disk
+struct __file
 {
     uint32_t                    (*read)(const char *name, uint32_t offset, uint32_t count, void *buff);
     uint32_t                    (*write)(const char *name, uint32_t offset, uint32_t count, const void *buff);
-    uint32_t                    (*copy)(const char *dst, const char *src, uint32_t count);
-    uint32_t                    (*set)(const char *name, uint8_t ch, uint32_t count);
 };
 
 /**
@@ -76,6 +64,6 @@ struct __heap
 
 /* Exported function prototypes ----------------------------------------------*/
 extern struct __heap heap;
-extern struct __disk disk;
+extern struct __file file;
 
 #endif /* __ALLOCATOR_H__ */

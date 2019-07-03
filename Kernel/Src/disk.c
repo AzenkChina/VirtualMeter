@@ -17,13 +17,25 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**
+  * @brief  文件读写特性
+  */
+enum __attr
+{
+    FILE_SAFE = 0x03,//带冗余备份的安全区域(eeprom)
+    FILE_FREQ = 0x06,//可频繁修改区域(eeprom)
+    FILE_RARE = 0x0c,//不频繁修改区域(flash 占用双倍存储空间并且写入时阻塞时间较长)
+    FILE_LOOP = 0x18,//文件循环写入(flash)
+    FILE_ONCE = 0x30,//文件一次性写入(flash)
+};
+
+/**
   * @brief  
   */
 struct __file_entry
 {
     char						*name;
     uint32_t					size;
-    enum __disk_aria			aria;
+    enum __attr                 attr;
 };
 
 /* Private define ------------------------------------------------------------*/
@@ -41,7 +53,8 @@ struct __file_entry
 static const struct __file_entry file_entry[] = 
 {
     /* 文件名  文件大小  文件所在分区 */
-	{"Display", 2*1024, DISK_FREQ},
+	{"display", 4*1024, FILE_FREQ},
+    {"firmware", 384*1024, FILE_ONCE},
 };
 
 
@@ -49,7 +62,6 @@ static uint8_t lock = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
 static void disk_ctrl_start(void)
 {
     if(system_status() == SYSTEM_RUN)
@@ -123,16 +135,6 @@ const struct __disk_ctrl disk_ctrl =
 };
 
 
-
-
-/**
-  * @brief  
-  */
-static uint32_t disk_copy(const char *dst, const char *src, uint32_t count)
-{
-    
-}
-
 /**
   * @brief  
   */
@@ -160,16 +162,43 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
 	{
 		return(0);
 	}
-	
-	for(loop=0; loop<index; loop++)
-	{
-		if(file_entry[loop].aria == file_entry[index].aria)
-		{
-			address += file_entry[loop].size;
-		}
-	}
-	
-	return(eeprom.random.read(address + offset, count, buff));
+    
+    if(file_entry[index].attr == FILE_SAFE)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_FREQ)
+    {
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == file_entry[index].attr)
+            {
+                address += file_entry[loop].size;
+            }
+        }
+        
+        return(eeprom.random.read(address + offset, count, buff));
+    }
+    else if(file_entry[index].attr == FILE_RARE)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_LOOP)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_ONCE)
+    {
+        //...
+        return(0);
+    }
+    else
+    {
+        return(0);
+    }
 }
 
 /**
@@ -205,33 +234,50 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
 		return(0);
 	}
 	
-	for(loop=0; loop<index; loop++)
-	{
-		if(file_entry[loop].aria == file_entry[index].aria)
-		{
-			address += file_entry[loop].size;
-		}
-	}
-	
-	return(eeprom.random.write(address + offset, count, buff));
+    if(file_entry[index].attr == FILE_SAFE)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_FREQ)
+    {
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == file_entry[index].attr)
+            {
+                address += file_entry[loop].size;
+            }
+        }
+        
+        return(eeprom.random.write(address + offset, count, buff));
+    }
+    else if(file_entry[index].attr == FILE_RARE)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_LOOP)
+    {
+        //...
+        return(0);
+    }
+    else if(file_entry[index].attr == FILE_ONCE)
+    {
+        //...
+        return(0);
+    }
+    else
+    {
+        return(0);
+    }
 }
+
 
 /**
   * @brief  
   */
-static uint32_t disk_set(const char *name, uint8_t ch, uint32_t count)
-{
-    
-}
-
-
-/**
-  * @brief  
-  */
-struct __disk disk = 
+struct __file file = 
 {
 	.read				= disk_read,
 	.write				= disk_write,
-	.copy				= disk_copy,
-	.set				= disk_set,
 };

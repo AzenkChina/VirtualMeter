@@ -12,7 +12,7 @@
           
           
           
-        <Column0>414</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>359</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -25,7 +25,7 @@
         
         
         
-      <ColumnWidth0>503</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>812</ColumnWidth2><ColumnWidth3>317</ColumnWidth3></Find-in-Files>
+      <ColumnWidth0>610</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>812</ColumnWidth2><ColumnWidth3>317</ColumnWidth3></Find-in-Files>
       <Select-Ambiguous-Definitions>
         
         
@@ -35,7 +35,7 @@
     <Windows>
       
       
-    <Wnd0>
+    <Wnd2>
         <Tabs>
           <Tab>
             <Identity>TabID-8316-13335</Identity>
@@ -43,11 +43,11 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Middleware</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols/proto_dlms</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Middleware</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols/Core</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd0><Wnd2>
+      <SelectedTab>0</SelectedTab></Wnd2><Wnd3>
         <Tabs>
           <Tab>
             <Identity>TabID-6747-13364</Identity>
@@ -69,20 +69,20 @@
           </Tab>
         <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab></Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd2></Windows>
+      <SelectedTab>0</SelectedTab></Wnd3></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\hdlc_datalink.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>600</YPos2><SelStart2>14862</SelStart2><SelEnd2>14862</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_association.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>204</YPos2><SelStart2>0</SelStart2><SelEnd2>0</SelEnd2></Tab><ActiveTab>1</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Kernel\Src\disk.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>217</YPos2><SelStart2>5256</SelStart2><SelEnd2>5256</SelEnd2></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_association.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>1799</YPos2><SelStart2>53982</SelStart2><SelEnd2>53982</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>101</YPos2><SelStart2>22300</SelStart2><SelEnd2>22300</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-029883B0><key>iaridepm.enu1</key></Toolbar-029883B0></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>589</Bottom><Right>505</Right><x>-2</x><y>-2</y><xscreen>126</xscreen><yscreen>191</yscreen><sizeHorzCX>76923</sizeHorzCX><sizeHorzCY>206263</sizeHorzCY><sizeVertCX>309524</sizeVertCX><sizeVertCY>638229</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>292</Bottom><Right>1640</Right><x>-2</x><y>-2</y><xscreen>1642</xscreen><yscreen>294</yscreen><sizeHorzCX>1002442</sizeHorzCX><sizeHorzCY>317495</sizeHorzCY><sizeVertCX>76923</sizeVertCX><sizeVertCY>206263</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-044D8628><key>iaridepm.enu1</key></Toolbar-044D8628></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>553</Bottom><Right>450</Right><x>-2</x><y>-2</y><xscreen>131</xscreen><yscreen>206</yscreen><sizeHorzCX>77791</sizeHorzCX><sizeHorzCY>216842</sizeHorzCY><sizeVertCX>268409</sizeVertCX><sizeVertCY>584211</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>352</Bottom><Right>1686</Right><x>-2</x><y>-2</y><xscreen>1688</xscreen><yscreen>354</yscreen><sizeHorzCX>1002375</sizeHorzCX><sizeHorzCY>372632</sizeHorzCY><sizeVertCX>77791</sizeVertCX><sizeVertCY>216842</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

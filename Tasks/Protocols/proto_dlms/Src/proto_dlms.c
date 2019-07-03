@@ -57,7 +57,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     union __dlms_right right;
     TypeObject Func;
     uint8_t input[8];
-    TypeObjectParam P;
+    ObjectPara P;
     struct __cosem_descriptor cosem_descriptor;
     
     cosem_descriptor.classid = descriptor[0];
@@ -103,7 +103,7 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     union __dlms_right right;
     TypeObject Func;
     uint8_t output[8];
-    TypeObjectParam P;
+    ObjectPara P;
     struct __cosem_descriptor cosem_descriptor;
     
     cosem_descriptor.classid = descriptor[0];
