@@ -2150,6 +2150,9 @@
     <file>
       <name>$PROJ_DIR$\..\..\Kernel\Src\kernel.c</name>
     </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\Kernel\Src\nvram.c</name>
+    </file>
   </group>
   <group>
     <name>Libraries</name>

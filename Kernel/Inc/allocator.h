@@ -13,6 +13,15 @@
 
 /* Exported types ------------------------------------------------------------*/
 /**
+  * @brief  非易失内存分配接口
+  */
+struct __nvram
+{
+    void                        *(*address)(const char *name);
+    uint32_t                    (*size)(const char *name);
+};
+
+/**
   * @brief  存储器接口
   */
 struct __file
@@ -63,6 +72,7 @@ struct __heap
 #define HEAP_FORWARD(p, c)                  heap.set((void *)(*p), c, 1); (uint8_t *)(*p)++
 
 /* Exported function prototypes ----------------------------------------------*/
+extern struct __nvram nvram;
 extern struct __heap heap;
 extern struct __file file;
 
