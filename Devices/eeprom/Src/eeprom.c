@@ -8,17 +8,18 @@
 #include "eeprom.h"
 #include "eeprom_1.h"
 #include "eeprom_2.h"
+#include "crc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-//Page size
+//页大小，注意两片eeprom页大小是否一致
 #define EEP_PAGE_SIZE          ((uint32_t)(eeprom_1.info.pagesize()))
 
-//Page amount
-#define EEP_PAGE_AMOUNT        ((uint32_t)(eeprom_1.info.pageamount() + eeprom_2.info.pageamount()))
+//页数量
+#define EEP_PAGE_AMOUNT        ((uint32_t)((eeprom_1.info.pageamount() + eeprom_2.info.pageamount())))
 
-//Chip size
+//芯片容量
 #define EEP_CHIP_SIZE          ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
 
 /* Private variables ---------------------------------------------------------*/
@@ -55,79 +56,29 @@ static void eep_suspend(void)
     status = DEVICE_SUSPENDED;
 }
 
-static uint32_t eep_page_read(uint32_t page, uint8_t * buffer)
+static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uint8_t * buffer)
 {
 	if(page < eeprom_1.info.pageamount())
 	{
-		return(eeprom_1.page.read(page, buffer));
+		return(eeprom_1.page.read(page, offset, size, buffer));
 	}
 	else
 	{
-		return(eeprom_2.page.read((page - eeprom_1.info.pageamount()), buffer));
+		return(eeprom_2.page.read((page - eeprom_1.info.pageamount()), offset, size, buffer));
 	}
 }
 
-static uint32_t eep_page_write(uint32_t page, const uint8_t *buffer)
+static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, const uint8_t *buffer)
 {
 	if(page < eeprom_1.info.pageamount())
 	{
-		return(eeprom_1.page.write(page, buffer));
+		return(eeprom_1.page.write(page, offset, size, buffer));
 	}
 	else
 	{
-		return(eeprom_2.page.write((page - eeprom_1.info.pageamount()), buffer));
+		return(eeprom_2.page.write((page - eeprom_1.info.pageamount()), offset, size, buffer));
 	}
 }
-
-
-static uint32_t eep_random_read(uint32_t addr, uint32_t count, uint8_t * buffer)
-{
-    uint32_t ret;
-    
-    if((addr < eeprom_1.info.chipsize()) && ((addr + count) >= eeprom_1.info.chipsize()))
-    {
-        //分芯片
-        ret = eeprom_1.random.read(addr, (eeprom_1.info.chipsize() - addr), buffer);
-        ret += eeprom_2.random.read(0, (count - (eeprom_1.info.chipsize() - addr)), (buffer + (eeprom_1.info.chipsize() - addr)));
-        
-        return(ret);
-    }
-    else if(addr < eeprom_1.info.chipsize())
-    {
-        //第一片
-        return(eeprom_1.random.read(addr, count, buffer));
-    }
-    else
-    {
-        //第二片
-        return(eeprom_2.random.read((addr - eeprom_1.info.chipsize()), count, buffer));
-    }
-}
-
-static uint32_t eep_random_write(uint32_t addr, uint32_t count, const uint8_t *buffer)
-{
-    uint32_t ret;
-    
-    if((addr < eeprom_1.info.chipsize()) && ((addr + count) >= eeprom_1.info.chipsize()))
-    {
-        //分芯片
-        ret = eeprom_1.random.write(addr, (eeprom_1.info.chipsize() - addr), buffer);
-        ret += eeprom_2.random.write(0, (count - (eeprom_1.info.chipsize() - addr)), (buffer + (eeprom_1.info.chipsize() - addr)));
-        
-        return(ret);
-    }
-    else if(addr < eeprom_1.info.chipsize())
-    {
-        //第一片
-        return(eeprom_1.random.write(addr, count, buffer));
-    }
-    else
-    {
-        //第二片
-        return(eeprom_2.random.write((addr - eeprom_1.info.chipsize()), count, buffer));
-    }
-}
-
 
 static uint32_t eep_erase(void)
 {
@@ -168,12 +119,6 @@ const struct __eeprom eeprom =
     {
         .read       = eep_page_read,
         .write      = eep_page_write,
-    },
-    
-    .random          = 
-    {
-        .read       = eep_random_read,
-        .write      = eep_random_write,
     },
     
     .info           = 

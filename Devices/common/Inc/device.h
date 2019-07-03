@@ -336,17 +336,10 @@ struct __eeprom
     
     struct
     {
-        uint32_t                    (*read)(uint32_t page, uint8_t *buffer); //读一个页
-        uint32_t                    (*write)(uint32_t page, const uint8_t *buffer); //写一个页
+        uint32_t                    (*read)(uint32_t page, uint16_t offset, uint16_t size, uint8_t *buffer); //读一个页内地址
+        uint32_t                    (*write)(uint32_t page, uint16_t offset, uint16_t size, const uint8_t *buffer); //写一个页内地址
         
     }                               page;
-    
-    struct
-    {
-        uint32_t                    (*read)(uint32_t addr, uint32_t count, uint8_t *buffer); //从 addr 地址读 count 个数据
-        uint32_t                    (*write)(uint32_t addr, uint32_t count, const uint8_t *buffer); //写 count 个数据到 addr 地址
-        
-    }                               random;
     
     struct
     {

@@ -119,7 +119,7 @@ static void eep_suspend(void)
     status = DEVICE_SUSPENDED;
 }
 
-static uint32_t eep_page_read(uint32_t page, uint8_t * buffer)
+static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uint8_t * buffer)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
     return(0);
@@ -131,6 +131,16 @@ static uint32_t eep_page_read(uint32_t page, uint8_t * buffer)
         return(0);
     }
     
+    if(offset >= EEP_PAGE_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > EEP_PAGE_SIZE))
+    {
+        return(0);
+    }
+    
 #if defined ( __linux )
     if(access(FIL_PATH, 0) != 0)
     {
@@ -150,21 +160,21 @@ static uint32_t eep_page_read(uint32_t page, uint8_t * buffer)
         return(0);
     }
     
-    fseek(fp, (page * EEP_PAGE_SIZE), 0);
-    fread(buffer, 1, EEP_PAGE_SIZE, fp);
+    fseek(fp, (page * EEP_PAGE_SIZE + offset), 0);
+    fread(buffer, 1, size, fp);
     fclose(fp);
 	
 #if defined ( __linux )
-	usleep(10*1000);
+	usleep(10*1000*size/EEP_PAGE_SIZE);
 #else
-	Sleep(10);
+	Sleep(10*size/EEP_PAGE_SIZE);
 #endif
     
     return(EEP_PAGE_SIZE);
 #endif
 }
 
-static uint32_t eep_page_write(uint32_t page, const uint8_t *buffer)
+static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, const uint8_t *buffer)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
     return(0);
@@ -176,6 +186,16 @@ static uint32_t eep_page_write(uint32_t page, const uint8_t *buffer)
         return(0);
     }
     
+    if(offset >= EEP_PAGE_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > EEP_PAGE_SIZE))
+    {
+        return(0);
+    }
+    
 #if defined ( __linux )
     if(access(FIL_PATH, 0) != 0)
     {
@@ -195,113 +215,20 @@ static uint32_t eep_page_write(uint32_t page, const uint8_t *buffer)
         return(0);
     }
     
-    fseek(fp, (page * EEP_PAGE_SIZE), 0);
-    fwrite(buffer, 1, EEP_PAGE_SIZE, fp);
+    fseek(fp, (page * EEP_PAGE_SIZE + offset), 0);
+    fwrite(buffer, 1, size, fp);
     fflush(fp);
     fclose(fp);
 	
 #if defined ( __linux )
-	usleep(10*1000);
+	usleep(10*1000*size/EEP_PAGE_SIZE);
 #else
-	Sleep(10);
+	Sleep(10*size/EEP_PAGE_SIZE);
 #endif
     
     return(EEP_PAGE_SIZE);
 #endif
 }
-
-
-static uint32_t eep_random_read(uint32_t addr, uint32_t count, uint8_t * buffer)
-{
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
-    FILE *fp;
-    
-    if((addr + count) >= EEP_CHIP_SIZE)
-    {
-        return(0);
-    }
-    
-#if defined ( __linux )
-    if(access(FIL_PATH, 0) != 0)
-    {
-        return(0);
-	}
-#else
-    if(_access(FIL_PATH, 0) != 0)
-    {
-        return(0);
-	}
-#endif
-    
-    fp = fopen(FIL_PATH,"rb+");
-    
-    if(!fp)
-    {
-        return(0);
-    }
-    
-    fseek(fp, addr, 0);
-    fread(buffer, 1, count, fp);
-    fclose(fp);
-	
-#if defined ( __linux )
-	usleep(((count/EEP_PAGE_SIZE+1)*5*1000));
-#else
-	Sleep(((count/EEP_PAGE_SIZE+1)*5));
-#endif
-    
-    return(count);
-#endif
-}
-
-static uint32_t eep_random_write(uint32_t addr, uint32_t count, const uint8_t *buffer)
-{
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
-    FILE *fp;
-    
-    if((addr + count) >= EEP_CHIP_SIZE)
-    {
-        return(0);
-    }
-    
-#if defined ( __linux )
-    if(access(FIL_PATH, 0) != 0)
-    {
-        return(0);
-	}
-#else
-    if(_access(FIL_PATH, 0) != 0)
-    {
-        return(0);
-	}
-#endif
-    
-    fp = fopen(FIL_PATH,"rb+");
-    
-    if(!fp)
-    {
-        return(0);
-    }
-    
-    fseek(fp, addr, 0);
-    fwrite(buffer, 1, count, fp);
-    fflush(fp);
-    fclose(fp);
-	
-#if defined ( __linux )
-	usleep(((count/EEP_PAGE_SIZE+1)*10*1000));
-#else
-	Sleep(((count/EEP_PAGE_SIZE+1)*10));
-#endif
-    
-    return(count);
-#endif
-}
-
 
 static uint32_t eep_erase(void)
 {
@@ -388,12 +315,6 @@ const struct __eeprom eeprom_2 =
     {
         .read       = eep_page_read,
         .write      = eep_page_write,
-    },
-    
-    .random          = 
-    {
-        .read       = eep_random_read,
-        .write      = eep_random_write,
     },
     
     .info           = 

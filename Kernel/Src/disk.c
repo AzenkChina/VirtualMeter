@@ -21,11 +21,11 @@
   */
 enum __attr
 {
-    FILE_SAFE = 0x03,//带冗余备份的安全区域(eeprom)
-    FILE_FREQ = 0x06,//可频繁修改区域(eeprom)
-    FILE_RARE = 0x0c,//不频繁修改区域(flash 占用双倍存储空间并且写入时阻塞时间较长)
-    FILE_LOOP = 0x18,//文件循环写入(flash)
-    FILE_ONCE = 0x30,//文件一次性写入(flash)
+    FILE_SAFE = 0x03,//带冗余备份的安全区域(eeprom等可单字节擦写存储介质)
+    FILE_FREQ = 0x06,//可频繁修改区域(eeprom等可单字节擦写存储介质)
+    FILE_RARE = 0x0c,//不频繁修改区域(flash等块擦除介质 占用双倍存储空间并且写入时阻塞时间较长)
+    FILE_LOOP = 0x18,//文件循环写入(flash等块擦除介质)
+    FILE_ONCE = 0x30,//文件一次性写入(flash等块擦除介质)
 };
 
 /**
@@ -39,12 +39,12 @@ struct __file_entry
 };
 
 /* Private define ------------------------------------------------------------*/
-#define EEP_PAGES_DIV_RATIO ((uint8_t)2)//取值0~8，代表安全区占用的页的比例
-#define EEP_PAGES_SAFE(n)   ((uint32_t)((n)/8*EEP_PAGES_DIV_RATIO))
-#define EEP_PAGES_FREQ(n)   ((uint32_t)((n)/8*(8-EEP_PAGES_DIV_RATIO)))
+#define EEP_PAGES_DIV_RATIO     ((uint8_t)2)//取值0~8，代表冗余备份区占用的页的比例
+#define EEP_PAGES_SAFE(n)       ((uint32_t)((n)*EEP_PAGES_DIV_RATIO/8))//冗余备份区占用页数
+#define EEP_PAGES_FREQ(n)       ((uint32_t)((n)*(8-EEP_PAGES_DIV_RATIO)/8))//频繁修改区占用页数
 
 /* Private macro -------------------------------------------------------------*/
-#define AMOUNT_FILE			((uint16_t)(sizeof(file_entry)/sizeof(struct __file_entry)))
+#define AMOUNT_FILE			    ((uint16_t)(sizeof(file_entry)/sizeof(struct __file_entry)))
 
 /* Private variables ---------------------------------------------------------*/
 /**
@@ -85,7 +85,7 @@ static void disk_ctrl_start(void)
 /**
   * @brief  
   */
-static void disk_unlock(void)
+static void disk_ctrl_unlock(void)
 {
     lock = 0x5a;
 }
@@ -93,7 +93,7 @@ static void disk_unlock(void)
 /**
   * @brief  
   */
-static void disk_lock(void)
+static void disk_ctrl_lock(void)
 {
     lock = 0;
 }
@@ -128,8 +128,8 @@ static void disk_ctrl_format(void)
 const struct __disk_ctrl disk_ctrl = 
 {
     .start              = disk_ctrl_start,
-    .lock               = disk_lock,
-    .unlock             = disk_unlock,
+    .lock               = disk_ctrl_lock,
+    .unlock             = disk_ctrl_unlock,
     .idle               = disk_ctrl_idle,
     .format             = disk_ctrl_format,
 };
@@ -170,15 +170,8 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
     }
     else if(file_entry[index].attr == FILE_FREQ)
     {
-        for(loop=0; loop<index; loop++)
-        {
-            if(file_entry[loop].attr == file_entry[index].attr)
-            {
-                address += file_entry[loop].size;
-            }
-        }
-        
-        return(eeprom.random.read(address + offset, count, buff));
+        //...
+        return(0);
     }
     else if(file_entry[index].attr == FILE_RARE)
     {
@@ -241,15 +234,8 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
     }
     else if(file_entry[index].attr == FILE_FREQ)
     {
-        for(loop=0; loop<index; loop++)
-        {
-            if(file_entry[loop].attr == file_entry[index].attr)
-            {
-                address += file_entry[loop].size;
-            }
-        }
-        
-        return(eeprom.random.write(address + offset, count, buff));
+        //...
+        return(0);
     }
     else if(file_entry[index].attr == FILE_RARE)
     {
