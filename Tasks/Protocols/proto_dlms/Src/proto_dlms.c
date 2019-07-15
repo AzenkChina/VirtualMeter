@@ -48,12 +48,11 @@ static enum __task_status dlms_status(void)
 
 
 
-static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *param)
+static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
 {
     struct __cosem_request_desc desc;
     const char *table;
     uint8_t index;
-    uint32_t para;
     union __dlms_right right;
     TypeObject Func;
     uint8_t input[8];
@@ -79,17 +78,15 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     desc.request = GET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &para, &right);
-	Func = CosemObjectsQuery(table, index);
-    
-    axdr.encode(&para, sizeof(para), AXDR_DOUBLE_LONG_UNSIGNED, P.Input.Buffer);
+    dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
+	Func = cosem_fetch_object(table, index);
     
     if(Func)
     {
     	Func(&P);
 	}
 	
-	*param = para;
+	*id = P.Input.ID;
 	
 	return(P.Output.Filled);
 }
@@ -99,7 +96,6 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     struct __cosem_request_desc desc;
     const char *table;
     uint8_t index;
-    uint32_t para;
     union __dlms_right right;
     TypeObject Func;
     uint8_t output[8];
@@ -125,8 +121,8 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     desc.request = SET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &para, &right);
-	Func = CosemObjectsQuery(table, index);
+    dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
+	Func = cosem_fetch_object(table, index);
     
     if(Func)
     {

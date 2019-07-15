@@ -43,8 +43,6 @@ struct __dlms_method_desc
     const char      *table;//函数表
     uint8_t         index;//函数索引
     
-    uint32_t        param;//输入参数
-    
     struct
     {
         uint16_t    lowest:3;
@@ -129,7 +127,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -139,7 +137,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -152,7 +150,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -169,7 +166,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -179,7 +176,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -192,7 +189,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -209,7 +205,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -219,7 +215,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -232,7 +228,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -249,7 +244,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -259,7 +254,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -272,7 +267,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_A, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -289,7 +283,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -299,7 +293,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -312,7 +306,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_B, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -329,7 +322,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -339,7 +332,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -352,7 +345,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_C, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -369,7 +361,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_N, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -379,7 +371,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_N, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -392,7 +384,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_T, M_PHASE_N, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -409,7 +400,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_P_ENERGY, M_PACT, M_PHASE_T, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -419,7 +410,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_P_ENERGY, M_PACT, M_PHASE_T, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -432,7 +423,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -449,7 +439,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_P_ENERGY, M_QUAD_23, M_PHASE_T, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_P_ENERGY, M_NACT, M_PHASE_T, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -459,7 +449,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_P_ENERGY, M_NACT, M_PHASE_T, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -472,7 +462,6 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 方法一 */
             {"", 0,  /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_QUAD_14, M_PHASE_T, 0, 0),  /** 携带参数 */
                 {\
                     METHOD_NO_ACCESS,   /** 权限一 */ \
                     METHOD_NO_ACCESS,   /** 权限二 */ \
@@ -597,7 +586,6 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     
                     *table = ((struct __cosem_entry_register *)Table)->method[desc->descriptor.index - 1].table;
                     *index = ((struct __cosem_entry_register *)Table)->method[desc->descriptor.index - 1].index;
-                    *param = ((struct __cosem_entry_register *)Table)->method[desc->descriptor.index - 1].param;
                     
                     switch(desc->level)
                     {

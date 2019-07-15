@@ -18,26 +18,17 @@
 enum __metering_item
 {
     M_NULL = 0,//未定义
-    M_P_POWER = 1,//有功功率（mW）
-    M_Q_POWER = 2,//无功功率（mVar）
-    M_S_POWER = 3,//视在功率（mVA）
-    M_P_ENERGY = 4,//有功电能（mWh）
-    M_Q_ENERGY = 5,//无功电能（mVarh）
-    M_S_ENERGY = 6,//视在电能（mVAh）
-	M_P_CURRENT_DEMAND = 7,//有功当前需量（mW）
-    M_Q_CURRENT_DEMAND = 8,//无功当前需量（mVar）
-    M_S_CURRENT_DEMAND = 9,//视在当前需量（mVA）
-	M_P_MAX_DEMAND = 10,//有功最大需量（mW）
-    M_Q_MAX_DEMAND = 11,//无功最大需量（mVar）
-    M_S_MAX_DEMAND = 12,//视在最大需量（mVA）
-    M_P_MAX_DEMAND_TIM = 13,//有功最大需量时间（UNIX时间戳）
-    M_Q_MAX_DEMAND_TIM = 14,//无功最大需量时间（UNIX时间戳）
-	M_S_MAX_DEMAND_TIM = 15,//视在最大需量时间（UNIX时间戳）
-    M_VOLTAGE = 16,//电压（mV）
-    M_CURRENT = 17,//电流（mA）
-    M_POWER_FACTOR = 18,//功率因数（1/1000）
-    M_ANGLE = 19,//相角（1/1000度）
-    M_FREQUENCY = 20,//频率（1/1000Hz）
+    M_P_ENERGY = 1,//有功电能（mWh）
+    M_Q_ENERGY = 2,//无功电能（mVarh）
+    M_S_ENERGY = 3,//视在电能（mVAh）
+    M_P_POWER = 4,//有功功率（mW）
+    M_Q_POWER = 5,//无功功率（mVar）
+    M_S_POWER = 6,//视在功率（mVA）
+    M_VOLTAGE = 7,//电压（mV）
+    M_CURRENT = 8,//电流（mA）
+    M_POWER_FACTOR = 9,//功率因数（1/1000）
+    M_ANGLE = 10,//相角（1/1000度）
+    M_FREQUENCY = 11,//频率（1/1000Hz）
     /** 以上数据的格式是已知的，不需要指定 */
     
 /**
@@ -45,12 +36,13 @@ enum __metering_item
   *         需要以怎样的格式来显示，默认显示为十进制，当需要显示为非
   *         十进制格式，则需要在这里显式地指定
   */
-    FMT_BIN = 25,//二进制格式
-    FMT_HEX = 26,//十六进制格式
-    FMT_DATE = 27,//日期格式
-    FMT_TIME = 28,//时间格式
-    FMT_DTIME = 29,//一年内时间格式
-    FMT_BCD = 30,//BCD格式
+    FMT_BIN = 24,//二进制格式
+    FMT_HEX = 25,//十六进制格式
+    FMT_DATE = 26,//日期格式
+    FMT_TIME = 27,//时间格式
+    FMT_DTIME = 28,//一年内时间格式
+    FMT_BCD = 29,//BCD格式
+    FMT_ASCII = 30,//ASCII格式
     FMT_STR = 31,//字符串格式
 };
 
@@ -59,15 +51,24 @@ enum __metering_item
   */
 enum __metering_quad
 {
-    M_QUAD_T = 0,//总（1+2+3+4）
-	M_QUAD_1 = 1,//1象限
-	M_QUAD_2 = 2,//2象限
-	M_QUAD_3 = 3,//3象限
-    M_QUAD_4 = 4,//4象限
-    M_QUAD_14 = 5,//14象限（正向有功、组合无功1）
-    M_QUAD_23 = 6,//23象限（反向有功、组合无功2）
-    M_QUAD_12 = 7,//12象限（正向无功、组合有功1）
-    M_QUAD_34 = 8,//34象限（反向无功、组合有功2）
+    M_QUAD_N = 0,//无
+	M_QUAD_I = 1,//1象限
+	M_QUAD_II = 2,//2象限
+	M_QUAD_III = 3,//3象限
+    M_QUAD_V = 4,//4象限
+    
+    M_PACT = 5,//正向有功
+    M_NACT = 6,//反向有功
+    M_PREACT = 7,//正向无功
+    M_NREACT = 8,//反向无功
+    
+    M_DPACT = 9,//正向有功-反向有功
+    M_DNACT = 10,//反向有功-正向有功
+    M_DPREACT = 11,//正向无功-反向无功
+    M_DNREACT = 12,//反向无功-正向无功
+    
+    M_TACT = 13,//总有功
+    M_TREACT = 14,//总无功
 };
 
 /**
@@ -75,14 +76,14 @@ enum __metering_quad
   */
 enum __metering_phase
 {
-    M_PHASE_T = 0,//总
+    M_PHASE_N = 0,//N相
 	M_PHASE_A = 1,//A相
 	M_PHASE_B = 2,//B相
-	M_PHASE_C = 3,//C相
-    M_PHASE_N = 4,//零相
-	M_PHASE_AB = 5,//AB
-	M_PHASE_AC = 6,//AC
-	M_PHASE_BC = 7,//BC
+	M_PHASE_C = 4,//C相
+	M_PHASE_AB = 3,//AB
+	M_PHASE_AC = 5,//AC
+	M_PHASE_BC = 6,//BC
+    M_PHASE_T = 7,//总
 };
 
 /**
@@ -223,26 +224,21 @@ struct __metering
                                     i.rate = ((val>>16)&0x0f);\
 									i.offset = ((val>>0)&0xffff)
 
-//将一个U32 ID转换成非计量数据标识
-#define M_UINT2NMB(src, dst)        (dst = (src&0x07ffffff))
+
+//判断一个U32 ID是否为显示格式
+#define M_UINTISFMT(val)            ((((val>>27)&0x1f) >= FMT_BIN) && (((val>>27)&0x1f) <= FMT_STR))
 
 //判断一个U32 ID是否为计量数据标识
-#define M_UINTISID(val)             ((((val>>27)&0x1f) >= M_P_POWER) && (((val>>27)&0x1f) <= M_FREQUENCY))
+#define M_UINTISID(val)             ((((val>>27)&0x1f) >= M_P_ENERGY) && (((val>>27)&0x1f) <= M_FREQUENCY))
 
-//判断一个U32 ID是否是电压
-#define M_UINTISVOLTAGE(val)        (((val>>27)&0x1f) == M_VOLTAGE)
-//判断一个U32 ID是否是电流
-#define M_UINTISCURRENT(val)        (((val>>27)&0x1f) == M_CURRENT)
-//判断一个U32 ID是否是功率
-#define M_UINTISPOWER(val)          ((((val>>27)&0x1f) >= M_P_POWER) && (((val>>27)&0x1f) <= M_S_POWER))
-//判断一个U32 ID是否是电能
+//判断一个U32 ID是否为电能
 #define M_UINTISENERGY(val)         ((((val>>27)&0x1f) >= M_P_ENERGY) && (((val>>27)&0x1f) <= M_S_ENERGY))
-//判断一个U32 ID是否是需量
-#define M_UINTISDEMAND(val)         ((((val>>27)&0x1f) >= M_P_CURRENT_DEMAND) && (((val>>27)&0x1f) <= M_S_MAX_DEMAND))
-//判断一个U32 ID是否是需量发生时间
-#define M_UINTISDEMANDTIM(val)      ((((val>>27)&0x1f) >= M_P_MAX_DEMAND_TIM) && (((val>>27)&0x1f) <= M_S_MAX_DEMAND_TIM))
-//判断一个U32 ID是否指定了数据的显示格式
-#define M_UINTISFMT(val)            ((((val>>27)&0x1f) >= FMT_BIN) && (((val>>27)&0x1f) <= FMT_STR))
+//判断一个U32 ID是否为功率
+#define M_UINTISPOWER(val)          ((((val>>27)&0x1f) >= M_P_POWER) && (((val>>27)&0x1f) <= M_S_POWER))
+//判断一个U32 ID是否为电压
+#define M_UINTISVOLTAGE(val)        (((val>>27)&0x1f) == M_VOLTAGE)
+//判断一个U32 ID是否为电流
+#define M_UINTISCURRENT(val)        (((val>>27)&0x1f) == M_CURRENT)
 
 
 /* Exported function prototypes ----------------------------------------------*/

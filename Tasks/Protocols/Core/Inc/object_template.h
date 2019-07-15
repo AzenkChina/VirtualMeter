@@ -25,16 +25,16 @@ typedef enum
 } ObjectErrs;
 
 /**
-  * 数据分片流程
+  * 迭代流程
   *
   */
 typedef enum
 {
-    IO_NO_SPLIT = 0,//不分片
-    IO_SPLITTING = 0x03,//正在分片传输中
-    IO_END_SPLIT = 0x0c,//分片结束
+    ITER_NONE = 0,//不进行迭代
+    ITER_ONGOING = 0x03,//正在迭代
+    ITER_FINISHED = 0x0c,//迭代结束
     
-} IOSplit;
+} IterStatus;
 
 /**
   * 对象形参
@@ -46,8 +46,7 @@ typedef struct
     {
         uint8_t     *Buffer; //输入数据
         uint16_t    Size; //输入数据长度
-        IOSplit     Split; //分片标记
-        uint32_t    Count; //当前分片数
+        uint32_t    ID; //内部数据标识
         
     }               Input;
     
@@ -56,8 +55,6 @@ typedef struct
         uint8_t     *Buffer; //输出缓冲
         uint16_t    Size; //输出缓冲长度
         uint16_t    Filled; //输出数据长度
-        IOSplit     Split; //分片标记
-        uint32_t    Count; //当前分片数
         
     }               Output;
     
@@ -65,6 +62,7 @@ typedef struct
     {
         uint32_t    Begin; //迭代器起始条目
         uint32_t    End; //迭代器结束条目
+        uint8_t     Status; //迭代器当前状态
         
     }               Iterator;
     
@@ -93,11 +91,20 @@ typedef struct
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#define OBJ_IN_ADDR(P)          ((const uint8_t *)(P->Input.Buffer))
-#define OBJ_IN_SIZE(P)          ((const uint16_t)(P->Input.Size))
-#define OBJ_OUT_ADDR(P)         (P->Output.Buffer)
-#define OBJ_OUT_SIZE(P)         (P->Output.Size)
-#define OBJ_PUSH_LENGTH(P, n)   (P->Output.Filled = n)
+#define OBJ_IN_ADDR(P)                  ((const uint8_t *)(P->Input.Buffer))//获取输入数据首地址
+#define OBJ_IN_SIZE(P)                  ((uint16_t)(P->Input.Size))//获取输入数据字节长度
+#define OBJ_IN_ID(P)                    ((uint32_t)(P->Input.ID))//获取数据标识
+
+#define OBJ_OUT_ADDR(P)                 (P->Output.Buffer)//获取输出缓冲首地址
+#define OBJ_OUT_SIZE(P)                 (P->Output.Size)//获取输出缓冲字节大小
+#define OBJ_PUSH_LENGTH(P, n)           (P->Output.Filled = n)//设置输出数据字节长度
+
+#define OBJ_ITERATE_BEGIN(P)            (P->Iterator.Begin)//获取迭代器起始
+#define OBJ_ITERATE_END(P)              (P->Iterator.End)//获取迭代器结束
+#define OBJ_ITERATE_STATUS(P)           ((IterStatus)(P->Iterator.Status))//获取迭代器状态
+#define OBJ_ITERATE_SET_BEGIN(P, v)     (P->Iterator.Begin = v)//设置迭代器起始
+#define OBJ_ITERATE_SET_END(P, v)       (P->Iterator.End = v)//设置迭代器结束
+#define OBJ_ITERATE_SET_STATUS(P, v)    (P->Iterator.Status = (IterStatus)v)//设置迭代器状态
 
 /* Exported function prototypes ----------------------------------------------*/
 

@@ -11,11 +11,12 @@
 #include "dlms_association.h"
 #include "object_template.h"
 #include "dlms_lexicon.h"
+#include "cosem_objects.h"
 #include "axdr.h"
 #include "mbedtls/gcm.h"
 
 /* Private define ------------------------------------------------------------*/
-#define DLMS_REQ_LIST_MAX   ((uint8_t)3) //一次请求可接受的最大数据项数
+#define DLMS_REQ_LIST_MAX   ((uint8_t)8) //一次请求可接受的最大数据项数
 
 /* Private typedef -----------------------------------------------------------*/
 /**	
@@ -58,7 +59,14 @@ struct __appl_request
   */
 struct __cosem_entry
 {
-    TypeObject              object[DLMS_REQ_LIST_MAX];
+    uint8_t Actived;
+    
+    struct
+    {
+        TypeObject Object;
+        ObjectPara Para;
+        
+    } Entry[DLMS_REQ_LIST_MAX];
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,6 +86,8 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
     uint16_t frame_decoded = 0;
     const uint8_t *start = (const uint8_t *)0;
     uint16_t info_length = 0;
+    uint16_t ninfo;
+    uint8_t nloop;
     
     if(!request || !info || !length)
     {
@@ -339,6 +349,10 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                     {
                         return(APPL_OTHERS);
                     }
+                    else
+                    {
+                        request->info[0].length = info_length - 12;
+                    }
                     break;
                 }
                 case GET_NEXT:
@@ -355,9 +369,46 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                     {
                         return(APPL_OTHERS);
                     }
+                    else
+                    {
+                        request->info[0].length = 0;
+                    }
                     break;
                 }
                 case GET_WITH_LIST:
+                {
+                    if((!start[3]) || (start[3] > DLMS_REQ_LIST_MAX))
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    ninfo = 4;
+                    
+                    for(nloop=0; nloop<start[3]; nloop ++)
+                    {
+                        request->info[nloop].active = 0xff;
+                        request->info[nloop].classid = (uint8_t *)&start[ninfo + 1];
+                        request->info[nloop].obis = (uint8_t *)&start[ninfo + 2];
+                        request->info[nloop].index = (uint8_t *)&start[ninfo + 8];
+                        request->info[nloop].data = (uint8_t *)&start[ninfo + 9];
+                        
+                        if(info_length < (ninfo + 9))
+                        {
+                            return(APPL_OTHERS);
+                        }
+                        
+                        if(*(request->info[nloop].data) != 0)
+                        {
+                            return(APPL_UNSUPPORT);
+                        }
+                        
+                        request->info[nloop].length = 0;
+                        
+                        ninfo += 10;
+                    }
+                    
+                    break;
+                }
                 default:
                 {
                     return(APPL_UNSUPPORT);
@@ -532,6 +583,17 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
     uint32_t param;
     union __dlms_right right;
     
+    current_entry = (struct __cosem_entry *)dlms_asso_storage();
+    if(!current_entry)
+    {
+        current_entry = (struct __cosem_entry *)dlms_asso_attach_storage(sizeof(struct __cosem_entry));
+    }
+    
+    if(!current_entry)
+    {
+        return(APPL_OTHERS);
+    }
+    
     switch(request->service)
     {
         case GET_REQUEST:
@@ -551,6 +613,15 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
                     dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    
+                    if(!table)
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    current_entry->Actived = 1;
+                    current_entry->Entry[0].Object = cosem_fetch_object(table, index);
+                    
                     break;
                 }
                 case GET_NEXT:
@@ -558,6 +629,9 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     break;
                 }
                 case GET_WITH_LIST:
+                {
+                    break;
+                }
                 default:
                 {
                     return(APPL_UNSUPPORT);

@@ -177,18 +177,6 @@ static enum __lcd_unit select_unit(struct __metering_identifier id)
 			return(LCD_UNIT_VARH);
 		case M_S_ENERGY: //视在电能（mVAh）
 			return(LCD_UNIT_VARH);
-		case M_P_CURRENT_DEMAND: //有功当前需量（mW）
-			return(LCD_UNIT_W);
-		case M_Q_CURRENT_DEMAND: //无功当前需量（mVar）
-			return(LCD_UNIT_VAR);
-		case M_S_CURRENT_DEMAND: //视在当前需量（mVA）
-			return(LCD_UNIT_VA);
-		case M_P_MAX_DEMAND: //有功最大需量（mW）
-			return(LCD_UNIT_W);
-		case M_Q_MAX_DEMAND: //无功最大需量（mVar）
-			return(LCD_UNIT_VAR);
-		case M_S_MAX_DEMAND: //视在最大需量（mVA）
-			return(LCD_UNIT_VA);
 		case M_VOLTAGE: //电压（mV）
 			return(LCD_UNIT_V);
 		case M_CURRENT: //电流（mA）
@@ -285,22 +273,6 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.energy, select_unit(id));
         }
-        else if(M_UINTISDEMAND(param))
-        {
-            if(disp_runs.dots.demand > 3)
-            {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.demand - 3));
-            }
-            else
-            {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.demand));
-            }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.demand, select_unit(id));
-        }
-        else if(M_UINTISDEMANDTIM(param))
-        {
-            lcd.window.show.date(LCD_WINDOW_MAIN, container.u64_t, LCD_DATE_MMDDhhmm);
-        }
         else
         {
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.others, select_unit(id));
@@ -326,7 +298,8 @@ static void select_data(uint32_t param, uint8_t *data)
             case FMT_DTIME: //日期时间格式
                 lcd.window.show.date(LCD_WINDOW_MAIN, container.u64_t, LCD_DATE_MMDDhhmm);
                 break;
-            case FMT_STR: //字符串格式
+            case FMT_ASCII: //字符串格式
+            case FMT_STR:
                 lcd.window.show.msg(LCD_WINDOW_MAIN, (const char *)(data+2));
                 break;
             default:

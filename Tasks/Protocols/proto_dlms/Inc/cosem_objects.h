@@ -16,6 +16,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern TypeObject CosemObjectsQuery(const char *table, uint8_t index);
+extern TypeObject cosem_fetch_object(const char *table, uint8_t index);
 
 #endif /* __COSEM_OBJECTS_H__ */

@@ -23,26 +23,12 @@
   */
 static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 {
-    enum __axdr_type type;
-    uint32_t param = 0;
     struct __metering_identifier id;
     struct __metering *api_metering;
     int64_t val = 0;
     uint16_t Length;
-    
-    //解析出输入参数的数据类型
-    type = axdr.type.decode(OBJ_IN_ADDR(P));
-    
-    //判断数据类型是否匹配（获取计量数据使用的数据标识是一个uint16_t类型）
-	if(type != AXDR_DOUBLE_LONG_UNSIGNED)
-	{
-		return(OBJECT_ERR_TYPE);
-	}
-    
-    //解析出输入参数中的数据
-    axdr.decode(OBJ_IN_ADDR(P), 0, (void *)&param);
 	
-    M_UINT2ID(param, id);
+    M_UINT2ID(OBJ_IN_ID(P), id);
     
     api_metering = (struct __metering *)api.query("task_metering");
     if(!api_metering)

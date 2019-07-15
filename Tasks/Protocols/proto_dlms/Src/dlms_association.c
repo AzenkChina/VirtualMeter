@@ -136,7 +136,7 @@ struct __aarq_request
 //#define DLMS_CONFIG_LOAD_TITLE(i)               ;
 
 ////////////////////////////////////////////////////////////////////////////
-//DEBUG
+//Just for debug
 //验证密码（info）
 #define DLMS_CONFIG_PASSWD_VALID(i)            ((memcmp(i, "\x80\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18) == 0))
 //加载认证密钥（info）

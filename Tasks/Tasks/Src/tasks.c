@@ -50,7 +50,7 @@ struct __task_table
 
 /* Private define ------------------------------------------------------------*/
 #define TASKS_MAX                   ((uint8_t)(128)) //最大task数量
-#define API_STACK_MAX				((uint8_t)(16)) //最大api调用深度
+#define API_STACK_MAX				((uint8_t)(8)) //最大api调用深度
 
 /* Private macro -------------------------------------------------------------*/
 #define TASKS_COMP      ((uint8_t)(sizeof(task_tables) / sizeof(struct __task_table)))
