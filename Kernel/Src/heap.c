@@ -31,7 +31,6 @@ struct __mem_entry
 /* Private variables ---------------------------------------------------------*/
 static struct __mem_entry *slist = (struct __mem_entry *)0;
 static struct __mem_entry *dlist = (struct __mem_entry *)0;
-static uint8_t lock = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -66,23 +65,6 @@ static void heap_dinit(void)
 }
 
 /**
-  * @brief  专用动态内存解锁
-  */
-static void heap_unlock(enum __heap_unlock fun)
-{
-    lock = 0;
-    lock |= fun;
-}
-
-/**
-  * @brief  专用动态内存锁定
-  */
-static void heap_lock(void)
-{
-    lock = 0;
-}
-
-/**
   * @brief  专用动态内存回收
   */
 static void heap_recycle(void)
@@ -96,7 +78,7 @@ static void heap_recycle(void)
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 #endif
 
-	magic = (unsigned long)task_trace.current();
+	magic = (unsigned long)task_ctrl.current();
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic pop
@@ -146,67 +128,68 @@ const struct __heap_ctrl heap_ctrl =
 {
     .sinit              = heap_sinit,
     .dinit              = heap_dinit,
-    .unlock             = heap_unlock,
-    .lock               = heap_lock,
     .recycle            = heap_recycle,
 };
 
 /**
-  * @brief  专用动态内存申请函数，只能用在 struct __task_sched 实例的 init 方法和 loop 方法中
+  * @brief  专用动态内存申请函数，会在该任务退出（exit）或者复位（exit）时自动释放
   */
-static void *heap_salloc(uint32_t size)
+static void *heap_salloc(const char *name, uint32_t size)
 {
     void *address;
     struct __mem_entry *p = slist;
     uint32_t mem_allcoked = 0;
+    unsigned long magic;
     
-    if((lock & HEAP_UNLOCK_ALLOC) != HEAP_UNLOCK_ALLOC)
+    if(!name)
     {
         TRACE(TRACE_ERR,\
-		"Heap salloc failed (lock not available), magic: %08X.",\
-		task_trace.belong());
-        return((void *)0);
-    }
-    
-    if(!task_trace.belong())
-    {
-        TRACE(TRACE_ERR,\
-		"Heap salloc failed (task id invalid), magic: %08X.",\
-		task_trace.belong());
+		"Heap salloc failed (name invalid).");
         return((void *)0);
     }
     
     if(!size)
     {
         TRACE(TRACE_ERR,\
-		"Heap salloc failed (size invalid), magic: %08X.",\
-		task_trace.belong());
+		"Heap salloc failed (size invalid), task name is: %s.",\
+		name);
+        return((void *)0);
+    }
+    
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
+#endif
+    
+    magic = (unsigned long)task_ctrl.search(name);
+    
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
+    
+    if(!magic)
+    {
+        TRACE(TRACE_ERR,\
+		"Heap salloc failed (task not found), task name is: %s.",\
+		name);
         return((void *)0);
     }
     
     while(p)
     {
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-        if(p->magic == (unsigned long)task_trace.belong())
+        if(p->magic == magic)
         {
             mem_allcoked += p->size;
         }
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
+        
         p = p->next;
     }
     
     if((mem_allcoked + size) > MAX_SHEAP_PER_TASK)
     {
         TRACE(TRACE_ERR,\
-		"Heap salloc failed (heap overflow), magic: %08X.",\
-		task_trace.belong());
+		"Heap salloc failed (heap overflow), task name is: %s.",\
+		name);
         return((void *)0);
     }
     
@@ -215,29 +198,19 @@ static void *heap_salloc(uint32_t size)
     if(!address)
     {
         TRACE(TRACE_ERR,\
-		"Heap salloc failed (system memory overflow), magic: %08X.",\
-		task_trace.belong());
+		"Heap salloc failed (system memory overflow), task name is: %s.",\
+		name);
         return((void *)0);
     }
-    
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
 
-    ((struct __mem_entry *)address)->magic = (unsigned long)task_trace.belong();
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
+    ((struct __mem_entry *)address)->magic = magic;
 	((struct __mem_entry *)address)->size = size;
     ((struct __mem_entry *)address)->next = slist;
     slist = ((struct __mem_entry *)address);
     
     TRACE(TRACE_INFO,\
-	"Heap salloc success, magic: %08X, address: %08X, size: %08X.",\
-	task_trace.belong(),\
+	"Heap salloc success, task name: %s, address: %08X, size: %08X.",\
+	name,\
 	address,\
 	size + sizeof(struct __mem_entry));
 
@@ -254,15 +227,15 @@ static void *heap_salloc(uint32_t size)
 }
 
 /**
-  * @brief  专用动态内存申请函数，只能用在 struct __task_sched 实例的 init 方法和 loop 方法中
+  * @brief  专用动态内存申请函数，会在该任务退出（exit）或者复位（exit）时自动释放
   */
-static void *heap_scalloc(uint32_t n, uint32_t size)
+static void *heap_scalloc(const char *name, uint32_t n, uint32_t size)
 {
-    return(heap_salloc(n * size));
+    return(heap_salloc(name, n * size));
 }
 
 /**
-  * @brief  短时动态内存申请函数，函数退出后会自动释放
+  * @brief  短时动态内存申请函数，会在该任务轮询完成后自动释放
   */
 static void *heap_dalloc(uint32_t size)
 {
@@ -273,8 +246,7 @@ static void *heap_dalloc(uint32_t size)
     if(!size)
     {
         TRACE(TRACE_ERR,\
-		"Heap dalloc failed (size invalid), magic: %08X.",\
-		task_trace.belong());
+		"Heap dalloc failed (size invalid).");
         return((void *)0);
     }
     
@@ -287,8 +259,7 @@ static void *heap_dalloc(uint32_t size)
     if((mem_allcoked + size) > MAX_DHEAP)
     {
         TRACE(TRACE_ERR,\
-		"Heap dalloc failed (heap overflow), magic: %08X.",\
-		task_trace.belong());
+		"Heap dalloc failed (heap overflow).");
         return((void *)0);
     }
     
@@ -296,29 +267,17 @@ static void *heap_dalloc(uint32_t size)
     if(!address)
     {
         TRACE(TRACE_ERR,\
-		"Heap dalloc failed (system memory overflow), magic: %08X.",\
-		task_trace.belong());
+		"Heap dalloc failed (system memory overflow).");
         return((void *)0);
     }
     
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-    ((struct __mem_entry *)address)->magic = (unsigned long)task_trace.belong() + 3;
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
+    ((struct __mem_entry *)address)->magic = 0;
 	((struct __mem_entry *)address)->size = size;
     ((struct __mem_entry *)address)->next = dlist;
     dlist = ((struct __mem_entry *)address);
     
     TRACE(TRACE_INFO,\
-	"Heap dalloc success, magic: %08X, address: %08X, size: %08X.",\
-	task_trace.belong(),\
+	"Heap dalloc success, address: %08X, size: %08X.",\
 	address,\
 	size + sizeof(struct __mem_entry));
 
@@ -335,7 +294,7 @@ static void *heap_dalloc(uint32_t size)
 }
 
 /**
-  * @brief  短时动态内存申请函数，函数退出后会自动释放
+  * @brief  短时动态内存申请函数，会在该任务轮询完成后自动释放
   */
 static void *heap_dcalloc(uint32_t n, uint32_t size)
 {
@@ -344,15 +303,11 @@ static void *heap_dcalloc(uint32_t n, uint32_t size)
 
 /**
   * @brief  动态内存释放函数
-  *         1 使用 heap_salloc 申请的内存只能在 struct __task_sched 实例的 exit 方法中手动释放，或者
-  *         在系统调用该 task 的 exit 方法 或者 reset 方法后由系统自动回收
-  *         2 使用 heap_dalloc 申请的内存能在任何地方手动释放
   */
 static void heap_free(void *address)
 {
     struct __mem_entry *p;
     struct __mem_entry *previous;
-    unsigned long magic;
     
     if(!address)
     {
@@ -373,8 +328,7 @@ static void heap_free(void *address)
 		(unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size))
         {
             TRACE(TRACE_INFO,\
-			"Heap dalloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
-			p->magic,\
+			"Heap dalloc memory freed manually, address: %08X, size: %08X.",\
 			p,\
 			p->size + sizeof(struct __mem_entry));
             
@@ -401,35 +355,13 @@ static void heap_free(void *address)
         }
     }
     
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-    
-    if((lock & HEAP_UNLOCK_FREE) != HEAP_UNLOCK_FREE)
-    {
-        return;
-    }
-    
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-	magic = (unsigned long)task_trace.belong();
-    
-    if(!magic)
-    {
-        return;
-    }
-    
     p = slist;
     previous = slist;
     
     while(p)
     {
         if((unsigned long)address >= ((unsigned long)p + sizeof(struct __mem_entry)) && \
-		(unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size) && \
-		((p->magic == magic) || (p->magic == 0)))
+		(unsigned long)address < ((unsigned long)p + sizeof(struct __mem_entry) + p->size))
         {
             TRACE(TRACE_INFO,\
 			"Heap salloc memory freed manually, magic: %08X, address: %08X, size: %08X.",\
@@ -469,7 +401,7 @@ static void heap_free(void *address)
   */
 static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 {
-    struct __mem_entry *p = slist;
+    struct __mem_entry *p = dlist;
     
     if(!dst || !src || !count)
     {
@@ -487,8 +419,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 		(((unsigned long)dst + count) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
-			"Heap copy address conflict, magic: %08X.",\
-			task_trace.belong());
+			"Heap copy address conflict.");
 			return(0);
 		}
 
@@ -498,7 +429,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
         p = p->next;
     }
     
-    p = dlist;
+    p = slist;
     
     while(p)
     {
@@ -511,8 +442,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 		(((unsigned long)dst + count) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
-			"Heap copy address conflict, magic: %08X.",\
-			task_trace.belong());
+			"Heap copy address conflict.");
 			return(0);
 		}
 
@@ -532,7 +462,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
   */
 static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 {
-    struct __mem_entry *p = slist;
+    struct __mem_entry *p = dlist;
     
     if(!address || !count)
     {
@@ -550,8 +480,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 		(((unsigned long)address + count) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
-			"Heap set address conflict, magic: %08X.",\
-			task_trace.belong());
+			"Heap set address conflict.");
 			return(0);
 		}
 
@@ -561,7 +490,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
         p = p->next;
     }
     
-    p = dlist;
+    p = slist;
     
     while(p)
     {
@@ -574,8 +503,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 		(((unsigned long)address + count) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
-			"Heap set address conflict, magic: %08X.",\
-			task_trace.belong());
+			"Heap set address conflict.");
 			return(0);
 		}
 
@@ -591,83 +519,6 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 }
 
 /**
-  * @brief   
-  */
-static uint32_t heap_szone_size(void)
-{
-    return(MAX_SHEAP_PER_TASK);
-}
-
-/**
-  * @brief   
-  */
-static uint32_t heap_szone_available(void)
-{
-    struct __mem_entry *p = slist;
-    uint32_t mem_allcoked = 0;
-    
-    while(p)
-    {
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-        if(p->magic == (unsigned long)task_trace.belong())
-        {
-            mem_allcoked += p->size;
-        }
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
-        p = p->next;
-    }
-    
-    if(mem_allcoked <= MAX_SHEAP_PER_TASK)
-    {
-        return(MAX_SHEAP_PER_TASK - mem_allcoked);
-    }
-    else
-    {
-        return(0);
-    }
-}
-
-/**
-  * @brief   
-  */
-static uint32_t heap_dzone_size(void)
-{
-    return(MAX_DHEAP);
-}
-
-/**
-  * @brief   
-  */
-static uint32_t heap_dzone_available(void)
-{
-    struct __mem_entry *p = dlist;
-    uint32_t mem_allcoked = 0;
-    
-    while(p)
-    {
-        mem_allcoked += p->size;
-        p = p->next;
-    }
-    
-    if(mem_allcoked <= MAX_DHEAP)
-    {
-        return(MAX_DHEAP - mem_allcoked);
-    }
-    else
-    {
-        return(0);
-    }
-}
-
-/**
   * @brief  内存操作函数
   */
 struct __heap heap = 
@@ -679,14 +530,4 @@ struct __heap heap =
     .free               = heap_free,
     .copy               = heap_copy,
     .set                = heap_set,
-    .szone              = 
-    {
-        .size           = heap_szone_size,
-        .available      = heap_szone_available,
-    },
-    .dzone              = 
-    {
-        .size           = heap_dzone_size,
-        .available      = heap_dzone_available,
-    },
 };

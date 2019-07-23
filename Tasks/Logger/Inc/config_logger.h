@@ -1,20 +1,16 @@
-/**
- * @brief		
- * @details		
- * @date		azenk@2018-12-14
- **/
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __API_H__
-#define __API_H__
+#ifndef __CONFIG_LOGGER_H__
+#define __CONFIG_LOGGER_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "tasks.h"
 
-/* Exported macro ------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported function prototypes ----------------------------------------------*/
-extern void * api_query(char *name);
+/* Exported macro ------------------------------------------------------------*/
+#define NAME_LOGGER   "task_logger"
 
-#endif /* __API_H__ */
+/* Exported function prototypes ----------------------------------------------*/
+
+#endif /* __CONFIG_LOGGER_H__ */

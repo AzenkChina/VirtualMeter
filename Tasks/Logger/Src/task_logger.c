@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_logger.h"
 #include "types_logger.h"
+#include "config_logger.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -75,7 +76,7 @@ static enum __task_status logger_status(void)
   */
 const struct __task_sched task_logger = 
 {
-    .name               = "task_logger",
+    .name               = NAME_LOGGER,
     .init               = logger_init,
     .loop               = logger_loop,
     .exit               = logger_exit,

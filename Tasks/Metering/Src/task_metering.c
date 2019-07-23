@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_metering.h"
 #include "types_metering.h"
+#include "config_metering.h"
 
 #include "meter.h"
 
@@ -431,7 +432,7 @@ static enum __task_status metering_status(void)
   */
 const struct __task_sched task_metering = 
 {
-    .name               = "task_metering",
+    .name               = NAME_METERING,
     .init               = metering_init,
     .loop               = metering_loop,
     .exit               = metering_exit,

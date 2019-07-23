@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_timed.h"
 #include "types_timed.h"
+#include "config_timed.h"
 
 #include "crc.h"
 
@@ -190,7 +191,7 @@ static void timed_init(void)
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
-        entries = heap.salloc(sizeof(struct __timed_entry)*TIMD_ENTRY_MAX);
+        entries = heap.salloc(NAME_TIMED, sizeof(struct __timed_entry)*TIMD_ENTRY_MAX);
         if(!entries)
         {
             status = TASK_ERROR;
@@ -275,7 +276,7 @@ static enum __task_status timed_status(void)
   */
 const struct __task_sched task_timed = 
 {
-    .name               = "task_timed",
+    .name               = NAME_TIMED,
     .init               = timed_init,
     .loop               = timed_loop,
     .exit               = timed_exit,

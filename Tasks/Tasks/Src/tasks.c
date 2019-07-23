@@ -50,7 +50,6 @@ struct __task_table
 
 /* Private define ------------------------------------------------------------*/
 #define TASKS_MAX                   ((uint8_t)(128)) //最大task数量
-#define API_STACK_MAX				((uint8_t)(8)) //最大api调用深度
 
 /* Private macro -------------------------------------------------------------*/
 #define TASKS_COMP      ((uint8_t)(sizeof(task_tables) / sizeof(struct __task_table)))
@@ -83,10 +82,6 @@ static const struct __task_table task_tables[] =
 };
 
 static uint16_t task_id = 0xffff;
-static uint16_t api_id = 0xffff;
-static uint16_t api_stack[API_STACK_MAX] = { 0 };
-static uint8_t api_stack_top = 0;
-static uint8_t task_hang[TASKS_COMP] = {0};
 
 #if defined ( __TASKS_MONITOR )
 static uint32_t timing = 0;
@@ -136,24 +131,17 @@ static void tasks_init(void)
             if(task_tables[cnt].task && task_tables[cnt].task->init)
             {
                 task_id = cnt;
-				api_id = task_id;
-				api_stack_top = 0;
                 cpu.watchdog.feed();
 #if defined ( __TASKS_MONITOR )
                 __monitor_start(cnt);
 #endif
-                heap_ctrl.unlock(HEAP_UNLOCK_ALLOC);
                 disk_ctrl.unlock();
                 task_tables[cnt].task->init();
                 disk_ctrl.lock();
-                heap_ctrl.lock();
 #if defined ( __TASKS_MONITOR )
                 __monitor_stop_init(cnt);
 #endif
                 task_id = 0xffff;
-				api_id = task_id;
-                
-                task_hang[cnt] = 0;
             }
         }
     }
@@ -191,30 +179,20 @@ static void tasks_loop(void)
                 }
             }
             
-            if(task_hang[cnt] == 0x8f)
-            {
-            	continue;
-            }
-            
             if(task_tables[cnt].task && task_tables[cnt].task->loop)
             {
                 task_id = cnt;
-				api_id = task_id;
-				api_stack_top = 0;
                 cpu.watchdog.feed();
 #if defined ( __TASKS_MONITOR )
                 __monitor_start(cnt);
 #endif
-                heap_ctrl.unlock((enum __heap_unlock)(HEAP_UNLOCK_ALLOC | HEAP_UNLOCK_FREE));
                 disk_ctrl.unlock();
                 task_tables[cnt].task->loop();
                 disk_ctrl.lock();
-                heap_ctrl.lock();
 #if defined ( __TASKS_MONITOR )
                 __monitor_stop_loop(cnt);
 #endif
                 task_id = 0xffff;
-				api_id = task_id;
             }
         }
     }
@@ -245,23 +223,18 @@ static void tasks_exit(void)
             if(task_tables[cnt].task && task_tables[cnt].task->exit)
             {
                 task_id = cnt;
-				api_id = task_id;
-				api_stack_top = 0;
                 cpu.watchdog.feed();
 #if defined ( __TASKS_MONITOR )
                 __monitor_start(cnt);
 #endif
-                heap_ctrl.unlock(HEAP_UNLOCK_FREE);
                 disk_ctrl.unlock();
                 task_tables[cnt].task->exit();
                 disk_ctrl.lock();
-                heap_ctrl.lock();
                 heap_ctrl.recycle();
 #if defined ( __TASKS_MONITOR )
                 __monitor_stop_exit(cnt);
 #endif
                 task_id = 0xffff;
-				api_id = task_id;
             }
         }
     }
@@ -299,15 +272,12 @@ static void tasks_reset(void)
             if(task_tables[cnt].task && task_tables[cnt].task->reset)
             {
                 task_id = cnt;
-				api_id = task_id;
-				api_stack_top = 0;
                 cpu.watchdog.feed();
                 disk_ctrl.unlock();
                 task_tables[cnt].task->reset();
                 disk_ctrl.lock();
                 heap_ctrl.recycle();
                 task_id = 0xffff;
-				api_id = task_id;
             }
         }
     }
@@ -340,202 +310,15 @@ const struct __task_sched tasks =
     .api            = (void *)0,
 };
 
-/**
-  * @brief  
-  */
-static enum  __sched_status task_sched_hang(const char *name)
-{
-    uint8_t cnt;
-   
-    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
-    {
-        if(!task_tables[cnt].task->name)
-        {
-            continue;
-        }
-		
-        if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            continue;
-        }
-        
-        task_hang[cnt] = 0x8f;
-        
-        return(SCHED_HANGED);
-    }
-    
-    return(SCHED_NODEF);
-}
-
-/**
-  * @brief  
-  */
-static enum  __sched_status task_sched_reset(const char *name)
-{
-    uint8_t cnt;
-	uint16_t task_id_backup;
-	uint16_t api_id_backup;
-   
-    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
-    {
-        if(!task_tables[cnt].task->name)
-        {
-            continue;
-        }
-		
-        if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            if(task_tables[cnt].task && task_tables[cnt].task->reset && task_tables[cnt].task->init)
-            {
-				task_id_backup = task_id;
-				api_id_backup = api_id;
-				
-				task_id = cnt;
-				api_id = task_id;
-				api_stack_top = 0;
-				disk_ctrl.unlock();
-				cpu.watchdog.feed();
-				task_tables[cnt].task->reset();
-				heap_ctrl.recycle();
-                heap_ctrl.unlock(HEAP_UNLOCK_ALLOC);
-				cpu.watchdog.feed();
-                task_tables[cnt].task->init();
-                heap_ctrl.lock();
-				disk_ctrl.lock();
-				
-				task_id = task_id_backup;
-				api_id = api_id_backup;
-            }
-        }
-    }
-    
-    return(SCHED_NODEF);
-}
-
-/**
-  * @brief  
-  */
-static enum  __sched_status task_sched_run(const char *name)
-{
-    uint8_t cnt;
-   
-    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
-    {
-        if(!task_tables[cnt].task->name)
-        {
-            continue;
-        }
-		
-        if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            continue;
-        }
-        
-        task_hang[cnt] = 0;
-        
-        return(SCHED_RUNNING);
-    }
-    
-    return(SCHED_NODEF);
-}
-
-/**
-  * @brief  
-  */
-static enum  __sched_status task_sched_status(const char *name)
-{
-    uint8_t cnt;
-   
-    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
-    {
-        if(!task_tables[cnt].task->name)
-        {
-            continue;
-        }
-		
-        if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            continue;
-        }
-        
-        if(task_hang[cnt] != 0x8f)
-        {
-            return(SCHED_RUNNING);
-        }
-        else
-        {
-            return(SCHED_HANGED);
-        }
-    }
-    
-    return(SCHED_NODEF);
-}
-
-/**
-  * @brief  
-  */
-const struct __task_ctrl task_ctrl = 
-{
-    .hang           = task_sched_hang,
-	.reset			= task_sched_reset,
-    .run            = task_sched_run,
-    .status         = task_sched_status,
-};
 
 
 
 /**
   * @brief  
   */
-static uint8_t task_amount(void)
+static uint8_t task_ctrl_amount(void)
 {
     return(TASK_AMOUNT);
-}
-
-/**
-  * @brief  
-  */
-static const struct __task_sched *task_current(void)
-{
-    if(task_id < TASK_AMOUNT)
-    {
-        return(task_tables[task_id].task);
-    }
-    
-    return((const struct __task_sched *)0);
-}
-
-/**
-  * @brief  
-  */
-static const struct __task_sched *task_belong(void)
-{
-    if(api_id < TASK_AMOUNT)
-    {
-        return(task_tables[api_id].task);
-    }
-    
-    return((const struct __task_sched *)0);
-}
-
-/**
-  * @brief  
-  */
-static uint8_t task_exist(const char *name)
-{
-    uint8_t cnt;
-   
-    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
-    {
-        if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            continue;
-        }
-        
-        return(0xff);
-    }
-    
-    return(0);
 }
 
 #if defined ( __TASKS_MONITOR )
@@ -598,7 +381,7 @@ static void __monitor_stop_loop(uint8_t index)
   *         格式：task_id task_name task_status init_seq       exit_seq   reset_seq  loop_seq    init_ms     exit_ms  loop_ms  loop_max_ms
   *               任务ID  任务名称  任务状态    初始化优先级   退出优先级 重置优先级 轮询优先级   初始化用时 退出用时 轮询用时 轮询最大用时
   */
-static const char *task_info(uint8_t index)
+static const char *task_ctrl_info(uint8_t index)
 {
     static uint8_t task_info[128];
     uint8_t *pinfo = task_info;
@@ -664,14 +447,7 @@ static const char *task_info(uint8_t index)
     	}
     	else if(task_status == TASK_RUN)
     	{
-            if(task_hang[index] != 0x8f)
-            {
-                *(pinfo ++) = 'R';
-            }
-            else
-            {
-                *(pinfo ++) = 'H';
-            }
+            *(pinfo ++) = 'R';
     	}
     	else if(task_status == TASK_SUSPEND)
     	{
@@ -883,7 +659,7 @@ static const char *task_info(uint8_t index)
 
 #else
 
-static const char *task_info(uint8_t index)
+static const char *task_ctrl_info(uint8_t index)
 {
     return("");
 }
@@ -893,13 +669,112 @@ static const char *task_info(uint8_t index)
 /**
   * @brief  
   */
-const struct __task_trace task_trace = 
+static uint8_t task_ctrl_index(const char *name)
 {
-    .amount         = task_amount,
-    .current        = task_current,
-    .belong         = task_belong,
-    .exist          = task_exist,
-    .info           = task_info,
+    uint8_t cnt;
+    
+    if(!name)
+    {
+        return(0xff);
+    }
+   
+    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
+    {
+        if(strcmp(task_tables[cnt].task->name, name) != 0)
+        {
+            continue;
+        }
+        
+        return(cnt);
+    }
+    
+    return(0xff);
+}
+
+/**
+  * @brief  
+  */
+static const struct __task_sched *task_ctrl_current(void)
+{
+    if(task_id < TASK_AMOUNT)
+    {
+        return(task_tables[task_id].task);
+    }
+    
+    return((const struct __task_sched *)0);
+}
+
+/**
+  * @brief  
+  */
+static const struct __task_sched * task_ctrl_search(const char *name)
+{
+    uint8_t cnt;
+    
+    if(!name)
+    {
+        return((const struct __task_sched *)0);
+    }
+   
+    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
+    {
+        if(strcmp(task_tables[cnt].task->name, name) != 0)
+        {
+            continue;
+        }
+        
+        return(task_tables[cnt].task);
+    }
+    
+    return((const struct __task_sched *)0);
+}
+
+/**
+  * @brief  
+  */
+static uint8_t task_ctrl_reset(const char *name)
+{
+    uint8_t cnt;
+   
+    for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
+    {
+        if(!task_tables[cnt].task->name)
+        {
+            continue;
+        }
+		
+        if(strcmp(task_tables[cnt].task->name, name) != 0)
+        {
+            if(task_tables[cnt].task && task_tables[cnt].task->reset && task_tables[cnt].task->init)
+            {
+				task_id = cnt;
+				disk_ctrl.unlock();
+				cpu.watchdog.feed();
+				task_tables[cnt].task->reset();
+				heap_ctrl.recycle();
+				cpu.watchdog.feed();
+                task_tables[cnt].task->init();
+				disk_ctrl.lock();
+                
+                return(0xff);
+            }
+        }
+    }
+    
+    return(0);
+}
+
+/**
+  * @brief  
+  */
+const struct __task_ctrl task_ctrl = 
+{
+    .amount         = task_ctrl_amount,
+    .info           = task_ctrl_info,
+    .index          = task_ctrl_index,
+    .current        = task_ctrl_current,
+    .search         = task_ctrl_search,
+	.reset			= task_ctrl_reset,
 };
 
 
@@ -907,53 +782,22 @@ const struct __task_trace task_trace =
 /**
   * @brief  
   */
-static void * api_query(char *name)
+void * api_query(char *name)
 {
     uint8_t cnt;
+    
+    if(!name)
+    {
+        return((void *)0);
+    }
    
     for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
     {
         if(strcmp(task_tables[cnt].task->name, name) == 0)
         {
-			if(api_stack_top >= API_STACK_MAX)
-			{
-				TRACE(TRACE_ERR, "Api call stack overflow.");
-				api_id = cnt;
-				return(task_tables[cnt].task->api);
-			}
-
-			api_stack[api_stack_top] = api_id;
-			api_stack_top += 1;
-			api_id = cnt;
             return(task_tables[cnt].task->api);
         }
     }
     
     return((void *)0);
 }
-
-/**
-  * @brief  
-  */
-static void api_release(void)
-{
-	if((api_stack_top) && (api_stack_top < API_STACK_MAX))
-	{
-		api_stack_top -= 1;
-		api_id = api_stack[api_stack_top];
-	}
-	else
-	{
-		TRACE(TRACE_ERR, "Api call stack pointer is invalid: %d.", api_stack_top);
-		api_id = task_id;
-	}
-}
-
-/**
-  * @brief  
-  */
-const struct __task_api api = 
-{
-    .query              = api_query,
-    .release            = api_release,
-};

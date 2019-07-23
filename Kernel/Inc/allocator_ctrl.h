@@ -42,8 +42,6 @@ struct __heap_ctrl
 {
     void                            (*sinit)(void);
     void                            (*dinit)(void);
-    void                            (*unlock)(enum __heap_unlock fun);
-    void                            (*lock)(void);
     void                            (*recycle)(void);
 };
 

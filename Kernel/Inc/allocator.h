@@ -33,26 +33,15 @@ struct __file
 /**
   * @brief  堆接口
   */
-struct __heap_info
-{
-    uint32_t                        (*size)(void);
-    uint32_t                        (*available)(void);
-};
-
-/**
-  * @brief  堆接口
-  */
 struct __heap
 {
-    void                            *(*salloc)(uint32_t size);
-    void                            *(*scalloc)(uint32_t n, uint32_t size);
+    void                            *(*salloc)(const char *name, uint32_t size);
+    void                            *(*scalloc)(const char *name, uint32_t n, uint32_t size);
     void                            *(*dalloc)(uint32_t size);
     void                            *(*dcalloc)(uint32_t n, uint32_t size);
     void                            (*free)(void *address);
     uint32_t                        (*copy)(void *dst, const void *src, uint32_t count);
     uint32_t                        (*set)(void *address, uint8_t ch, uint32_t count);
-    struct __heap_info              szone;
-    struct __heap_info              dzone;
 };
 
 /* Exported constants --------------------------------------------------------*/

@@ -1,20 +1,13 @@
-/**
- * @brief		
- * @details		
- * @date		azenk@2018-12-14
- **/
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __API_H__
-#define __API_H__
+#ifndef __CONFIG_KEYBOARD_H__
+#define __CONFIG_KEYBOARD_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "stdint.h"
-
-/* Exported macro ------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported function prototypes ----------------------------------------------*/
-extern void * api_query(char *name);
+/* Exported macro ------------------------------------------------------------*/
+#define NAME_KEYBOARD   "task_keyboard"
 
-#endif /* __API_H__ */
+/* Exported function prototypes ----------------------------------------------*/
+
+#endif /* __CONFIG_KEYBOARD_H__ */

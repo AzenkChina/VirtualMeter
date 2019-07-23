@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_calendar.h"
 #include "types_calendar.h"
+#include "config_calendar.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/

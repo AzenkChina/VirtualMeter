@@ -45,41 +45,20 @@ struct __task_sched
 };
 
 /**
-  * @brief  任务调度当前状态
-  */
-enum  __sched_status
-{
-    SCHED_NODEF = 0,//应用未定义
-    SCHED_RUNNING = 0x0f,//正常调度（loop正常轮询）
-    SCHED_HANGED = 0xf0,//调度被挂起（loop不轮询）
-};
-
-/**
-  * @brief  任务调度控制接口
+  * @brief  任务控制信息接口
   */
 struct __task_ctrl
 {
-    enum  __sched_status            (*hang)(const char *name);
-	enum  __sched_status            (*reset)(const char *name);
-    enum  __sched_status            (*run)(const char *name);
-    enum  __sched_status            (*status)(const char *name);
-};
-
-/**
-  * @brief  任务信息接口
-  */
-struct __task_trace
-{
-    uint8_t                         (*amount)(void);
-    const struct __task_sched       *(*current)(void);
-    const struct __task_sched       *(*belong)(void);
-    uint8_t                         (*exist)(const char *name);
-    const char                      *(*info)(uint8_t index);
+    uint8_t							(*amount)(void);
+    const char						*(*info)(uint8_t index);
+    uint8_t							(*index)(const char *name);
+    const struct __task_sched		*(*current)(void);
+    const struct __task_sched		*(*search)(const char *name);
+	uint8_t							(*reset)(const char *name);
 };
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 extern const struct __task_ctrl task_ctrl;
-extern const struct __task_trace task_trace;
 
 #endif /* __TASKS_H__ */

@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_keyboard.h"
 #include "types_keyboard.h"
+#include "config_keyboard.h"
 
 #include "power.h"
 #include "crc.h"
@@ -163,7 +164,7 @@ static enum __task_status keyboard_status(void)
   */
 const struct __task_sched task_keyboard = 
 {
-    .name               = "task_keyboard",
+    .name               = NAME_KEYBOARD,
     .init               = keyboard_init,
     .loop               = keyboard_loop,
     .exit               = keyboard_exit,

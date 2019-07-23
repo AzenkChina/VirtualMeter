@@ -1,20 +1,19 @@
 /**
  * @brief		
  * @details		
- * @date		azenk@2018-12-14
+ * @date		azenk@2017-01-09
  **/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __API_H__
-#define __API_H__
+#ifndef __CONFIG_XMODEM_H__
+#define __CONFIG_XMODEM_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "stdint.h"
-
-/* Exported macro ------------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported function prototypes ----------------------------------------------*/
-extern void * api_query(char *name);
+/* Exported macro ------------------------------------------------------------*/
+#define NAME_XMODEM     "task_xmodem"
 
-#endif /* __API_H__ */
+/* Exported function prototypes ----------------------------------------------*/
+
+#endif /* __CONFIG_XMODEM_H__ */

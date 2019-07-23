@@ -8,6 +8,8 @@
 #include "system.h"
 #include "task_display.h"
 #include "types_display.h"
+#include "config_display.h"
+
 #include "lcd.h"
 
 #include "types_metering.h"
@@ -326,7 +328,7 @@ static void flush_data(void)
     
     clear_unit();
     
-    api_stream = api.query("task_protocol");
+    api_stream = (struct __protocol *)api_query("task_protocol");
     
     if(!api_stream)
     {
@@ -335,11 +337,8 @@ static void flush_data(void)
     
     if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
     {
-        api.release();
         return;
     }
-    
-    api.release();
     
     select_data(param, buff);
     
@@ -409,7 +408,7 @@ static uint8_t display_list_show_next(void)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = api.query("task_protocol");
+    api_stream = (struct __protocol *)api_query("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);
@@ -417,11 +416,9 @@ static uint8_t display_list_show_next(void)
     
     if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
     {
-        api.release();
         return(disp_runs.index);
     }
     
-    api.release();
     
     //根据获取到的数据和参数，刷新显示
     select_data(param, buff);
@@ -458,7 +455,7 @@ static uint8_t display_list_show_last(void)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = api.query("task_protocol");
+    api_stream = (struct __protocol *)api_query("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);
@@ -466,11 +463,8 @@ static uint8_t display_list_show_last(void)
 	
     if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
     {
-        api.release();
         return(disp_runs.index);
     }
-    
-    api.release();
     
     select_data(param, buff);
     
@@ -504,7 +498,7 @@ static uint8_t display_list_show_index(uint8_t val)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = api.query("task_protocol");
+    api_stream = (struct __protocol *)api_query("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);
@@ -512,11 +506,8 @@ static uint8_t display_list_show_index(uint8_t val)
     
     if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
     {
-        api.release();
         return(disp_runs.index);
     }
-    
-    api.release();
     
     select_data(param, buff);
     
@@ -1139,7 +1130,7 @@ static enum __task_status display_status(void)
   */
 const struct __task_sched task_display = 
 {
-    .name               = "task_display",
+    .name               = NAME_DISPLAY,
     .init               = display_init,
     .loop               = display_loop,
     .exit               = display_exit,

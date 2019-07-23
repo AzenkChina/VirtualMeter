@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_comm.h"
 #include "types_comm.h"
+#include "config_comm.h"
 
 #include "types_protocol.h"
 
@@ -240,7 +241,7 @@ static void comm_init(void)
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
-        buff = heap.salloc((PORT_AMOUNT*2 + 1)*BUFF_SIZE);
+        buff = heap.salloc(NAME_COMM, (PORT_AMOUNT*2 + 1)*BUFF_SIZE);
         
         if(!buff)
         {
@@ -307,12 +308,11 @@ static void comm_loop(void)
         
 	    if(length)
 	    {
-            api_stream = api.query("task_protocol");
+            api_stream = (struct __protocol *)api_query("task_protocol");
             
             if(api_stream)
             {
                 api_stream->stream.in(cnt_port, buff, length);
-                api.release();
             }
 		}
 	}
@@ -335,7 +335,7 @@ static void comm_loop(void)
         }
         
         //轮询注册的协议栈，检查是否有数据要从此端口发送
-        api_stream = api.query("task_protocol");
+        api_stream = (struct __protocol *)api_query("task_protocol");
         
         if(!api_stream)
         {
@@ -343,7 +343,6 @@ static void comm_loop(void)
         }
         
         length = api_stream->stream.out(cnt_port, pbuff, pbuff_length);
-        api.release();
         
         if(length)
         {
@@ -402,7 +401,7 @@ static enum __task_status comm_status(void)
   */
 const struct __task_sched task_comm = 
 {
-    .name               = "task_comm",
+    .name               = NAME_COMM,
     .init               = comm_init,
     .loop               = comm_loop,
     .exit               = comm_exit,

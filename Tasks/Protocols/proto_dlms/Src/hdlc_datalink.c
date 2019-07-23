@@ -8,6 +8,7 @@
 #include "string.h"
 
 #include "system.h"
+#include "config_protocol.h"
 #include "hdlc_datalink.h"
 #include "dlms_association.h"
 
@@ -524,7 +525,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
     
     //获取 发送数据缓冲区
-    link->send.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU() + 32);
+    link->send.data = (uint8_t *)heap.salloc(NAME_PROTOCOL, HDLC_CONFIG_APPL_MTU() + 32);
     if(!link->send.data)
     {
         return(HDLC_ERR_NOMEM);
@@ -533,7 +534,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     link->send.length = HDLC_CONFIG_APPL_MTU();
     
     //获取 接收数据缓冲区
-    link->recv.data = (uint8_t *)heap.salloc(HDLC_CONFIG_APPL_MTU() + 32);
+    link->recv.data = (uint8_t *)heap.salloc(NAME_PROTOCOL, HDLC_CONFIG_APPL_MTU() + 32);
     if(!link->recv.data)
     {
         heap.free(link->send.data);

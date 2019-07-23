@@ -8,7 +8,7 @@
 #include "system.h"
 #include "task_protocol.h"
 #include "types_protocol.h"
-
+#include "config_protocol.h"
 
 /** 在这里添加协议栈头文件 */
 #include "proto_dlms.h"
@@ -275,7 +275,7 @@ static enum __task_status protocol_status(void)
   */
 const struct __task_sched task_protocol = 
 {
-    .name               = "task_protocol",
+    .name               = NAME_PROTOCOL,
     .init               = protocol_init,
     .loop               = protocol_loop,
     .exit               = protocol_exit,

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "system.h"
+#include "config_protocol.h"
 #include "jiffy.h"
 #include "dlms_association.h"
 #include "dlms_application.h"
@@ -1853,7 +1854,7 @@ void dlms_asso_gateway(uint8_t sap,
 		        {
 		            if(!asso_list[cnt])
 		            {
-		                asso_list[cnt] = heap.salloc(sizeof(struct __dlms_association));
+		                asso_list[cnt] = heap.salloc(NAME_PROTOCOL, sizeof(struct __dlms_association));
 		                if(!asso_list[cnt])
 		                {
 		                    return;
@@ -2279,7 +2280,7 @@ void * dlms_asso_attach_storage(uint16_t size)
         heap.free(asso_current->appl);
     }
     
-    asso_current->appl = heap.salloc(size);
+    asso_current->appl = heap.salloc(NAME_PROTOCOL, size);
     if(asso_current->appl)
     {
         heap.set(asso_current->appl, 0, size);

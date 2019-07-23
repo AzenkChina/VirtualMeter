@@ -8,6 +8,8 @@
 #include "system.h"
 #include "task_disconnect.h"
 #include "types_disconnect.h"
+#include "config_disconnect.h"
+
 #include "jiffy.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,7 +131,7 @@ static enum __task_status disconnect_status(void)
   */
 const struct __task_sched task_disconnect = 
 {
-    .name               = "task_disconnect",
+    .name               = NAME_DISCONNECT,
     .init               = disconnect_init,
     .loop               = disconnect_loop,
     .exit               = disconnect_exit,
@@ -137,15 +139,3 @@ const struct __task_sched task_disconnect =
     .status             = disconnect_status,
     .api                = (void *)&disconnecter,
 };
-
-
-
-
-
-
-
-
-
-
-
-

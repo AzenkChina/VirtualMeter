@@ -9,6 +9,7 @@
 #include "system.h"
 #include "task_console.h"
 #include "types_console.h"
+#include "config_console.h"
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
 #include <windows.h>
@@ -441,7 +442,7 @@ static enum __task_status console_status(void)
   */
 const struct __task_sched task_console = 
 {
-    .name               = "task_console",
+    .name               = NAME_CONSOLE,
     .init               = console_init,
     .loop               = console_loop,
     .exit               = console_exit,

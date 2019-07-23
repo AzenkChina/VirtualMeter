@@ -8,6 +8,7 @@
 #include "system.h"
 #include "task_xmodem.h"
 #include "types_xmodem.h"
+#include "config_xmodem.h"
 
 #include "jiffy.h"
 
@@ -105,7 +106,7 @@ static enum __task_status xmodem_status(void)
   */
 const struct __task_sched task_xmodem = 
 {
-    .name               = "task_xmodem",
+    .name               = NAME_XMODEM,
     .init               = xmodem_init,
     .loop               = xmodem_loop,
     .exit               = xmodem_exit,

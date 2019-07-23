@@ -30,7 +30,7 @@ static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 	
     M_UINT2ID(OBJ_IN_ID(P), id);
     
-    api_metering = (struct __metering *)api.query("task_metering");
+    api_metering = (struct __metering *)api_query("task_metering");
     if(!api_metering)
     {
         return(OBJECT_ERR_LOWLEVEL);
@@ -39,11 +39,8 @@ static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
     //使用id获取计量数据
     if(api_metering->instant(id, &val) == M_NULL)
     {
-        api.release();
         return(OBJECT_ERR_LOWLEVEL);
     }
-    
-    api.release();
     
     //将获取到的计量数据进行AXDR组包
     Length = axdr.encode(&val, sizeof(val), AXDR_LONG64, OBJ_OUT_ADDR(P));
