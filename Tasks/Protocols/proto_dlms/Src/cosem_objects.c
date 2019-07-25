@@ -38,7 +38,7 @@ static const ObjectCluster *ObjectClusterTable[] =
   * 获取一个基础函数
   *
   */
-TypeObject cosem_fetch_object(const char *table, uint8_t index)
+TypeObject cosem_load_object(const char *table, uint8_t index)
 {
     uint16_t cnt;
     

@@ -49,12 +49,12 @@ struct __task_sched
   */
 struct __task_ctrl
 {
-    uint8_t							(*amount)(void);
-    const char						*(*info)(uint8_t index);
-    uint8_t							(*index)(const char *name);
-    const struct __task_sched		*(*current)(void);
-    const struct __task_sched		*(*search)(const char *name);
-	uint8_t							(*reset)(const char *name);
+    uint8_t							(*amount)(void); //应用数量
+    const char						*(*info)(uint8_t index); //应用信息
+    uint8_t							(*index)(const char *name); //应用索引
+    const struct __task_sched		*(*current)(void); //当前应用
+    const struct __task_sched		*(*search)(const char *name); //根据名称查找应用
+	uint8_t							(*reset)(const char *name); //根据名称复位应用
 };
 
 /* Exported constants --------------------------------------------------------*/

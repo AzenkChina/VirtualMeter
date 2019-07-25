@@ -153,6 +153,30 @@ static void bat_rtc_suspend(void)
 }
 
 /**
+  * @brief  额定电池容量mA·H
+  */
+static uint32_t battery_rtc_rated_capacity(void)
+{
+    return(600);
+}
+
+/**
+  * @brief  额定电池电压
+  */
+static uint32_t battery_rtc_rated_voltage(void)
+{
+    return(3000);
+}
+
+/**
+  * @brief  电池电压
+  */
+static uint32_t battery_rtc_voltage(void)
+{
+    return(3000);
+}
+
+/**
   * @brief  
   */
 static enum __battery_status battery_rtc_status(void)
@@ -204,6 +228,30 @@ static void bat_bkp_suspend(void)
 }
 
 /**
+  * @brief  额定电池容量mA·H
+  */
+static uint32_t battery_bkp_rated_capacity(void)
+{
+    return(1800);
+}
+
+/**
+  * @brief  额定电池电压
+  */
+static uint32_t battery_bkp_rated_voltage(void)
+{
+    return(6300);
+}
+
+/**
+  * @brief  电池电压
+  */
+static uint32_t battery_bkp_voltage(void)
+{
+    return(6300);
+}
+
+/**
   * @brief  
   */
 static enum __battery_status battery_bkp_status(void)
@@ -222,6 +270,13 @@ const struct __battery battery[BAT_AMOUNT] =
 			.suspend    = bat_rtc_suspend,
 		},
 		
+        .rated          =
+        {
+            .capacity   = battery_rtc_rated_capacity,
+            .voltage    = battery_rtc_rated_voltage,
+        },
+        
+        .voltage        = battery_rtc_voltage,
 		.status         = battery_rtc_status,
 	},
 	{
@@ -232,7 +287,14 @@ const struct __battery battery[BAT_AMOUNT] =
 			.init       = bat_bkp_init,
 			.suspend    = bat_bkp_suspend,
 		},
+        
+        .rated          =
+        {
+            .capacity   = battery_bkp_rated_capacity,
+            .voltage    = battery_bkp_rated_voltage,
+        },
 		
+        .voltage        = battery_bkp_voltage,
 		.status         = battery_bkp_status,
 	},
 };

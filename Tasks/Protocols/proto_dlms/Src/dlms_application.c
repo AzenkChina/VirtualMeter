@@ -620,7 +620,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     }
                     
                     current_entry->Actived = 1;
-                    current_entry->Entry[0].Object = cosem_fetch_object(table, index);
+                    current_entry->Entry[0].Object = cosem_load_object(table, index);
                     
                     break;
                 }

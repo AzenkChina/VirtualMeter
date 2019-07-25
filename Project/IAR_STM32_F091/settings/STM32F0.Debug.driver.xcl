@@ -10,7 +10,7 @@
 
 "D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\CONFIG\debugger\ST\STM32F091VC.ddf" 
 
-"--semihosting" 
+"--semihosting=none" 
 
 "--device=STM32F091VC" 
 

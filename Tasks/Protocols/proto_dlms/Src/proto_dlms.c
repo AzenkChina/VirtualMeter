@@ -79,7 +79,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
-	Func = cosem_fetch_object(table, index);
+	Func = cosem_load_object(table, index);
     
     if(Func)
     {
@@ -122,7 +122,7 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
-	Func = cosem_fetch_object(table, index);
+	Func = cosem_load_object(table, index);
     
     if(Func)
     {

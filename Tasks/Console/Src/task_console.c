@@ -167,9 +167,9 @@ static void command_received(const char *str)
 	    	printf("cpu usage: %d%%\n",system_usage());
             printf("id:    name:         status:  prio:                        time:\n");
 	        printf("                               init   exit  reset   loop    init    exit    loop     max\n");
-	        for(cnt=0; cnt<task_trace.amount(); cnt++)
+	        for(cnt=0; cnt<task_ctrl.amount(); cnt++)
 	        {
-	            printf("%s", task_trace.info(cnt));
+	            printf("%s", task_ctrl.info(cnt));
 	        }
 	    }
 	    else if(memcmp(p, "reset", 5) == 0)

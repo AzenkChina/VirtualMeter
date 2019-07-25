@@ -21,7 +21,7 @@
 static int waketime_get(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __keyboard *api_keyboard = api.query("task_keyboard");
+	struct __keyboard *api_keyboard = api("task_keyboard");
 	
     if(!api_keyboard)
     {
@@ -29,7 +29,6 @@ static int waketime_get(lua_State *L)
         return 1;
     }
 	second = api_keyboard->waketime.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -37,7 +36,7 @@ static int waketime_get(lua_State *L)
 static int waketime_set(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __keyboard *api_keyboard = api.query("task_keyboard");
+	struct __keyboard *api_keyboard = api("task_keyboard");
 	
     if(!api_keyboard)
     {
@@ -46,7 +45,6 @@ static int waketime_set(lua_State *L)
     }
     second = (uint8_t)luaL_checknumber(L, 1);
 	second = api_keyboard->waketime.set(second);
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }

@@ -782,7 +782,7 @@ const struct __task_ctrl task_ctrl =
 /**
   * @brief  
   */
-void * api_query(char *name)
+void * api(const char *name)
 {
     uint8_t cnt;
     

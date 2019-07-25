@@ -21,7 +21,7 @@
 static int display_change(lua_State *L)
 {
 	uint8_t channel = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -31,7 +31,6 @@ static int display_change(lua_State *L)
     
 	channel = (uint8_t)luaL_checknumber(L, 1);
 	channel = api_display->change(channel);
-	api.release();
 	lua_pushnumber(L, (lua_Number)channel);
 	return 1;
 }
@@ -39,7 +38,7 @@ static int display_change(lua_State *L)
 static int display_channel(lua_State *L)
 {
 	uint8_t channel = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -47,7 +46,6 @@ static int display_channel(lua_State *L)
         return 1;
     }
 	channel = api_display->channel();
-	api.release();
 	lua_pushnumber(L, (lua_Number)channel);
 	return 1;
 }
@@ -55,7 +53,7 @@ static int display_channel(lua_State *L)
 static int display_list_show_next(lua_State *L)
 {
 	uint8_t index = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -63,7 +61,6 @@ static int display_list_show_next(lua_State *L)
         return 1;
     }
 	index = api_display->list.show.next();
-	api.release();
 	lua_pushnumber(L, (lua_Number)index);
 	return 1;
 }
@@ -71,7 +68,7 @@ static int display_list_show_next(lua_State *L)
 static int display_list_show_last(lua_State *L)
 {
 	uint8_t index = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -79,7 +76,6 @@ static int display_list_show_last(lua_State *L)
         return 1;
     }
 	index = api_display->list.show.last();
-	api.release();
 	lua_pushnumber(L, (lua_Number)index);
 	return 1;
 }
@@ -87,7 +83,7 @@ static int display_list_show_last(lua_State *L)
 static int display_list_show_index(lua_State *L)
 {
 	uint8_t index = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -96,7 +92,6 @@ static int display_list_show_index(lua_State *L)
     }
     index = (uint8_t)luaL_checknumber(L, 1);
 	index = api_display->list.show.index(index);
-	api.release();
 	lua_pushnumber(L, (lua_Number)index);
 	return 1;
 }
@@ -104,7 +99,7 @@ static int display_list_show_index(lua_State *L)
 static int display_list_current(lua_State *L)
 {
 	uint8_t index = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -112,7 +107,6 @@ static int display_list_current(lua_State *L)
         return 1;
     }
 	index = api_display->list.current();
-	api.release();
 	lua_pushnumber(L, (lua_Number)index);
 	return 1;
 }
@@ -120,7 +114,7 @@ static int display_list_current(lua_State *L)
 static int display_config_start_get(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -128,7 +122,6 @@ static int display_config_start_get(lua_State *L)
         return 1;
     }
 	second = api_display->config.time.start.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -136,7 +129,7 @@ static int display_config_start_get(lua_State *L)
 static int display_config_start_set(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -145,7 +138,6 @@ static int display_config_start_set(lua_State *L)
     }
     second = (uint8_t)luaL_checknumber(L, 1);
 	second = api_display->config.time.start.set(second);
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -153,7 +145,7 @@ static int display_config_start_set(lua_State *L)
 static int display_config_scroll_get(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -161,7 +153,6 @@ static int display_config_scroll_get(lua_State *L)
         return 1;
     }
 	second = api_display->config.time.scroll.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -169,7 +160,7 @@ static int display_config_scroll_get(lua_State *L)
 static int display_config_scroll_set(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -178,7 +169,6 @@ static int display_config_scroll_set(lua_State *L)
     }
     second = (uint8_t)luaL_checknumber(L, 1);
 	second = api_display->config.time.scroll.set(second);
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -186,7 +176,7 @@ static int display_config_scroll_set(lua_State *L)
 static int display_config_backlight_get(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -194,7 +184,6 @@ static int display_config_backlight_get(lua_State *L)
         return 1;
     }
 	second = api_display->config.time.backlight.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -202,7 +191,7 @@ static int display_config_backlight_get(lua_State *L)
 static int display_config_backlight_set(lua_State *L)
 {
 	uint8_t second = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -211,7 +200,6 @@ static int display_config_backlight_set(lua_State *L)
     }
     second = (uint8_t)luaL_checknumber(L, 1);
 	second = api_display->config.time.backlight.set(second);
-	api.release();
 	lua_pushnumber(L, (lua_Number)second);
 	return 1;
 }
@@ -219,7 +207,7 @@ static int display_config_backlight_set(lua_State *L)
 static int display_config_power_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -227,7 +215,6 @@ static int display_config_power_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.power.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -235,7 +222,7 @@ static int display_config_power_dot_get(lua_State *L)
 static int display_config_power_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -244,7 +231,6 @@ static int display_config_power_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.power.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -252,7 +238,7 @@ static int display_config_power_dot_set(lua_State *L)
 static int display_config_voltage_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -260,7 +246,6 @@ static int display_config_voltage_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.voltage.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -268,7 +253,7 @@ static int display_config_voltage_dot_get(lua_State *L)
 static int display_config_voltage_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -277,7 +262,6 @@ static int display_config_voltage_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.voltage.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -285,7 +269,7 @@ static int display_config_voltage_dot_set(lua_State *L)
 static int display_config_current_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -293,7 +277,6 @@ static int display_config_current_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.current.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -301,7 +284,7 @@ static int display_config_current_dot_get(lua_State *L)
 static int display_config_current_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -310,7 +293,6 @@ static int display_config_current_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.current.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -318,7 +300,7 @@ static int display_config_current_dot_set(lua_State *L)
 static int display_config_energy_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -326,7 +308,6 @@ static int display_config_energy_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.energy.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -334,7 +315,7 @@ static int display_config_energy_dot_get(lua_State *L)
 static int display_config_energy_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -343,7 +324,6 @@ static int display_config_energy_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.energy.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -351,7 +331,7 @@ static int display_config_energy_dot_set(lua_State *L)
 static int display_config_demand_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -359,7 +339,6 @@ static int display_config_demand_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.demand.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -367,7 +346,7 @@ static int display_config_demand_dot_get(lua_State *L)
 static int display_config_demand_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -376,7 +355,6 @@ static int display_config_demand_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.demand.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -384,7 +362,7 @@ static int display_config_demand_dot_set(lua_State *L)
 static int display_config_others_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -392,7 +370,6 @@ static int display_config_others_dot_get(lua_State *L)
         return 1;
     }
 	point = api_display->config.dot.others.get();
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -400,7 +377,7 @@ static int display_config_others_dot_get(lua_State *L)
 static int display_config_others_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -409,7 +386,6 @@ static int display_config_others_dot_set(lua_State *L)
     }
     point = (uint8_t)luaL_checknumber(L, 1);
 	point = api_display->config.dot.others.set(point);
-	api.release();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -430,7 +406,7 @@ static int display_config_list_amount(lua_State *L)
 {
 	uint16_t amount = 0;
 	uint8_t channel = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -439,7 +415,6 @@ static int display_config_list_amount(lua_State *L)
     }
     channel = (uint8_t)luaL_checknumber(L, 1);
 	amount = api_display->config.list.amount(channel);
-	api.release();
 	lua_pushnumber(L, (lua_Number)amount);
 	return 1;
 }
@@ -447,7 +422,7 @@ static int display_config_list_amount(lua_State *L)
 static int display_config_list_clean(lua_State *L)
 {
 	uint8_t channel = 0;
-	struct __display *api_display = api.query("task_display");
+	struct __display *api_display = api("task_display");
 	
     if(!api_display)
     {
@@ -455,7 +430,6 @@ static int display_config_list_clean(lua_State *L)
     }
     channel = (uint8_t)luaL_checknumber(L, 1);
 	api_display->config.list.clean(channel);
-	api.release();
 	return 0;
 }
 

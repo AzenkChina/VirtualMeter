@@ -15,7 +15,10 @@
 #include "device_lowlevel.h"
 
 /* Exported types ------------------------------------------------------------*/
-
+     
+//###########################################################################
+//设备驱动控制单元（基类）
+     
 /**
   * @brief  设备当前状态
   */
@@ -444,7 +447,15 @@ struct __battery
 {
     struct __device_ctrl            control;
     
-	enum __battery_status			(*status)(void); //获取电池状态
+    struct
+    {
+        uint32_t                    (*capacity)(void); //额定电池容量mA·H
+        uint32_t                    (*voltage)(void); //额定电池电压mV
+        
+    }                               rated;
+    
+    uint32_t                        (*voltage)(void); //电池电压mV
+	enum __battery_status           (*status)(void); //获取电池剩余百分百
 };
 
 /**

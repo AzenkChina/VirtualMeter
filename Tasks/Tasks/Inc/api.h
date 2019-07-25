@@ -15,6 +15,6 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void * api_query(char *name);
+extern void * api(const char *name);
 
 #endif /* __API_H__ */

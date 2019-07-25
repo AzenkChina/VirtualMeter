@@ -328,7 +328,7 @@ static void flush_data(void)
     
     clear_unit();
     
-    api_stream = (struct __protocol *)api_query("task_protocol");
+    api_stream = (struct __protocol *)api("task_protocol");
     
     if(!api_stream)
     {
@@ -408,7 +408,7 @@ static uint8_t display_list_show_next(void)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = (struct __protocol *)api_query("task_protocol");
+    api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);
@@ -455,7 +455,7 @@ static uint8_t display_list_show_last(void)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = (struct __protocol *)api_query("task_protocol");
+    api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);
@@ -498,7 +498,7 @@ static uint8_t display_list_show_index(uint8_t val)
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
     file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
-    api_stream = (struct __protocol *)api_query("task_protocol");
+    api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
     {
         return(disp_runs.index);

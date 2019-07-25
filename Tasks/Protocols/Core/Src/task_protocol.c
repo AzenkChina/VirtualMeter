@@ -42,7 +42,10 @@ static void proto_init(void)
     
     for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
     {
-        proto_table[cnt]->sched.init();
+    	if(proto_table[cnt]->sched.init)
+    	{
+			proto_table[cnt]->sched.init();
+		}
     }
 }
 
@@ -55,7 +58,10 @@ static void proto_loop(void)
     
     for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
     {
-        proto_table[cnt]->sched.loop();
+    	if(proto_table[cnt]->sched.loop)
+    	{
+			proto_table[cnt]->sched.loop();
+		}
     }
 }
 
@@ -68,7 +74,10 @@ static void proto_exit(void)
     
     for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
     {
-        proto_table[cnt]->sched.exit();
+    	if(proto_table[cnt]->sched.exit)
+    	{
+			proto_table[cnt]->sched.exit();
+		}
     }
 }
 
@@ -81,7 +90,10 @@ static void proto_reset(void)
     
     for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
     {
-        proto_table[cnt]->sched.reset();
+    	if(proto_table[cnt]->sched.reset)
+    	{
+			proto_table[cnt]->sched.reset();
+		}
     }
 }
 
@@ -100,7 +112,14 @@ static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, ui
 	
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
-		length = proto_table[cnt]->protocol.read(descriptor, buff, size, param);
+    	if(proto_table[cnt]->protocol.read)
+    	{
+			length = proto_table[cnt]->protocol.read(descriptor, buff, size, param);
+		}
+        else
+        {
+            length = 0;
+        }
         
         if(length)
         {
@@ -121,7 +140,14 @@ static uint16_t proto_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 	
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
-		length = proto_table[cnt]->protocol.write(descriptor, buff, size);
+    	if(proto_table[cnt]->protocol.write)
+    	{
+			length = proto_table[cnt]->protocol.write(descriptor, buff, size);
+		}
+        else
+        {
+            length = 0;
+        }
         
         if(!length)
         {
@@ -141,7 +167,10 @@ static uint16_t proto_stream_in(uint8_t channel, const uint8_t *frame, uint16_t 
 	
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
-		proto_table[cnt]->protocol.stream.in(channel, frame, length);
+    	if(proto_table[cnt]->protocol.stream.in)
+    	{
+			proto_table[cnt]->protocol.stream.in(channel, frame, length);
+		}
 	}
     
     return(0);
@@ -157,7 +186,14 @@ static uint16_t proto_stream_out(uint8_t channel, uint8_t *buff, uint16_t length
 	
 	for(cnt=0; cnt<PROTO_AMOUNT; cnt++)
 	{
-		result = proto_table[cnt]->protocol.stream.out(channel, buff, length);
+    	if(proto_table[cnt]->protocol.stream.out)
+    	{
+			result = proto_table[cnt]->protocol.stream.out(channel, buff, length);
+		}
+        else
+        {
+            result = 0;
+        }
         
         if(result)
         {

@@ -308,7 +308,7 @@ static void comm_loop(void)
         
 	    if(length)
 	    {
-            api_stream = (struct __protocol *)api_query("task_protocol");
+            api_stream = (struct __protocol *)api("task_protocol");
             
             if(api_stream)
             {
@@ -335,7 +335,7 @@ static void comm_loop(void)
         }
         
         //轮询注册的协议栈，检查是否有数据要从此端口发送
-        api_stream = (struct __protocol *)api_query("task_protocol");
+        api_stream = (struct __protocol *)api("task_protocol");
         
         if(!api_stream)
         {

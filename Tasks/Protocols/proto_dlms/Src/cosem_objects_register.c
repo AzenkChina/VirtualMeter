@@ -30,7 +30,7 @@ static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 	
     M_UINT2ID(OBJ_IN_ID(P), id);
     
-    api_metering = (struct __metering *)api_query("task_metering");
+    api_metering = (struct __metering *)api("task_metering");
     if(!api_metering)
     {
         return(OBJECT_ERR_LOWLEVEL);

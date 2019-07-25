@@ -26,7 +26,7 @@ static int metering_instant(lua_State *L)
     struct __metering *api_metering;
     int64_t val = 0;
     
-    api_metering = (struct __metering *)api.query("task_metering");
+    api_metering = (struct __metering *)api("task_metering");
     if(!api_metering)
     {
     	lua_pushnil(L);
@@ -38,12 +38,10 @@ static int metering_instant(lua_State *L)
     
     if(api_metering->instant(id, &val) == M_NULL)
     {
-        api.release();
     	lua_pushnil(L);
         return 1;
     }
     
-    api.release();
 	lua_pushnumber(L, ((lua_Number)val)/1000);
 	return 1;
 }
