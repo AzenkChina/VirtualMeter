@@ -6,8 +6,8 @@ LeftChar=1
 Open=0
 Top=0
 [Editors]
-Order=
-Focused=33
+Order=86
+Focused=86
 [Editor_1]
 Open=0
 Top=0
@@ -462,9 +462,9 @@ CursorRow=5
 TopLine=1
 LeftChar=1
 [Editor_86]
-CursorCol=44
-CursorRow=29
-TopLine=104
+CursorCol=6
+CursorRow=34
+TopLine=26
 LeftChar=1
 [Editor_105]
 CursorCol=1

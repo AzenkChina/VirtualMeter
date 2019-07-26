@@ -70,8 +70,29 @@ struct __disp_dot
     uint32_t                energy:4;
     //需量
     uint32_t                demand:4;
-    //其它计量数据
-    uint32_t                others:4;
+    //相角
+    uint32_t                angle:4;
+    //频率
+    uint32_t                freq:4;
+    //功率因数
+    uint32_t                pf:4;
+    
+    //备用1
+    uint32_t                reserve1:4;
+    //备用2
+    uint32_t                reserve2:4;
+    //备用3
+    uint32_t                reserve3:4;
+    //备用4
+    uint32_t                reserve4:4;
+    //备用5
+    uint32_t                reserve5:4;
+    //备用6
+    uint32_t                reserve6:4;
+    //备用7
+    uint32_t                reserve7:4;
+    //备用8
+    uint32_t                reserve8:4;
 };
 
 
@@ -275,9 +296,45 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.energy, select_unit(id));
         }
+        else if(M_UINTISPF(param))
+        {
+            if(disp_runs.dots.energy > 3)
+            {
+                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+            }
+            else
+            {
+                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+            }
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.pf, select_unit(id));
+        }
+        else if(M_UINTISANGLE(param))
+        {
+            if(disp_runs.dots.energy > 3)
+            {
+                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+            }
+            else
+            {
+                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+            }
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.angle, select_unit(id));
+        }
+        else if(M_UINTISFREQ(param))
+        {
+            if(disp_runs.dots.energy > 3)
+            {
+                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+            }
+            else
+            {
+                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+            }
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.freq, select_unit(id));
+        }
         else
         {
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.others, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, LCD_DOT_NONE, select_unit(id));
         }
     }
     else if(M_UINTISFMT(param))
@@ -658,22 +715,58 @@ static uint8_t display_config_demand_dot_set(uint8_t dot)
     return((uint8_t)disp_runs.dots.demand);
 }
 
-static uint8_t display_config_others_dot_get(void)
+static uint8_t display_config_angle_dot_get(void)
 {
-    return((uint8_t)disp_runs.dots.others);
+    return((uint8_t)disp_runs.dots.angle);
 }
 
-static uint8_t display_config_others_dot_set(uint8_t dot)
+static uint8_t display_config_angle_dot_set(uint8_t dot)
 {
 	uint32_t offset;
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
     file.read("display", offset, sizeof(disp_runs.dots), &dots);
-    disp_runs.dots.others = dot;
+    disp_runs.dots.angle = dot;
 	file.write("display", offset, sizeof(disp_runs.dots), &dots);
     
-    return((uint8_t)disp_runs.dots.others);
+    return((uint8_t)disp_runs.dots.angle);
+}
+
+static uint8_t display_config_freq_dot_get(void)
+{
+    return((uint8_t)disp_runs.dots.freq);
+}
+
+static uint8_t display_config_freq_dot_set(uint8_t dot)
+{
+	uint32_t offset;
+    struct __disp_dot dots;
+    
+	offset = STRUCT_OFFSET(struct __disp_param, dots);
+    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    disp_runs.dots.freq = dot;
+	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+    
+    return((uint8_t)disp_runs.dots.freq);
+}
+
+static uint8_t display_config_pf_dot_get(void)
+{
+    return((uint8_t)disp_runs.dots.pf);
+}
+
+static uint8_t display_config_pf_dot_set(uint8_t dot)
+{
+	uint32_t offset;
+    struct __disp_dot dots;
+    
+	offset = STRUCT_OFFSET(struct __disp_param, dots);
+    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    disp_runs.dots.pf = dot;
+	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+    
+    return((uint8_t)disp_runs.dots.pf);
 }
 
 static uint16_t display_config_list_write(uint8_t channel, void *id)
@@ -854,10 +947,22 @@ static const struct __display display =
                 .set            = display_config_demand_dot_set,
             },
             
-            .others             = 
+            .angle              = 
             {
-                .get            = display_config_others_dot_get,
-                .set            = display_config_others_dot_set,
+                .get            = display_config_angle_dot_get,
+                .set            = display_config_angle_dot_set,
+            },
+            
+            .freq               = 
+            {
+                .get            = display_config_freq_dot_get,
+                .set            = display_config_freq_dot_set,
+            },
+            
+            .pf                 = 
+            {
+                .get            = display_config_pf_dot_get,
+                .set            = display_config_pf_dot_set,
             },
         },
         
@@ -1028,7 +1133,7 @@ static void display_reset(void)
     lcd.control.suspend();
     status = TASK_NOTINIT;
     
-//...仅供调试使用
+//...Just for test
 //初始化EEPROM参数
 	uint32_t offset;
 	uint8_t val;
@@ -1050,11 +1155,17 @@ static void display_reset(void)
     descriptor[9] = 0;
     descriptor[10] = 0;
 	
+    
+    heap.set((void *)&dots, 0, sizeof(dots));
+    
 	dots.power = 3;
     dots.voltage = 1;
     dots.current = 3;
     dots.energy = 3;
     dots.demand = 4;
+    dots.angle = 3;
+    dots.freq = 2;
+    dots.pf = 3;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
 	file.write("display", offset, sizeof(dots), &dots);

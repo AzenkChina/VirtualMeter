@@ -51,24 +51,16 @@ enum __metering_item
   */
 enum __metering_quad
 {
-    M_QUAD_N = 0,//无
-	M_QUAD_I = 1,//1象限
-	M_QUAD_II = 2,//2象限
-	M_QUAD_III = 3,//3象限
-    M_QUAD_V = 4,//4象限
+    M_QUAD_N = 0x00,//无
+	M_QUAD_I = 0x01,//1象限
+	M_QUAD_II = 0x02,//2象限
+	M_QUAD_III = 0x04,//3象限
+    M_QUAD_V = 0x08,//4象限
     
-    M_PACT = 5,//正向有功
-    M_NACT = 6,//反向有功
-    M_PREACT = 7,//正向无功
-    M_NREACT = 8,//反向无功
-    
-    M_DPACT = 9,//正向有功-反向有功
-    M_DNACT = 10,//反向有功-正向有功
-    M_DPREACT = 11,//正向无功-反向无功
-    M_DNREACT = 12,//反向无功-正向无功
-    
-    M_TACT = 13,//总有功
-    M_TREACT = 14,//总无功
+	M_QUAD_NI = 0x10,//减1象限
+	M_QUAD_NII = 0x20,//减2象限
+	M_QUAD_NIII = 0x40,//减3象限
+    M_QUAD_NV = 0x80,//减4象限
 };
 
 /**
@@ -92,10 +84,10 @@ enum __metering_phase
 struct __metering_identifier
 {
     uint32_t item       :5;// enum __metering_item
-    uint32_t quad       :4;// enum __metering_quad
     uint32_t phase      :3;// enum __metering_phase
+    uint32_t quad       :8;// enum __metering_quad
     uint32_t rate       :4;//费率0 ~ 15
-	uint32_t offset		:16;//自定义字段
+	uint32_t offset		:12;//自定义字段
 };
 
 
@@ -215,14 +207,14 @@ struct __metering
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 //将一个计量数据标识转换成U32 ID
-#define M_ID2UINT(i,q,p,r,o)		((uint32_t)(((i&0x1f)<<27)|((q&0x0f)<<23)|((p&0x07)<<20)|((r&0x0f)<<16))|((o&0xffff)<<0))
+#define M_ID2UINT(i,p,q,r,o)		((uint32_t)(((i&0x1f)<<27)|((p&0x07)<<24)|((q&0xff)<<16)|((r&0x0f)<<12))|((o&0xfff)<<0))
 
 //将一个U32 ID转换成计量数据标识
 #define M_UINT2ID(val, i)           i.item = ((val>>27)&0x1f);\
-                                    i.quad = ((val>>23)&0x0f);\
-                                    i.phase = ((val>>20)&0x07);\
-                                    i.rate = ((val>>16)&0x0f);\
-									i.offset = ((val>>0)&0xffff)
+                                    i.phase = ((val>>24)&0x07);\
+                                    i.quad = ((val>>16)&0xff);\
+                                    i.rate = ((val>>12)&0x0f);\
+									i.offset = ((val>>0)&0xfff)
 
 
 //判断一个U32 ID是否为显示格式
@@ -239,7 +231,12 @@ struct __metering
 #define M_UINTISVOLTAGE(val)        (((val>>27)&0x1f) == M_VOLTAGE)
 //判断一个U32 ID是否为电流
 #define M_UINTISCURRENT(val)        (((val>>27)&0x1f) == M_CURRENT)
-
+//判断一个U32 ID是否为功率因数
+#define M_UINTISPF(val)             (((val>>27)&0x1f) == M_POWER_FACTOR)
+//判断一个U32 ID是否为相角
+#define M_UINTISANGLE(val)          (((val>>27)&0x1f) == M_ANGLE)
+//判断一个U32 ID是否为频率
+#define M_UINTISFREQ(val)           (((val>>27)&0x1f) == M_FREQUENCY)
 
 /* Exported function prototypes ----------------------------------------------*/
 

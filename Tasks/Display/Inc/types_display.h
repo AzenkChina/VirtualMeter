@@ -101,10 +101,24 @@ struct __display
             
             struct
             {
-                uint8_t             (*get)(void); //获取其它计量数据小数点显示位数
-                uint8_t             (*set)(uint8_t dot); //设置计量数据小数点显示位数
+                uint8_t             (*get)(void); //获取相角计量数据小数点显示位数
+                uint8_t             (*set)(uint8_t dot); //设置相角数据小数点显示位数
                 
-            }                       others;
+            }                       angle;
+            
+            struct
+            {
+                uint8_t             (*get)(void); //获取频率计量数据小数点显示位数
+                uint8_t             (*set)(uint8_t dot); //设置频率数据小数点显示位数
+                
+            }                       freq;
+            
+            struct
+            {
+                uint8_t             (*get)(void); //获取功率因数计量数据小数点显示位数
+                uint8_t             (*set)(uint8_t dot); //设置功率因数数据小数点显示位数
+                
+            }                       pf;
             
         }                           dot;
         

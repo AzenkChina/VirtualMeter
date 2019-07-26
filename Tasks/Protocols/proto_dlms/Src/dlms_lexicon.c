@@ -127,7 +127,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_PHASE_A, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -137,7 +137,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_PHASE_A, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -166,7 +166,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_PHASE_B, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -176,7 +176,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_PHASE_B, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -205,7 +205,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_VOLTAGE, M_PHASE_C, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -215,7 +215,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_VOLTAGE, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_VOLTAGE, M_PHASE_C, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -244,7 +244,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_PHASE_A, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -254,7 +254,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_A, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_PHASE_A, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -283,7 +283,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_PHASE_B, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -293,7 +293,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_B, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_PHASE_B, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -322,7 +322,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_PHASE_C, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -332,7 +332,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_C, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_PHASE_C, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -361,7 +361,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_N, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_CURRENT, M_PHASE_N, M_QUAD_N, 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_READ_ONLY,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -371,7 +371,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_CURRENT, M_QUAD_N, M_PHASE_N, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_CURRENT, M_PHASE_N, M_QUAD_N, 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_NO_ACCESS,    /** 权限二 */ \
@@ -400,7 +400,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_P_ENERGY, M_PACT, M_PHASE_T, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_P_ENERGY, M_PHASE_T, (M_QUAD_I|M_QUAD_V), 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -410,7 +410,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_PACT, M_PHASE_T, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_P_ENERGY, M_PHASE_T, (M_QUAD_I|M_QUAD_V), 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -439,7 +439,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
         {\
             /** 属性二 */
             {"Register", 0, "", 0,    /** 函数表，函数序号 */ \
-                M_ID2UINT(M_P_ENERGY, M_NACT, M_PHASE_T, 0, 0),  /** 携带参数 */ \
+                M_ID2UINT(M_P_ENERGY, M_PHASE_T, (M_QUAD_II|M_QUAD_III), 0, 0),  /** 携带参数 */ \
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
@@ -449,7 +449,7 @@ static const struct __cosem_entry_register cosem_class_register[] =
             
             /** 属性三 */
             {"", 0, "", 0,    /** 函数表，函数序号 */
-                M_ID2UINT(M_P_ENERGY, M_NACT, M_PHASE_T, 0, 0),  /** 携带参数 */
+                M_ID2UINT(M_P_ENERGY, M_PHASE_T, (M_QUAD_II|M_QUAD_III), 0, 0),  /** 携带参数 */
                 {\
                     ATTRIBUTE_NO_ACCESS,    /** 权限一 */ \
                     ATTRIBUTE_READ_ONLY,    /** 权限二 */ \
