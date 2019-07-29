@@ -26,6 +26,10 @@ enum __appl_result
 {
     APPL_SUCCESS = 0,
     APPL_DENIED,
+    APPL_NOMEM,
+    APPL_BLOCK_MISS,
+    APPL_OBJ_MISS,
+    APPL_OBJ_OVERFLOW,
     APPL_UNSUPPORT,
     APPL_ENC_FAILD,
     APPL_OTHERS,
@@ -57,21 +61,22 @@ struct __appl_request
 /**	
   * @brief 数据对象
   */
-struct __cosem_entry
+struct __cosem_request
 {
-    uint8_t Actived;
+    uint8_t Actived; //激活的条目数量
     
     struct
     {
-        TypeObject Object;
-        ObjectPara Para;
+        TypeObject Object; //数据对象
+        ObjectPara Para; //对象参数
+        uint32_t Block; //块计数
         
-    } Entry[DLMS_REQ_LIST_MAX];
+    } Entry[DLMS_REQ_LIST_MAX]; //总条目
 };
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static struct __cosem_entry *current_entry = (void *)0;
+static struct __cosem_request *Request = (void *)0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -583,13 +588,13 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
     uint32_t param;
     union __dlms_right right;
     
-    current_entry = (struct __cosem_entry *)dlms_asso_storage();
-    if(!current_entry)
+    Request = (struct __cosem_request *)dlms_asso_storage();
+    if(!Request)
     {
-        current_entry = (struct __cosem_entry *)dlms_asso_attach_storage(sizeof(struct __cosem_entry));
+        Request = (struct __cosem_request *)dlms_asso_attach_storage(sizeof(struct __cosem_request));
     }
     
-    if(!current_entry)
+    if(!Request)
     {
         return(APPL_OTHERS);
     }
@@ -619,13 +624,39 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         return(APPL_UNSUPPORT);
                     }
                     
-                    current_entry->Actived = 1;
-                    current_entry->Entry[0].Object = cosem_load_object(table, index);
+                    Request->Actived = 1;//暂时不支持多实例
+                    Request->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Request->Entry[0].Para.Iterator.Begin = 0;//初始化迭代器
+                    Request->Entry[0].Para.Iterator.End = 0;//初始化迭代器
+                    Request->Entry[0].Para.Iterator.Status = ITER_NONE;//初始化迭代器
+                    Request->Entry[0].Block = 0;//块计数清零
+                    Request->Entry[0].Object = cosem_load_object(table, index);
                     
                     break;
                 }
                 case GET_NEXT:
                 {
+                    //暂时不支持多实例
+                    if(Request->Actived != 1)
+                    {
+                        return(APPL_OBJ_OVERFLOW);
+                    }
+                    
+                    //块计数验证
+                    if((Request->Entry[0].Block + 1) != request->info->block)
+                    {
+                        return(APPL_BLOCK_MISS);
+                    }
+                    
+                    //查看对象是否还存在
+                    if(!Request->Entry[0].Object)
+                    {
+                        return(APPL_OBJ_MISS);
+                    }
+                    
+                    //更新块计数
+                    Request->Entry[0].Block = request->info->block;
+                    
                     break;
                 }
                 case GET_WITH_LIST:
@@ -706,7 +737,15 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
 /**	
   * @brief 
   */
-static void reply_exception(enum __appl_result result, uint16_t buffer_length, uint16_t *filled_length)
+static void reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
+{
+    
+}
+
+/**	
+  * @brief 
+  */
+static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
     
 }
@@ -721,10 +760,12 @@ void dlms_appl_entrance(const uint8_t *info,
                         uint16_t buffer_length,
                         uint16_t *filled_length)
 {
+    uint8_t cnt;
     enum __appl_result result;
     struct __appl_request request;
+    ObjectErrs Errs;
     
-    current_entry = (void *)0;
+    Request = (void *)0;
     
     heap.set(&request, 0, sizeof(request));
     
@@ -733,42 +774,136 @@ void dlms_appl_entrance(const uint8_t *info,
     
     if(result != APPL_SUCCESS)
     {
-        reply_exception(result, buffer_length, filled_length);
+        reply_exception(result, buffer, buffer_length, filled_length);
         return;
     }
     
     //生成访问对象
     result = make_cosem_instance(&request);
     
-    if(!current_entry)
+    if(!Request)
     {
         return;
     }
     
+    //生成访问对象失败
     if(result != APPL_SUCCESS)
     {
-        current_entry = (void *)0;
-        reply_exception(result, buffer_length, filled_length);
+        //清零链接内存
+        heap.set(Request, 0, sizeof(struct __cosem_request));
+        Request = (void *)0;
+        reply_exception(result, buffer, buffer_length, filled_length);
         return;
     }
     
-//    //遍历访问所有生成的访问对象
-//    for(cnt=0; cnt<entry_amount; cnt++)
-//    {
-//        current_entry = ((struct __cosem_entry *)(*data)) + cnt;
-//        
-//        //...调用
-//        
-//        current_entry = (void *)0;
-//    }
+    //设置好所有访问对象对应的输出缓冲
+    for(cnt=0; cnt<Request->Actived; cnt++)
+    {
+        Request->Entry[cnt].Para.Output.Buffer = heap.dalloc(dlms_asso_mtu());
+        
+        //如果任意一个内存请求失败
+        if(!Request->Entry[cnt].Para.Output.Buffer)
+        {
+            //释放所有申请的内存
+            for(cnt=0; cnt<Request->Actived; cnt++)
+            {
+                if(Request->Entry[cnt].Para.Output.Buffer)
+                {
+                    heap.free(Request->Entry[cnt].Para.Output.Buffer);
+                }
+            }
+            
+            //清零链接内存
+            heap.set(Request, 0, sizeof(struct __cosem_request));
+            
+            reply_exception(APPL_NOMEM, buffer, buffer_length, filled_length);
+            
+            return;
+        }
+        else
+        {
+            Request->Entry[cnt].Para.Output.Size = dlms_asso_mtu();
+        }
+    }
     
-    current_entry = (void *)0;
+    //遍历访问所有请求对象
+    for(cnt=0; cnt<Request->Actived; cnt++)
+    {
+        Errs = Request->Entry[cnt].Object(&Request->Entry[cnt].Para);
+        if(Errs != OBJECT_NOERR)
+        {
+            break;
+        }
+    }
     
+    //任意一个数据项返回失败
+    if(Errs != OBJECT_NOERR)
+    {
+        //释放所有申请的内存
+        for(cnt=0; cnt<Request->Actived; cnt++)
+        {
+            if(Request->Entry[cnt].Para.Output.Buffer)
+            {
+                heap.free(Request->Entry[cnt].Para.Output.Buffer);
+            }
+        }
+        
+        //清零链接内存
+        heap.set(Request, 0, sizeof(struct __cosem_request));
+        
+        reply_exception(APPL_OTHERS, buffer, buffer_length, filled_length);
+        
+        return;
+    }
     
-    //...组包返回数据
+    //多访问实例
+    if(Request->Actived > 1)
+    {
+        //多实例不支持重入
+        for(cnt=0; cnt<Request->Actived; cnt++)
+        {
+            if(Request->Entry[cnt].Para.Iterator.Status != ITER_NONE)
+            {
+                //释放所有申请的内存
+                for(cnt=0; cnt<Request->Actived; cnt++)
+                {
+                    if(Request->Entry[cnt].Para.Output.Buffer)
+                    {
+                        heap.free(Request->Entry[cnt].Para.Output.Buffer);
+                    }
+                }
+                
+                //清零链接内存
+                heap.set(Request, 0, sizeof(struct __cosem_request));
+                
+                reply_exception(APPL_OTHERS, buffer, buffer_length, filled_length);
+                
+                return;
+            }
+        }
+    }
     
-    //...释放 struct __appl_request request;
+    //组包返回数据
+    reply_normal(&request, buffer, buffer_length, filled_length);
     
-    //...判断对象生命周期是否已经结束
+    //释放所有申请的内存
+    for(cnt=0; cnt<Request->Actived; cnt++)
+    {
+        if(Request->Entry[cnt].Para.Output.Buffer)
+        {
+            heap.free(Request->Entry[cnt].Para.Output.Buffer);
+        }
+    }
     
+    //判断对象生命周期是否已经结束
+    if(Request->Actived == 1)
+    {
+        //单访问实例
+        if(Request->Entry[0].Para.Iterator.Status != ITER_ONGOING)
+        {
+            heap.set(Request, 0, sizeof(struct __cosem_request));
+        }
+    }
+    
+    Request = (void *)0;
 }
