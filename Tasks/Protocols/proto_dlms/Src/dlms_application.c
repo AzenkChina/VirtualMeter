@@ -28,6 +28,7 @@ enum __appl_result
     APPL_DENIED,
     APPL_NOMEM,
     APPL_BLOCK_MISS,
+    APPL_OBJ_NODEF,
     APPL_OBJ_MISS,
     APPL_OBJ_OVERFLOW,
     APPL_UNSUPPORT,
@@ -64,19 +65,20 @@ struct __appl_request
 struct __cosem_request
 {
     uint8_t Actived; //激活的条目数量
+    uint32_t Block; //块计数
     
     struct
     {
         TypeObject Object; //数据对象
         ObjectPara Para; //对象参数
-        uint32_t Block; //块计数
+        ObjectErrs Errs; //调用结果
         
     } Entry[DLMS_REQ_LIST_MAX]; //总条目
 };
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static struct __cosem_request *Request = (void *)0;
+static struct __cosem_request *Current = (void *)0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -582,21 +584,24 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
   */
 static enum __appl_result make_cosem_instance(const struct __appl_request *request)
 {
+    uint8_t cnt;
     struct __cosem_request_desc desc;
     const char *table;
     uint8_t index;
     uint32_t param;
     union __dlms_right right;
     
-    Request = (struct __cosem_request *)dlms_asso_storage();
-    if(!Request)
+    //获取当前链接下附属的对象内存
+    Current = (struct __cosem_request *)dlms_asso_storage();
+    if(!Current)
     {
-        Request = (struct __cosem_request *)dlms_asso_attach_storage(sizeof(struct __cosem_request));
-    }
-    
-    if(!Request)
-    {
-        return(APPL_OTHERS);
+        //生成当前链接下附属的对象内存
+        Current = (struct __cosem_request *)dlms_asso_attach_storage(sizeof(struct __cosem_request));
+        
+        if(!Current)
+        {
+            return(APPL_OTHERS);
+        }
     }
     
     switch(request->service)
@@ -624,43 +629,69 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         return(APPL_UNSUPPORT);
                     }
                     
-                    Request->Actived = 1;//暂时不支持多实例
-                    Request->Entry[0].Para.Input.ID = param;//赋值数据标识
-                    Request->Entry[0].Para.Iterator.Begin = 0;//初始化迭代器
-                    Request->Entry[0].Para.Iterator.End = 0;//初始化迭代器
-                    Request->Entry[0].Para.Iterator.Status = ITER_NONE;//初始化迭代器
-                    Request->Entry[0].Block = 0;//块计数清零
-                    Request->Entry[0].Object = cosem_load_object(table, index);
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 1;//一个请求条目
+                    
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Object = cosem_load_object(table, index);
                     
                     break;
                 }
                 case GET_NEXT:
                 {
                     //暂时不支持多实例
-                    if(Request->Actived != 1)
+                    if(Current->Actived < 1)
                     {
                         return(APPL_OBJ_OVERFLOW);
                     }
                     
                     //块计数验证
-                    if((Request->Entry[0].Block + 1) != request->info->block)
+                    if((Current->Block + 1) != request->info->block)
                     {
                         return(APPL_BLOCK_MISS);
                     }
                     
-                    //查看对象是否还存在
-                    if(!Request->Entry[0].Object)
-                    {
-                        return(APPL_OBJ_MISS);
-                    }
-                    
                     //更新块计数
-                    Request->Entry[0].Block = request->info->block;
+                    Current->Block = request->info->block;
                     
                     break;
                 }
                 case GET_WITH_LIST:
                 {
+                    desc.request = GET_REQUEST;
+                    desc.level = dlms_asso_level();
+                    
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 0;
+                    
+                    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                    {
+                        if(!request->info[cnt].active)
+                        {
+                            break;
+                        }
+                        
+                        desc.descriptor.classid = request->info[cnt].classid[0];
+                        desc.descriptor.classid <<= 8;
+                        desc.descriptor.classid += request->info[cnt].classid[1];
+                        heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
+                        desc.descriptor.index = request->info[cnt].index[0];
+                        desc.descriptor.selector = 0;
+                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        
+                        if(!table)
+                        {
+                            return(APPL_UNSUPPORT);
+                        }
+                        
+                        Current->Actived += 1;//一个请求条目
+                        
+                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
+                        Current->Entry[cnt].Para.Input.ID = param;//赋值数据标识
+                        Current->Entry[cnt].Object = cosem_load_object(table, index);
+                    }
+                    
                     break;
                 }
                 default:
@@ -737,9 +768,446 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
 /**	
   * @brief 
   */
-static void reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
+static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
+    uint8_t cnt = 0;
+    uint8_t alive = 0;
+    uint8_t entry = 0;
+    uint8_t *plain;
+    uint16_t plain_length = 0;
     
+    mbedtls_gcm_context ctx;
+    uint8_t akey[32] = {0};
+    uint8_t akey_length;
+    uint8_t ekey[32] = {0};
+    uint8_t ekey_length;
+    uint8_t iv[12] = {0};
+    uint16_t cipher_length = 0;
+    uint8_t tag[12];
+    uint8_t *add = (void *)0;
+    int ret;
+    
+    //判断是否有条目的生命周期还未结束
+    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+    {
+        if(Current->Entry[cnt].Object)
+        {
+            entry += 1;
+            
+            //迭代器状态不在运行中，或者迭代器起始等于终止，或者调用结果为异常，生命周期结束
+            if((Current->Entry[cnt].Para.Iterator.Status == ITER_ONGOING) && \
+                (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End) && \
+                Current->Entry[cnt].Errs == OBJECT_NOERR)
+            {
+                alive = 0xff;
+            }
+        }
+    }
+    
+    if(!entry)
+    {
+        return(APPL_OBJ_MISS);
+    }
+    
+    //获取临时缓冲，组包未加密报文
+    plain = heap.dalloc(dlms_asso_mtu() + 16);
+    
+    if(!plain)
+    {
+        return(APPL_NOMEM);
+    }
+    
+    //组包返回的报文（明文）
+    switch(request->service)
+    {
+        case GET_REQUEST:
+        case GLO_GET_REQUEST:
+        case DED_GET_REQUEST:
+        {
+            plain[0] = GET_RESPONSE;
+            plain[2] = request->id;
+            
+            plain_length = 3;
+            
+            if(entry > 1)
+            {
+                //Get-Response-With-List
+                plain[1] = GET_RESPONSE_WITH_LIST;
+                
+                for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                {
+                    if(!Current->Entry[cnt].Object)
+                    {
+                        continue;
+                    }
+                    
+                    //Get-Response-With-List 不允许 Get-Response-With-Datablock
+                    if((Current->Entry[cnt].Para.Iterator.Status == ITER_ONGOING) && \
+                        (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End))
+                    {
+                        Current->Entry[cnt].Para.Iterator.Status = ITER_NONE;
+                        Current->Entry[cnt].Errs = OBJECT_ERR_MEM;
+                    }
+                    
+                    if(Current->Entry[cnt].Errs == OBJECT_NOERR)
+                    {
+                        if((Current->Entry[cnt].Para.Output.Filled > Current->Entry[cnt].Para.Output.Size) || \
+                            ((Current->Entry[cnt].Para.Output.Filled + plain_length) > (dlms_asso_mtu() - 20)))
+                        {
+                            plain[1] = GET_RESPONSE_NORMAL;
+                            plain[3] = 1;
+                            plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                            plain_length = 5;
+                            break;
+                        }
+                        else
+                        {
+                            plain[plain_length + 0] = 0;
+                            plain_length += 1;
+                            plain_length += heap.copy(&plain[plain_length], Current->Entry[cnt].Para.Output.Buffer, Current->Entry[cnt].Para.Output.Filled);
+                        }
+                    }
+                    else
+                    {
+                        plain[plain_length + 0] = 1;
+                        plain[plain_length + 1] = (uint8_t)Current->Entry[cnt].Errs;
+                        plain_length += 2;
+                    }
+                }
+            }
+            else
+            {
+                if(alive)
+                {
+                    //Get-Response-With-Datablock
+                    if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
+                        (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
+                    {
+                        plain[1] = GET_RESPONSE_NORMAL;
+                        plain[3] = 1;
+                        plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                        plain_length = 5;
+                        
+                        Current->Entry[0].Para.Iterator.Status = ITER_NONE;
+                    }
+                    else
+                    {
+                        plain[1] = GET_RESPONSE_WITH_BLOCK;
+                        
+                        if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
+                            (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                        {
+                            plain[3] = (uint8_t)IS_LAST_BLOCK;
+                        }
+                        else
+                        {
+                            plain[3] = (uint8_t)NOT_LAST_BLOCK;
+                        }
+                        
+                        plain[4] = (uint8_t)(Current->Block >> 24);
+                        plain[5] = (uint8_t)(Current->Block >> 16);
+                        plain[6] = (uint8_t)(Current->Block >> 8);
+                        plain[7] = (uint8_t)(Current->Block >> 0);
+                        
+                        plain[8] = 0;
+                        
+                        plain_length = 9;
+                        
+                        plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
+                        
+                        plain_length += heap.copy(&plain[plain_length], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
+                    }
+                }
+                else
+                {
+                    //Get-Response-Normal
+                    plain[1] = GET_RESPONSE_NORMAL;
+                    if(Current->Entry[0].Errs == OBJECT_NOERR)
+                    {
+                        if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
+                            (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
+                        {
+                            plain[3] = 1;
+                            plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                            plain_length = 5;
+                        }
+                        else
+                        {
+                            plain[3] = 0;
+                            plain_length = 4;
+                            plain_length += heap.copy(&plain[4], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
+                        }
+                    }
+                    else
+                    {
+                        plain[3] = 1;
+                        plain[4] = (uint8_t)Current->Entry[0].Errs;
+                        plain_length = 5;
+                    }
+                }
+            }
+            
+            break;
+        }
+        case SET_REQUEST:
+        case GLO_SET_REQUEST:
+        case DED_SET_REQUEST:
+        {
+            switch(request->type)
+            {
+                case SET_NORMAL:
+                {
+                    break;
+                }
+                case SET_FIRST_BLOCK:
+                {
+                    break;
+                }
+                case SET_WITH_BLOCK:
+                {
+                    break;
+                }
+                case SET_WITH_LIST:
+                case SET_WITH_LIST_AND_FIRST_BLOCK:
+                default:
+                {
+                    heap.free(plain);
+                    return(APPL_UNSUPPORT);
+                }
+            }
+        }
+        case ACTION_REQUEST:
+        case GLO_ACTION_REQUEST:
+        case DED_ACTION_REQUEST:
+        {
+            switch(request->type)
+            {
+                case ACTION_NORMAL:
+                {
+                    break;
+                }
+                case ACTION_NEXT_BLOCK:
+                {
+                    break;
+                }
+                case ACTION_FIRST_BLOCK:
+                {
+                    break;
+                }
+                case ACTION_WITH_LIST:
+                case ACTION_WITH_LIST_AND_FIRST_BLOCK:
+                case ACTION_WITH_BLOCK:
+                default:
+                {
+                    heap.free(plain);
+                    return(APPL_UNSUPPORT);
+                }
+            }
+        }
+        default:
+        {
+            heap.free(plain);
+            return(APPL_UNSUPPORT);
+        }
+    }
+    
+    //判断是否需要加密报文
+    switch(request->service)
+    {
+        case GLO_GET_REQUEST:
+        case GLO_SET_REQUEST:
+        case GLO_ACTION_REQUEST:
+        {
+            ekey_length = dlms_asso_ekey(ekey);
+            akey_length = dlms_asso_akey(akey);
+            dlms_asso_callingtitle(iv);
+            dlms_asso_fc(&iv[8]);
+            break;
+        }
+        case DED_GET_REQUEST:
+        case DED_SET_REQUEST:
+        case DED_ACTION_REQUEST:
+        {
+            ekey_length = dlms_asso_dedkey(ekey);
+            akey_length = dlms_asso_akey(akey);
+            dlms_asso_callingtitle(iv);
+            dlms_asso_fc(&iv[8]);
+            break;
+        }
+        default:
+        {
+            if(plain_length > buffer_length)
+            {
+                plain_length = buffer_length;
+            }
+            
+            *filled_length = heap.copy(buffer, plain, plain_length);
+            
+            heap.free(plain);
+            return(APPL_SUCCESS);
+        }
+    }
+    
+    //加密
+    switch(request->service)
+    {
+        case GLO_GET_REQUEST:
+        case GLO_SET_REQUEST:
+        case GLO_ACTION_REQUEST:
+        case DED_GET_REQUEST:
+        case DED_SET_REQUEST:
+        case DED_ACTION_REQUEST:
+        {
+            buffer[0] = ((uint8_t)request->service + 8);
+            cipher_length = 1;
+            
+            if((request->sc & 0xf0) == 0x10)
+            {
+                cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+                buffer[cipher_length] = request->sc;
+                cipher_length += 1;
+                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+                
+                mbedtls_gcm_init(&ctx);
+                
+                ret = mbedtls_gcm_setkey(&ctx,
+                                         MBEDTLS_CIPHER_ID_AES,
+                                         ekey,
+                                         ekey_length*8);
+                
+                if(ret != 0)
+                        goto enc_faild;
+                
+                add = heap.dalloc(1 + akey_length + plain_length);
+                if(!add)
+                        goto enc_faild;
+                
+                add[0] = request->sc;
+                heap.copy(&add[1], akey, akey_length);
+                heap.copy(&add[1+akey_length], plain, plain_length);
+                
+                ret = mbedtls_gcm_crypt_and_tag(&ctx,
+                                                MBEDTLS_GCM_ENCRYPT,
+                                                0,
+                                                iv,
+                                                sizeof(iv),
+                                                add,
+                                                (1 + akey_length + plain_length),
+                                                (void *)0,
+                                                (void *)0,
+                                                sizeof(tag),
+                                                tag);
+                heap.free(add);
+                
+                if(ret != 0)
+                        goto enc_faild;
+                
+                mbedtls_gcm_free(&ctx);
+                
+                cipher_length += heap.copy(&buffer[cipher_length], plain, plain_length);
+                cipher_length += heap.copy(&buffer[cipher_length], tag, sizeof(tag));
+                *filled_length = cipher_length;
+            }
+            else if((request->sc & 0xf0) == 0x20)
+            {
+                cipher_length += axdr.length.encode((5+plain_length), &buffer[cipher_length]);
+                buffer[cipher_length] = request->sc;
+                cipher_length += 1;
+                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+                
+                mbedtls_gcm_init(&ctx);
+                
+                ret = mbedtls_gcm_setkey(&ctx,
+                                         MBEDTLS_CIPHER_ID_AES,
+                                         ekey,
+                                         ekey_length*8);
+                
+                if(ret != 0)
+                        goto enc_faild;
+                
+                ret = mbedtls_gcm_crypt_and_tag(&ctx,
+                                                MBEDTLS_GCM_ENCRYPT,
+                                                plain_length,
+                                                iv,
+                                                sizeof(iv),
+                                                (void *)0,
+                                                0,
+                                                plain,
+                                                (buffer + cipher_length),
+                                                0,
+                                                (void *)0);
+                if(ret != 0)
+                        goto enc_faild;
+                
+                mbedtls_gcm_free(&ctx);
+                
+                *filled_length = cipher_length + plain_length;
+            }
+            else if((request->sc & 0xf0) == 0x30)
+            {
+                cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+                buffer[cipher_length] = request->sc;
+                cipher_length += 1;
+                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+                
+                mbedtls_gcm_init(&ctx);
+                
+                ret = mbedtls_gcm_setkey(&ctx,
+                                         MBEDTLS_CIPHER_ID_AES,
+                                         ekey,
+                                         ekey_length*8);
+                
+                if(ret != 0)
+                        goto enc_faild;
+                
+                add = heap.dalloc(1 + akey_length);
+                if(!add)
+                        goto enc_faild;
+                add[0] = request->sc;
+                heap.copy(&add[1], akey, akey_length);
+                
+                ret = mbedtls_gcm_crypt_and_tag(&ctx,
+                                                MBEDTLS_GCM_ENCRYPT,
+                                                plain_length,
+                                                iv,
+                                                sizeof(iv),
+                                                add,
+                                                (1 + akey_length),
+                                                plain,
+                                                (buffer + cipher_length),
+                                                sizeof(tag),
+                                                tag);
+                heap.free(add);
+                
+                if(ret != 0)
+                        goto enc_faild;
+                
+                mbedtls_gcm_free(&ctx);
+                
+                cipher_length += plain_length;
+                cipher_length += heap.copy((buffer + cipher_length), tag, sizeof(tag));
+                
+                *filled_length = cipher_length;
+            }
+            else
+            {
+                goto enc_faild;
+            }
+            
+            break;
+        }
+        default:
+        {
+            goto enc_faild;
+            break;
+        }
+    }
+    
+    heap.free(plain);
+    return(APPL_SUCCESS);
+enc_faild:
+    heap.free(plain);
+    return(APPL_ENC_FAILD);
 }
 
 /**	
@@ -760,150 +1228,144 @@ void dlms_appl_entrance(const uint8_t *info,
                         uint16_t buffer_length,
                         uint16_t *filled_length)
 {
-    uint8_t cnt;
+    uint8_t cnt = 0;
+    uint8_t alive = 0;
+    uint8_t *cosem_data = (uint8_t *)0;
     enum __appl_result result;
     struct __appl_request request;
-    ObjectErrs Errs;
     
-    Request = (void *)0;
+    Current = (void *)0;
     
     heap.set(&request, 0, sizeof(request));
     
+    //step 1
     //解析报文
+    //去除加密，并且索引报文中有效字段
     result = parse_dlms_frame(info, length, &request);
     
+    //解析报文失败
     if(result != APPL_SUCCESS)
     {
         reply_exception(result, buffer, buffer_length, filled_length);
         return;
     }
     
+    //step 2
     //生成访问对象
     result = make_cosem_instance(&request);
     
-    if(!Request)
-    {
-        return;
-    }
-    
     //生成访问对象失败
-    if(result != APPL_SUCCESS)
+    if((result != APPL_SUCCESS) || (!Current))
     {
-        //清零链接内存
-        heap.set(Request, 0, sizeof(struct __cosem_request));
-        Request = (void *)0;
+        //清零访问对象
+        if(Current)
+        {
+            heap.set(Current, 0, sizeof(struct __cosem_request));
+            Current = (void *)0;
+        }
+        
         reply_exception(result, buffer, buffer_length, filled_length);
+        
         return;
     }
     
-    //设置好所有访问对象对应的输出缓冲
-    for(cnt=0; cnt<Request->Actived; cnt++)
+    //检查生成的访问对象是否合法
+    if((Current->Actived == 0) || (Current->Actived > DLMS_REQ_LIST_MAX))
     {
-        Request->Entry[cnt].Para.Output.Buffer = heap.dalloc(dlms_asso_mtu());
-        
-        //如果任意一个内存请求失败
-        if(!Request->Entry[cnt].Para.Output.Buffer)
+        reply_exception(APPL_OBJ_OVERFLOW, buffer, buffer_length, filled_length);
+        Current = (void *)0;
+        return;
+    }
+    else
+    {
+        for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
         {
-            //释放所有申请的内存
-            for(cnt=0; cnt<Request->Actived; cnt++)
+            if(Current->Entry[cnt].Object)
             {
-                if(Request->Entry[cnt].Para.Output.Buffer)
-                {
-                    heap.free(Request->Entry[cnt].Para.Output.Buffer);
-                }
+                alive += 1;
             }
-            
-            //清零链接内存
-            heap.set(Request, 0, sizeof(struct __cosem_request));
-            
-            reply_exception(APPL_NOMEM, buffer, buffer_length, filled_length);
-            
+        }
+        
+        if(Current->Actived != alive)
+        {
+            reply_exception(APPL_OBJ_OVERFLOW, buffer, buffer_length, filled_length);
+            Current = (void *)0;
             return;
         }
-        else
-        {
-            Request->Entry[cnt].Para.Output.Size = dlms_asso_mtu();
-        }
     }
     
-    //遍历访问所有请求对象
-    for(cnt=0; cnt<Request->Actived; cnt++)
+    //step 3
+    //获取访问对象对应的输出缓冲
+    cosem_data = heap.dalloc((dlms_asso_mtu() + Current->Actived * 16));
+    if(!cosem_data)
     {
-        Errs = Request->Entry[cnt].Object(&Request->Entry[cnt].Para);
-        if(Errs != OBJECT_NOERR)
-        {
-            break;
-        }
-    }
-    
-    //任意一个数据项返回失败
-    if(Errs != OBJECT_NOERR)
-    {
-        //释放所有申请的内存
-        for(cnt=0; cnt<Request->Actived; cnt++)
-        {
-            if(Request->Entry[cnt].Para.Output.Buffer)
-            {
-                heap.free(Request->Entry[cnt].Para.Output.Buffer);
-            }
-        }
-        
         //清零链接内存
-        heap.set(Request, 0, sizeof(struct __cosem_request));
-        
-        reply_exception(APPL_OTHERS, buffer, buffer_length, filled_length);
-        
+        heap.set(Current, 0, sizeof(struct __cosem_request));
+        reply_exception(APPL_NOMEM, buffer, buffer_length, filled_length);
+        Current = (void *)0;
         return;
     }
     
-    //多访问实例
-    if(Request->Actived > 1)
+    //均分内存给访问对象内的有效条目
+    alive = 0;
+    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
     {
-        //多实例不支持重入
-        for(cnt=0; cnt<Request->Actived; cnt++)
+        if(Current->Entry[cnt].Object)
         {
-            if(Request->Entry[cnt].Para.Iterator.Status != ITER_NONE)
+            Current->Entry[cnt].Para.Output.Buffer = cosem_data + (dlms_asso_mtu() / Current->Actived + 16) * alive;
+            Current->Entry[cnt].Para.Output.Size = (dlms_asso_mtu() - 20) / Current->Actived;
+            alive += 1;
+        }
+    }
+    
+    //step 4
+    //遍历访问每个条目
+    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+    {
+        if(Current->Entry[cnt].Object)
+        {
+            Current->Entry[cnt].Errs = Current->Entry[cnt].Object(&Current->Entry[cnt].Para);
+        }
+    }
+    
+    //step 5
+    //组包返回数据
+    result = reply_normal(&request, buffer, buffer_length, filled_length);
+    
+    if(result != APPL_SUCCESS)
+    {
+        reply_exception(result, buffer, buffer_length, filled_length);
+    }
+    
+    //step 6
+    //判断条目生命周期是否结束
+    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+    {
+        if(Current->Entry[cnt].Object)
+        {
+            //迭代器状态不在运行中，或者迭代器起始等于终止，或者调用结果为异常，生命周期结束
+            if((Current->Entry[cnt].Para.Iterator.Status != ITER_ONGOING) || \
+                (Current->Entry[cnt].Para.Iterator.Begin == Current->Entry[cnt].Para.Iterator.End) || \
+                Current->Entry[cnt].Errs != OBJECT_NOERR)
             {
-                //释放所有申请的内存
-                for(cnt=0; cnt<Request->Actived; cnt++)
-                {
-                    if(Request->Entry[cnt].Para.Output.Buffer)
-                    {
-                        heap.free(Request->Entry[cnt].Para.Output.Buffer);
-                    }
-                }
-                
-                //清零链接内存
-                heap.set(Request, 0, sizeof(struct __cosem_request));
-                
-                reply_exception(APPL_OTHERS, buffer, buffer_length, filled_length);
-                
-                return;
+                //清零条目
+                heap.set((void *)&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
             }
         }
     }
     
-    //组包返回数据
-    reply_normal(&request, buffer, buffer_length, filled_length);
-    
-    //释放所有申请的内存
-    for(cnt=0; cnt<Request->Actived; cnt++)
+    //重新计算激活的条目数
+    Current->Actived = 0;
+    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
     {
-        if(Request->Entry[cnt].Para.Output.Buffer)
+        if(Current->Entry[cnt].Object)
         {
-            heap.free(Request->Entry[cnt].Para.Output.Buffer);
+            Current->Actived += 1;
         }
     }
     
-    //判断对象生命周期是否已经结束
-    if(Request->Actived == 1)
-    {
-        //单访问实例
-        if(Request->Entry[0].Para.Iterator.Status != ITER_ONGOING)
-        {
-            heap.set(Request, 0, sizeof(struct __cosem_request));
-        }
-    }
+    //释放内存
+    heap.free(cosem_data);
     
-    Request = (void *)0;
+    Current = (void *)0;
 }

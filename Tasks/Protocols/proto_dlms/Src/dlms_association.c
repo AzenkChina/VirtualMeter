@@ -84,6 +84,7 @@ struct __dlms_association
     uint32_t fc;
     struct __user_info info;
     void *appl;
+    uint16_t sz_appl;
 };
 
 /**	
@@ -119,7 +120,7 @@ struct __aarq_request
 //DLMS 配置参数
 
 //DLMS 最大报文长度
-#define DLMS_CONFIG_MAX_BLOCK_SIZE              ((uint16_t)(512))
+#define DLMS_CONFIG_MAX_BLOCK_SIZE              ((uint16_t)(512)) //>=32
 
 //DLMS 同时最多支持的ASSOCIATION数量
 #define DLMS_CONFIG_MAX_ASSO                    ((uint8_t)(6))
@@ -1483,6 +1484,8 @@ static void asso_aarq_high(struct __dlms_association *asso,
                 goto enc_faild;
         
         add = heap.dalloc(1 + asso->akey[1] + input_length);
+        if(!add)
+                goto enc_faild;
         add[0] = asso->info.sc;
         heap.copy(&add[1], &asso->akey[2], asso->akey[1]);
         heap.copy(&add[1+asso->akey[1]], input, input_length);
@@ -1582,6 +1585,8 @@ static void asso_aarq_high(struct __dlms_association *asso,
                 goto enc_faild;
         
         add = heap.dalloc(1 + asso->akey[1]);
+        if(!add)
+                goto enc_faild;
         add[0] = asso->info.sc;
         heap.copy(&add[1], &asso->akey[2], asso->akey[1]);
         
@@ -1965,6 +1970,11 @@ enum __asso_status dlms_asso_status(void)
   */
 uint16_t dlms_asso_mtu(void)
 {
+    if(DLMS_CONFIG_MAX_BLOCK_SIZE < 32)
+    {
+        return(32);
+    }
+    
     return(DLMS_CONFIG_MAX_BLOCK_SIZE);
 }
 
@@ -2131,7 +2141,7 @@ uint8_t dlms_asso_akey(uint8_t *buffer)
         return(0);
     }
     
-    if((asso_current->akey[1] > 16) || (asso_current->akey[1] == 0))
+    if((asso_current->akey[1] > 32) || (asso_current->akey[1] == 0))
     {
         return(0);
     }
@@ -2151,7 +2161,7 @@ uint8_t dlms_asso_ekey(uint8_t *buffer)
         return(0);
     }
     
-    if((asso_current->ekey[1] > 16) || (asso_current->ekey[1] == 0))
+    if((asso_current->ekey[1] > 32) || (asso_current->ekey[1] == 0))
     {
         return(0);
     }
@@ -2265,6 +2275,21 @@ void * dlms_asso_storage(void)
     return(asso_current->appl);
 }
 
+uint32_t dlms_asso_storage_size(void)
+{
+    if(!asso_current)
+    {
+        return(0);
+    }
+    
+    if(!asso_current->appl)
+    {
+        return(0);
+    }
+    
+    return(asso_current->sz_appl);
+}
+
 /**
   * @brief 申请 应用层 附属缓冲
   */
@@ -2285,6 +2310,8 @@ void * dlms_asso_attach_storage(uint16_t size)
     {
         heap.set(asso_current->appl, 0, size);
     }
+    
+    asso_current->sz_appl = size;
     
     return(asso_current->appl);
 }
