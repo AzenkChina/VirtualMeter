@@ -359,7 +359,7 @@ static int display_config_demand_dot_set(lua_State *L)
 	return 1;
 }
 
-static int display_config_others_dot_get(lua_State *L)
+static int display_config_angle_dot_get(lua_State *L)
 {
 	uint8_t point = 0;
 	struct __display *api_display = api("task_display");
@@ -369,12 +369,12 @@ static int display_config_others_dot_get(lua_State *L)
     	lua_pushnil(L);
         return 1;
     }
-	point = api_display->config.dot.others.get();
+	point = api_display->config.dot.angle.get();
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
 
-static int display_config_others_dot_set(lua_State *L)
+static int display_config_angle_dot_set(lua_State *L)
 {
 	uint8_t point = 0;
 	struct __display *api_display = api("task_display");
@@ -385,7 +385,69 @@ static int display_config_others_dot_set(lua_State *L)
         return 1;
     }
     point = (uint8_t)luaL_checknumber(L, 1);
-	point = api_display->config.dot.others.set(point);
+	point = api_display->config.dot.angle.set(point);
+	lua_pushnumber(L, (lua_Number)point);
+	return 1;
+}
+
+static int display_config_freq_dot_get(lua_State *L)
+{
+	uint8_t point = 0;
+	struct __display *api_display = api("task_display");
+	
+    if(!api_display)
+    {
+    	lua_pushnil(L);
+        return 1;
+    }
+	point = api_display->config.dot.freq.get();
+	lua_pushnumber(L, (lua_Number)point);
+	return 1;
+}
+
+static int display_config_freq_dot_set(lua_State *L)
+{
+	uint8_t point = 0;
+	struct __display *api_display = api("task_display");
+	
+    if(!api_display)
+    {
+    	lua_pushnil(L);
+        return 1;
+    }
+    point = (uint8_t)luaL_checknumber(L, 1);
+	point = api_display->config.dot.freq.set(point);
+	lua_pushnumber(L, (lua_Number)point);
+	return 1;
+}
+
+static int display_config_pf_dot_get(lua_State *L)
+{
+	uint8_t point = 0;
+	struct __display *api_display = api("task_display");
+	
+    if(!api_display)
+    {
+    	lua_pushnil(L);
+        return 1;
+    }
+	point = api_display->config.dot.pf.get();
+	lua_pushnumber(L, (lua_Number)point);
+	return 1;
+}
+
+static int display_config_pf_dot_set(lua_State *L)
+{
+	uint8_t point = 0;
+	struct __display *api_display = api("task_display");
+	
+    if(!api_display)
+    {
+    	lua_pushnil(L);
+        return 1;
+    }
+    point = (uint8_t)luaL_checknumber(L, 1);
+	point = api_display->config.dot.pf.set(point);
 	lua_pushnumber(L, (lua_Number)point);
 	return 1;
 }
@@ -472,9 +534,15 @@ static const luaL_Tree display_tree[] =
 	{"dot",			"demand",		NULL},
 	{"demand",		"get",			display_config_demand_dot_get},
 	{"demand",		"set",			display_config_demand_dot_set},
-	{"dot",			"others",		NULL},
-	{"others",		"get",			display_config_others_dot_get},
-	{"others",		"set",			display_config_others_dot_set},
+	{"dot",			"angle",		NULL},
+	{"angle",		"get",			display_config_angle_dot_get},
+	{"angle",		"set",			display_config_angle_dot_set},
+	{"dot",			"freq",			NULL},
+	{"freq",		"get",			display_config_freq_dot_get},
+	{"freq",		"set",			display_config_freq_dot_set},
+	{"dot",			"pf",			NULL},
+	{"pf",			"get",			display_config_pf_dot_get},
+	{"pf",			"set",			display_config_pf_dot_set},
 	{"config",		"list",			NULL},
 	{"list",		"write",		display_config_list_write},
 	{"list",		"read",			display_config_list_read},

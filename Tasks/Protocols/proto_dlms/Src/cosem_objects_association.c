@@ -20,57 +20,9 @@
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNSetSecret(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNGetApplicationContextName(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNGetxDLMSContextInfo(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNGetAuthenticationMechanismName(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNGetAssociationStatus(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
-{
-    
-}
-
-/**	
-  * @brief 
-  */
 static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
 {
-    
+    return(OBJECT_ERR_NODEF);
 }
 
 /**	
@@ -78,15 +30,57 @@ static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
   */
 static ObjectErrs AssociationLNGetAssociatedPartnersID(ObjectPara *P)
 {
-    
+    return(OBJECT_ERR_NODEF);
 }
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNGetApplicationContextName(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNGetxDLMSContextInfo(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNGetAuthenticationMechanismName(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNSetSecret(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNGetAssociationStatus(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+
 
 /**	
   * @brief 
   */
 static ObjectErrs AssociationLNSecuritySetupReference(ObjectPara *P)
 {
-    
+    return(OBJECT_ERR_NODEF);
 }
 
 /**	
@@ -94,7 +88,7 @@ static ObjectErrs AssociationLNSecuritySetupReference(ObjectPara *P)
   */
 static ObjectErrs AssociationLNUserList(ObjectPara *P)
 {
-    
+    return(OBJECT_ERR_NODEF);
 }
 
 /**	
@@ -102,7 +96,23 @@ static ObjectErrs AssociationLNUserList(ObjectPara *P)
   */
 static ObjectErrs AssociationLNCurrentUser(ObjectPara *P)
 {
-    
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AssociationLNChangeHLSSecret(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
 }
 
 /**	
@@ -110,17 +120,18 @@ static ObjectErrs AssociationLNCurrentUser(ObjectPara *P)
   */
 static const TypeObject ObjectList[] = 
 {
-    AssociationLNSetSecret,
+    AssociationLNGetObjectList,
+    AssociationLNGetAssociatedPartnersID,
     AssociationLNGetApplicationContextName,
     AssociationLNGetxDLMSContextInfo,
     AssociationLNGetAuthenticationMechanismName,
+    AssociationLNSetSecret,
     AssociationLNGetAssociationStatus,
-    AssociationLNActionreplyToHLSAuthentication,
-    AssociationLNGetObjectList,
-    AssociationLNGetAssociatedPartnersID,
     AssociationLNSecuritySetupReference,
     AssociationLNUserList,
     AssociationLNCurrentUser,
+    AssociationLNActionreplyToHLSAuthentication,
+    AssociationLNChangeHLSSecret,
 };
 
 

@@ -23,8 +23,8 @@
 /** 在这里添加所有任务模块输出的基础函数列表 */
 static const ObjectCluster *ObjectClusterTable[] = 
 {
-    (ObjectCluster *)&CosemObjectsRegister,
     (ObjectCluster *)&CosemObjectsAssociation,
+    (ObjectCluster *)&CosemObjectsRegister,
 };
 
 /* Private macro -------------------------------------------------------------*/

@@ -13,14 +13,13 @@
 typedef enum
 {
 	OBJECT_NOERR = 0,
-	OBJECT_ERR_TYPE,//类型错误
-	OBJECT_ERR_DATA,//数据错误
-	OBJECT_ERR_MEM,//内存错误
-	OBJECT_ERR_ENCODE,//编码错误
-	OBJECT_ERR_DECODE,//解码错误
-	OBJECT_ERR_LOWLEVEL,//底层调用错误
-	
-	OBJECT_ERR_NODEF = 0xff,//未知错误
+    OBJECT_ERR_LOWLEVEL = 1,//底层调用错误
+    OBJECT_ERR_MEM = 2,//内存错误
+    OBJECT_ERR_DATA = 3,//数据错误
+	OBJECT_ERR_TYPE = 12,//类型错误
+	OBJECT_ERR_ENCODE = 100,//编码错误
+	OBJECT_ERR_DECODE = 101,//解码错误
+	OBJECT_ERR_NODEF = 250,//未知错误
 	
 } ObjectErrs;
 

@@ -47,6 +47,21 @@ enum __metering_item
 };
 
 /**
+  * @brief  计量数据 分相标识
+  */
+enum __metering_phase
+{
+    M_PHASE_N = 0,//N相
+	M_PHASE_A = 1,//A相
+	M_PHASE_B = 2,//B相
+	M_PHASE_C = 4,//C相
+	M_PHASE_AB = 3,//AB
+	M_PHASE_AC = 5,//AC
+	M_PHASE_BC = 6,//BC
+    M_PHASE_T = 7,//总
+};
+
+/**
   * @brief  计量数据 象限标识
   */
 enum __metering_quad
@@ -61,21 +76,6 @@ enum __metering_quad
 	M_QUAD_NII = 0x20,//减2象限
 	M_QUAD_NIII = 0x40,//减3象限
     M_QUAD_NV = 0x80,//减4象限
-};
-
-/**
-  * @brief  计量数据 分相标识
-  */
-enum __metering_phase
-{
-    M_PHASE_N = 0,//N相
-	M_PHASE_A = 1,//A相
-	M_PHASE_B = 2,//B相
-	M_PHASE_C = 4,//C相
-	M_PHASE_AB = 3,//AB
-	M_PHASE_AC = 5,//AC
-	M_PHASE_BC = 6,//BC
-    M_PHASE_T = 7,//总
 };
 
 /**

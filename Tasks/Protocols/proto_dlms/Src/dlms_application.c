@@ -1158,18 +1158,76 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         case GLO_SET_REQUEST:
         case DED_SET_REQUEST:
         {
+            plain[0] = SET_RESPONSE;
+            plain[2] = request->id;
+            
             switch(request->type)
             {
                 case SET_NORMAL:
                 {
+                    plain[1] = SET_RESPONSE_NORMAL;
+                    
+                    if(!Current->Entry[0].Object || Current->Actived != 1)
+                    {
+                        plain[3] = (uint8_t)OBJECT_ERR_MEM;
+                        plain_length = 4;
+                    }
+                    else
+                    {
+                        if((Current->Entry[0].Para.Iterator.Status != ITER_NONE) || \
+                            (Current->Entry[0].Para.Iterator.Begin != Current->Entry[0].Para.Iterator.End))
+                        {
+                            Current->Entry[0].Para.Iterator.Status = ITER_NONE;
+                            Current->Entry[0].Errs = OBJECT_ERR_MEM;
+                        }
+                        
+                        if(Current->Entry[cnt].Errs == OBJECT_NOERR)
+                        {
+                            plain[3] = 0;
+                            plain_length = 4;
+                        }
+                        else
+                        {
+                            plain[3] = (uint8_t)Current->Entry[cnt].Errs;
+                            plain_length = 4;
+                        }
+                    }
                     break;
                 }
                 case SET_FIRST_BLOCK:
-                {
-                    break;
-                }
                 case SET_WITH_BLOCK:
                 {
+                    if(!Current->Entry[0].Object || Current->Actived != 1)
+                    {
+                        plain[1] = SET_RESPONSE_NORMAL;
+                        plain[3] = (uint8_t)OBJECT_ERR_MEM;
+                        plain_length = 4;
+                    }
+                    else
+                    {
+                        if((Current->Entry[0].Para.Iterator.Status != ITER_ONGOING) || \
+                            (Current->Entry[0].Errs != OBJECT_NOERR))
+                        {
+                            plain[1] = SET_RESPONSE_LAST_DATABLOCK;
+                            plain[3] = (uint8_t)Current->Entry[0].Errs;
+                            plain[4] = Current->Block >> 24;
+                            plain[5] = Current->Block >> 16;
+                            plain[6] = Current->Block >> 8;
+                            plain[7] = Current->Block >> 0;
+                            
+                            plain_length = 8;
+                        }
+                        else
+                        {
+                            plain[1] = SET_RESPONSE_DATABLOCK;
+                            plain[3] = Current->Block >> 24;
+                            plain[4] = Current->Block >> 16;
+                            plain[5] = Current->Block >> 8;
+                            plain[6] = Current->Block >> 0;
+                            
+                            plain_length = 7;
+                        }
+                    }
                     break;
                 }
                 case SET_WITH_LIST:
@@ -1185,10 +1243,53 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         case GLO_ACTION_REQUEST:
         case DED_ACTION_REQUEST:
         {
+            plain[0] = ACTION_RESPONSE;
+            plain[2] = request->id;
+            
             switch(request->type)
             {
                 case ACTION_NORMAL:
                 {
+                    plain[1] = ACTION_RESPONSE_NORMAL;
+                    
+                    if(!Current->Entry[0].Object || Current->Actived != 1)
+                    {
+                        plain[3] = (uint8_t)OBJECT_ERR_MEM;
+                        plain[4] = 0;
+                        plain_length = 5;
+                    }
+                    else
+                    {
+                        if((Current->Entry[0].Para.Iterator.Status != ITER_NONE) || \
+                            (Current->Entry[0].Para.Iterator.Begin != Current->Entry[0].Para.Iterator.End))
+                        {
+                            Current->Entry[0].Para.Iterator.Status = ITER_NONE;
+                            Current->Entry[0].Errs = OBJECT_ERR_MEM;
+                        }
+                        
+                        if(Current->Entry[0].Errs == OBJECT_NOERR)
+                        {
+                            if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
+                                ((Current->Entry[0].Para.Output.Filled + plain_length) > (dlms_asso_mtu() - 20)))
+                            {
+                                plain[3] = (uint8_t)OBJECT_ERR_MEM;
+                                plain[4] = 0;
+                                plain_length = 5;
+                            }
+                            else
+                            {
+                                plain[3] = 0;
+                                plain_length = 4;
+                                plain_length += heap.copy(&plain[4], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
+                            }
+                        }
+                        else
+                        {
+                            plain[3] = (uint8_t)OBJECT_ERR_MEM;
+                            plain[4] = 0;
+                            plain_length = 5;
+                        }
+                    }
                     break;
                 }
                 case ACTION_NEXT_BLOCK:
@@ -1458,7 +1559,73 @@ enc_faild:
   */
 static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
+    buffer[0] = EXCEPTION_RESPONSE;
     
+    switch(result)
+    {
+        case APPL_DENIED:
+        {
+            buffer[1] = 1;
+            buffer[2] = 1;
+            break;
+        }
+        case APPL_NOMEM:
+        {
+            buffer[1] = 1;
+            buffer[2] = 3;
+            break;
+        }
+        case APPL_BLOCK_MISS:
+        {
+            buffer[1] = 1;
+            buffer[2] = 1;
+            break;
+        }
+        case APPL_OBJ_NODEF:
+        {
+            buffer[1] = 1;
+            buffer[2] = 1;
+            break;
+        }
+        case APPL_OBJ_MISS:
+        {
+            buffer[1] = 1;
+            buffer[2] = 3;
+            break;
+        }
+        case APPL_OBJ_OVERFLOW:
+        {
+            buffer[1] = 1;
+            buffer[2] = 3;
+            break;
+        }
+        case APPL_UNSUPPORT:
+        {
+            buffer[1] = 2;
+            buffer[2] = 2;
+            break;
+        }
+        case APPL_ENC_FAILD:
+        {
+            buffer[1] = 1;
+            buffer[2] = 3;
+            break;
+        }
+        case APPL_OTHERS:
+        {
+            buffer[1] = 2;
+            buffer[2] = 3;
+            break;
+        }
+        default:
+        {
+            buffer[1] = 2;
+            buffer[2] = 3;
+            break;
+        }
+    }
+    
+    *filled_length = 3;
 }
 
 
