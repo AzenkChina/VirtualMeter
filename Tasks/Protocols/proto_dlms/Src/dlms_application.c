@@ -435,7 +435,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                     request->info[0].index = (uint8_t *)&start[11];
                     request->info[0].data = (uint8_t *)&start[13];
                     request->info[0].length = info_length - 13;
-                    if(info_length < 14)
+                    if((info_length < 14) || start[12])
                     {
                         return(APPL_OTHERS);
                     }
@@ -456,7 +456,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                     request->info[0].block <<= 8;
                     request->info[0].block += start[17];
                     request->info[0].data = (uint8_t *)&start[18 + axdr.length.decode(&start[18], &request->info[0].length)];
-                    if(info_length < 20)
+                    if((info_length < 20) || start[12])
                     {
                         return(APPL_OTHERS);
                     }
@@ -584,11 +584,11 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
   */
 static enum __appl_result make_cosem_instance(const struct __appl_request *request)
 {
-    uint8_t cnt;
+    uint8_t cnt = 0;
+    uint8_t index = 0;
+    uint32_t param = 0;
+    const char *table = (const char *)0;
     struct __cosem_request_desc desc;
-    const char *table;
-    uint8_t index;
-    uint32_t param;
     union __dlms_right right;
     
     //获取当前链接下附属的对象内存
@@ -604,6 +604,9 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
         }
     }
     
+    desc.request = (enum __dlms_request_type)request->service;
+    desc.level = dlms_asso_level();
+    
     switch(request->service)
     {
         case GET_REQUEST:
@@ -614,8 +617,6 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case GET_NORMAL:
                 {
-                    desc.request = GET_REQUEST;
-                    desc.level = dlms_asso_level();
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
@@ -634,14 +635,16 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     
                     heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
                     Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;
                     Current->Entry[0].Object = cosem_load_object(table, index);
                     
                     break;
                 }
                 case GET_NEXT:
                 {
-                    //暂时不支持多实例
-                    if(Current->Actived < 1)
+                    //不支持多实例
+                    if((Current->Actived != 1) || (!Current->Entry[0].Object))
                     {
                         return(APPL_OBJ_OVERFLOW);
                     }
@@ -655,13 +658,13 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     //更新块计数
                     Current->Block = request->info->block;
                     
+                    Current->Entry[0].Para.Input.Buffer = (uint8_t *)0;
+                    Current->Entry[0].Para.Input.Size = 0;
+                    
                     break;
                 }
                 case GET_WITH_LIST:
                 {
-                    desc.request = GET_REQUEST;
-                    desc.level = dlms_asso_level();
-                    
                     Current->Block = 0;//块计数清零
                     Current->Actived = 0;
                     
@@ -689,6 +692,8 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         
                         heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
                         Current->Entry[cnt].Para.Input.ID = param;//赋值数据标识
+                        Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;
+                        Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;
                         Current->Entry[cnt].Object = cosem_load_object(table, index);
                     }
                     
@@ -709,17 +714,126 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case SET_NORMAL:
                 {
+                    desc.descriptor.classid = request->info[0].classid[0];
+                    desc.descriptor.classid <<= 8;
+                    desc.descriptor.classid += request->info[0].classid[1];
+                    heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
+                    desc.descriptor.index = request->info[0].index[0];
+                    desc.descriptor.selector = 0;
+                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    
+                    if(!table)
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 1;//一个请求条目
+                    
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    Current->Entry[0].Object = cosem_load_object(table, index);
                     break;
                 }
                 case SET_FIRST_BLOCK:
                 {
+                    desc.descriptor.classid = request->info[0].classid[0];
+                    desc.descriptor.classid <<= 8;
+                    desc.descriptor.classid += request->info[0].classid[1];
+                    heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
+                    desc.descriptor.index = request->info[0].index[0];
+                    desc.descriptor.selector = 0;
+                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    
+                    if(!table)
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    if(!request->info->block)
+                    {
+                        return(APPL_BLOCK_MISS);
+                    }
+                    
+                    Current->Block = request->info->block;//块计数
+                    Current->Actived = 1;//一个请求条目
+                    
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    if((request->info->end) && !(*(request->info->end)))
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_ONGOING;//赋值迭代标识
+                    }
+                    else
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
+                    }
+                    Current->Entry[0].Object = cosem_load_object(table, index);
                     break;
                 }
                 case SET_WITH_BLOCK:
                 {
+                    //不支持多实例
+                    if((Current->Actived != 1) || (!Current->Entry[0].Object))
+                    {
+                        return(APPL_OBJ_OVERFLOW);
+                    }
+                    
+                    //块计数验证
+                    if((Current->Block + 1) != request->info->block)
+                    {
+                        return(APPL_BLOCK_MISS);
+                    }
+                    
+                    Current->Block = request->info->block;//更新块计数
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    
+                    if(!(request->info->end) || *(request->info->end))
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
+                    }
                     break;
                 }
                 case SET_WITH_LIST:
+                {
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 0;//一个请求条目
+                    
+                    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                    {
+                        if(!request->info[cnt].active)
+                        {
+                            break;
+                        }
+                        
+                        desc.descriptor.classid = request->info[cnt].classid[0];
+                        desc.descriptor.classid <<= 8;
+                        desc.descriptor.classid += request->info[cnt].classid[1];
+                        heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
+                        desc.descriptor.index = request->info[cnt].index[0];
+                        desc.descriptor.selector = 0;
+                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        
+                        if(!table)
+                        {
+                            return(APPL_UNSUPPORT);
+                        }
+                        
+                        Current->Actived += 1;//一个请求条目
+                        
+                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
+                        Current->Entry[cnt].Para.Input.ID = param;//赋值数据标识
+                        Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;//赋值数据
+                        Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;//赋值数据长度
+                        Current->Entry[cnt].Object = cosem_load_object(table, index);
+                    }
+                    break;
+                }
                 case SET_WITH_LIST_AND_FIRST_BLOCK:
                 default:
                 {
@@ -736,17 +850,126 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case ACTION_NORMAL:
                 {
+                    desc.descriptor.classid = request->info[0].classid[0];
+                    desc.descriptor.classid <<= 8;
+                    desc.descriptor.classid += request->info[0].classid[1];
+                    heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
+                    desc.descriptor.index = request->info[0].index[0];
+                    desc.descriptor.selector = 0;
+                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    
+                    if(!table)
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 1;//一个请求条目
+                    
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    Current->Entry[0].Object = cosem_load_object(table, index);
                     break;
                 }
                 case ACTION_NEXT_BLOCK:
                 {
+                    //不支持多实例
+                    if((Current->Actived != 1) || (!Current->Entry[0].Object))
+                    {
+                        return(APPL_OBJ_OVERFLOW);
+                    }
+                    
+                    //块计数验证
+                    if((Current->Block + 1) != request->info->block)
+                    {
+                        return(APPL_BLOCK_MISS);
+                    }
+                    
+                    Current->Block = request->info->block;//更新块计数
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    
+                    if(!(request->info->end) || *(request->info->end))
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
+                    }
                     break;
                 }
                 case ACTION_FIRST_BLOCK:
                 {
+                    desc.descriptor.classid = request->info[0].classid[0];
+                    desc.descriptor.classid <<= 8;
+                    desc.descriptor.classid += request->info[0].classid[1];
+                    heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
+                    desc.descriptor.index = request->info[0].index[0];
+                    desc.descriptor.selector = 0;
+                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    
+                    if(!table)
+                    {
+                        return(APPL_UNSUPPORT);
+                    }
+                    
+                    if(!request->info->block)
+                    {
+                        return(APPL_BLOCK_MISS);
+                    }
+                    
+                    Current->Block = request->info->block;//块计数
+                    Current->Actived = 1;//一个请求条目
+                    
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    Current->Entry[0].Para.Input.ID = param;//赋值数据标识
+                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
+                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    if((request->info->end) && !(*(request->info->end)))
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_ONGOING;//赋值迭代标识
+                    }
+                    else
+                    {
+                        Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
+                    }
+                    Current->Entry[0].Object = cosem_load_object(table, index);
                     break;
                 }
                 case ACTION_WITH_LIST:
+                {
+                    Current->Block = 0;//块计数清零
+                    Current->Actived = 0;//一个请求条目
+                    
+                    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                    {
+                        if(!request->info[cnt].active)
+                        {
+                            break;
+                        }
+                        
+                        desc.descriptor.classid = request->info[cnt].classid[0];
+                        desc.descriptor.classid <<= 8;
+                        desc.descriptor.classid += request->info[cnt].classid[1];
+                        heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
+                        desc.descriptor.index = request->info[cnt].index[0];
+                        desc.descriptor.selector = 0;
+                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        
+                        if(!table)
+                        {
+                            return(APPL_UNSUPPORT);
+                        }
+                        
+                        Current->Actived += 1;//一个请求条目
+                        
+                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
+                        Current->Entry[cnt].Para.Input.ID = param;//赋值数据标识
+                        Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;//赋值数据
+                        Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;//赋值数据长度
+                        Current->Entry[cnt].Object = cosem_load_object(table, index);
+                    }
+                    break;
+                }
                 case ACTION_WITH_LIST_AND_FIRST_BLOCK:
                 case ACTION_WITH_BLOCK:
                 default:
@@ -771,45 +994,23 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
 static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
     uint8_t cnt = 0;
-    uint8_t alive = 0;
-    uint8_t entry = 0;
-    uint8_t *plain;
+    uint8_t *plain = (uint8_t *)0;
     uint16_t plain_length = 0;
     
-    mbedtls_gcm_context ctx;
     uint8_t akey[32] = {0};
-    uint8_t akey_length;
+    uint8_t akey_length = 0;
     uint8_t ekey[32] = {0};
-    uint8_t ekey_length;
+    uint8_t ekey_length = 0;
     uint8_t iv[12] = {0};
     uint16_t cipher_length = 0;
-    uint8_t tag[12];
-    uint8_t *add = (void *)0;
+    uint8_t tag[12] = {0};
+    uint8_t *add = (uint8_t *)0;
+    
+    mbedtls_gcm_context ctx;
     int ret;
     
-    //判断是否有条目的生命周期还未结束
-    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
-    {
-        if(Current->Entry[cnt].Object)
-        {
-            entry += 1;
-            
-            //迭代器状态不在运行中，或者迭代器起始等于终止，或者调用结果为异常，生命周期结束
-            if((Current->Entry[cnt].Para.Iterator.Status == ITER_ONGOING) && \
-                (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End) && \
-                Current->Entry[cnt].Errs == OBJECT_NOERR)
-            {
-                alive = 0xff;
-            }
-        }
-    }
-    
-    if(!entry)
-    {
-        return(APPL_OBJ_MISS);
-    }
-    
-    //获取临时缓冲，组包未加密报文
+    //step 1
+    //获取临时缓冲，用于组包未加密报文
     plain = heap.dalloc(dlms_asso_mtu() + 16);
     
     if(!plain)
@@ -817,6 +1018,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         return(APPL_NOMEM);
     }
     
+    //step 2
     //组包返回的报文（明文）
     switch(request->service)
     {
@@ -829,9 +1031,8 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
             
             plain_length = 3;
             
-            if(entry > 1)
+            if(Current->Actived > 1) //Get-Response-With-List
             {
-                //Get-Response-With-List
                 plain[1] = GET_RESPONSE_WITH_LIST;
                 
                 for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
@@ -842,7 +1043,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                     }
                     
                     //Get-Response-With-List 不允许 Get-Response-With-Datablock
-                    if((Current->Entry[cnt].Para.Iterator.Status == ITER_ONGOING) && \
+                    if((Current->Entry[cnt].Para.Iterator.Status != ITER_NONE) || \
                         (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End))
                     {
                         Current->Entry[cnt].Para.Iterator.Status = ITER_NONE;
@@ -877,9 +1078,15 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
             }
             else
             {
-                if(alive)
+                if(!Current->Entry[0].Object) //Get-Response-Normal (Error)
                 {
-                    //Get-Response-With-Datablock
+                    plain[1] = GET_RESPONSE_NORMAL;
+                    plain[3] = 1;
+                    plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                    plain_length = 5;
+                }
+                else if(Current->Entry[0].Para.Iterator.Status != ITER_NONE) //Get-Response-With-Datablock
+                {
                     if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
                         (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
                     {
@@ -914,13 +1121,11 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                         plain_length = 9;
                         
                         plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
-                        
                         plain_length += heap.copy(&plain[plain_length], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
                     }
                 }
-                else
+                else //Get-Response-Normal
                 {
-                    //Get-Response-Normal
                     plain[1] = GET_RESPONSE_NORMAL;
                     if(Current->Entry[0].Errs == OBJECT_NOERR)
                     {
@@ -1011,6 +1216,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         }
     }
     
+    //step 3
     //判断是否需要加密报文
     switch(request->service)
     {
@@ -1036,6 +1242,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         }
         default:
         {
+            //不需要加密，明文返回
             if(plain_length > buffer_length)
             {
                 plain_length = buffer_length;
@@ -1048,6 +1255,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         }
     }
     
+    //step 4
     //加密
     switch(request->service)
     {
@@ -1058,12 +1266,18 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         case DED_SET_REQUEST:
         case DED_ACTION_REQUEST:
         {
-            buffer[0] = ((uint8_t)request->service + 8);
+            buffer[0] = (request->service + 8);
             cipher_length = 1;
             
             if((request->sc & 0xf0) == 0x10)
             {
                 cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+                
+                if(buffer_length < (cipher_length+5+plain_length+12))
+                {
+                    goto enc_faild;
+                }
+                
                 buffer[cipher_length] = request->sc;
                 cipher_length += 1;
                 cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
@@ -1076,11 +1290,15 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                                          ekey_length*8);
                 
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 add = heap.dalloc(1 + akey_length + plain_length);
                 if(!add)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 add[0] = request->sc;
                 heap.copy(&add[1], akey, akey_length);
@@ -1100,7 +1318,9 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                 heap.free(add);
                 
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 mbedtls_gcm_free(&ctx);
                 
@@ -1111,6 +1331,12 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
             else if((request->sc & 0xf0) == 0x20)
             {
                 cipher_length += axdr.length.encode((5+plain_length), &buffer[cipher_length]);
+                
+                if(buffer_length < (cipher_length+5+plain_length))
+                {
+                    goto enc_faild;
+                }
+                
                 buffer[cipher_length] = request->sc;
                 cipher_length += 1;
                 cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
@@ -1123,7 +1349,9 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                                          ekey_length*8);
                 
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 ret = mbedtls_gcm_crypt_and_tag(&ctx,
                                                 MBEDTLS_GCM_ENCRYPT,
@@ -1137,7 +1365,9 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                                                 0,
                                                 (void *)0);
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 mbedtls_gcm_free(&ctx);
                 
@@ -1146,6 +1376,12 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
             else if((request->sc & 0xf0) == 0x30)
             {
                 cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+                
+                if(buffer_length < (cipher_length+5+plain_length+12))
+                {
+                    goto enc_faild;
+                }
+                
                 buffer[cipher_length] = request->sc;
                 cipher_length += 1;
                 cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
@@ -1158,11 +1394,16 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                                          ekey_length*8);
                 
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 add = heap.dalloc(1 + akey_length);
                 if(!add)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
+                
                 add[0] = request->sc;
                 heap.copy(&add[1], akey, akey_length);
                 
@@ -1180,7 +1421,9 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                 heap.free(add);
                 
                 if(ret != 0)
-                        goto enc_faild;
+                {
+                    goto enc_faild;
+                }
                 
                 mbedtls_gcm_free(&ctx);
                 
