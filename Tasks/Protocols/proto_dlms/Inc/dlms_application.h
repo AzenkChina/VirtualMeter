@@ -20,5 +20,6 @@ extern void dlms_appl_entrance(const uint8_t *info,
                                uint8_t *buffer,
                                uint16_t buffer_length,
                                uint16_t *filled_length);
+extern uint8_t dlms_appl_logicalname(uint8_t *name);
 
 #endif /* __DLMS_APPLICATION_H__ */

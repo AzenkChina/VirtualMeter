@@ -53,7 +53,6 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     struct __cosem_request_desc desc;
     const char *table;
     uint8_t index;
-    union __dlms_right right;
     TypeObject Func;
     uint8_t input[8];
     ObjectPara P;
@@ -78,7 +77,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     desc.request = GET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
+    dlms_lex_parse(&desc, &table, &index, &P.Input.ID);
 	Func = cosem_load_object(table, index);
     
     if(Func)
@@ -96,7 +95,6 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     struct __cosem_request_desc desc;
     const char *table;
     uint8_t index;
-    union __dlms_right right;
     TypeObject Func;
     uint8_t output[8];
     ObjectPara P;
@@ -121,7 +119,7 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     desc.request = SET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &P.Input.ID, &right);
+    dlms_lex_parse(&desc, &table, &index, &P.Input.ID);
 	Func = cosem_load_object(table, index);
     
     if(Func)

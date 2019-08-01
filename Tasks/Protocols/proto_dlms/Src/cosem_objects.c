@@ -9,6 +9,7 @@
 #include "string.h"
 
 /** 在这里添加所有任务模块输出的基础函数列表对应头文件 */
+#include "cosem_objects_exception.h"
 #include "cosem_objects_association.h"
 #include "cosem_objects_clock.h"
 #include "cosem_objects_data.h"
@@ -23,6 +24,7 @@
 /** 在这里添加所有任务模块输出的基础函数列表 */
 static const ObjectCluster *ObjectClusterTable[] = 
 {
+    (ObjectCluster *)&CosemObjectsException,
     (ObjectCluster *)&CosemObjectsAssociation,
     (ObjectCluster *)&CosemObjectsRegister,
 };

@@ -29,7 +29,7 @@ IncludeVersionInfo=1
 SupportXPThemes=0
 CompilerSet=1
 CompilerSettings=0000000000000000001000000
-UnitCount=188
+UnitCount=189
 
 [VersionInfo]
 Major=1
@@ -6664,6 +6664,16 @@ BuildCmd=
 FileName=..\..\Kernel\Src\nvram.c
 CompileCpp=0
 Folder=Kernel
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit189]
+FileName=..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_exception.c
+CompileCpp=0
+Folder=Tasks/Protocols/proto_dlms
 Compile=1
 Link=1
 Priority=1000

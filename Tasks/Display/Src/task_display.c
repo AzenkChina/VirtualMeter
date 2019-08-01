@@ -1005,6 +1005,11 @@ static void display_init(void)
 		offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
 		file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
         
+        if(disp_runs.amount > AMOUNT_LIST_MAX)
+        {
+            disp_runs.amount = 0;
+        }
+        
         if(system_status() == SYSTEM_RUN)
         {
             lcd.control.init(DEVICE_NORMAL);

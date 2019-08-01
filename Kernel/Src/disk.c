@@ -143,8 +143,15 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
 	uint16_t loop;
 	uint16_t index = 0xffff;
 	uint32_t address = 0;
+    
+    uint32_t pagesize = 0;
+    uint32_t page = 0;
+    uint32_t header = 0;
+    uint32_t middle = 0;
+    uint32_t tail = 0;
+    uint8_t *buffer = (uint8_t *)buff;
 	
-	if(!name)
+	if(!name || !count || !buff)
 	{
 		return(0);
 	}
@@ -170,8 +177,76 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
     }
     else if(file_entry[index].attr == FILE_FREQ)
     {
-        //...
-        return(0);
+        pagesize = eeprom.info.pagesize();
+        
+        if(!pagesize)
+        {
+            return(0);
+        }
+        
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == FILE_FREQ)
+            {
+                address += file_entry[loop].size;
+            }
+        }
+        
+        address += offset;//计算起始地址
+        page = address / pagesize;//计算起始页
+        header = address % pagesize;//计算起始页内起始地址
+        
+        if(page == ((address + count - 1) / pagesize))
+        {
+            //不分页
+            if(eeprom.page.read(page, header, count, buffer) != count)
+            {
+                return(0);
+            }
+            
+            return(count);
+        }
+        else
+        {
+            //分页
+            middle = (count - ((pagesize - header) % pagesize)) / pagesize;//计算整页页数
+            tail = (address + count) % pagesize;//计算最后一页写入字节数
+            
+            if(header)
+            {
+                if(eeprom.page.read(page, header, (pagesize - header), buffer) != (pagesize - header))
+                {
+                    return(0);
+                }
+                
+                buffer += (pagesize - header);
+                page += 1;
+            }
+            
+            if(middle)
+            {
+                for(loop=0; loop<middle; loop++)
+                {
+                    if(eeprom.page.read(page, 0, pagesize, buffer) != pagesize)
+                    {
+                        return(0);
+                    }
+                    
+                    buffer += pagesize;
+                    page += 1;
+                }
+            }
+            
+            if(tail)
+            {
+                if(eeprom.page.read(page, 0, tail, buffer) != tail)
+                {
+                    return(0);
+                }
+            }
+            
+            return(count);
+        }
     }
     else if(file_entry[index].attr == FILE_RARE)
     {
@@ -202,8 +277,15 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
 	uint16_t loop;
 	uint16_t index = 0xffff;
 	uint32_t address = 0;
+    
+    uint32_t pagesize = 0;
+    uint32_t page = 0;
+    uint32_t header = 0;
+    uint32_t middle = 0;
+    uint32_t tail = 0;
+    uint8_t *buffer = (uint8_t *)buff;
 	
-	if(!name)
+	if(!name || !count || !buff)
 	{
 		return(0);
 	}
@@ -234,8 +316,76 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
     }
     else if(file_entry[index].attr == FILE_FREQ)
     {
-        //...
-        return(0);
+        pagesize = eeprom.info.pagesize();
+        
+        if(!pagesize)
+        {
+            return(0);
+        }
+        
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == FILE_FREQ)
+            {
+                address += file_entry[loop].size;
+            }
+        }
+        
+        address += offset;//计算起始地址
+        page = address / pagesize;//计算起始页
+        header = address % pagesize;//计算起始页内起始地址
+        
+        if(page == ((address + count - 1) / pagesize))
+        {
+            //不分页
+            if(eeprom.page.write(page, header, count, buffer) != count)
+            {
+                return(0);
+            }
+            
+            return(count);
+        }
+        else
+        {
+            //分页
+            middle = (count - ((pagesize - header) % pagesize)) / pagesize;//计算整页页数
+            tail = (address + count) % pagesize;//计算最后一页写入字节数
+            
+            if(header)
+            {
+                if(eeprom.page.write(page, header, (pagesize - header), buffer) != (pagesize - header))
+                {
+                    return(0);
+                }
+                
+                buffer += (pagesize - header);
+                page += 1;
+            }
+            
+            if(middle)
+            {
+                for(loop=0; loop<middle; loop++)
+                {
+                    if(eeprom.page.write(page, 0, pagesize, buffer) != pagesize)
+                    {
+                        return(0);
+                    }
+                    
+                    buffer += pagesize;
+                    page += 1;
+                }
+            }
+            
+            if(tail)
+            {
+                if(eeprom.page.write(page, 0, tail, buffer) != tail)
+                {
+                    return(0);
+                }
+            }
+            
+            return(count);
+        }
     }
     else if(file_entry[index].attr == FILE_RARE)
     {

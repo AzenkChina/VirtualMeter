@@ -646,14 +646,16 @@ static const struct __cosem_entry_register cosem_class_register[] =
 void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     const char **table,
                     uint8_t *index,
-                    uint32_t *param,
-                    union __dlms_right *right)
+                    uint32_t *param)
 {
     uint8_t *Table = (uint8_t *)0;
+    union __dlms_right right;
+    uint16_t step = 0;
     uint16_t amount = 0;
     uint16_t count = 0;
     
-    if((!table) || (!index) || (!param) || (!right))
+    
+    if((!table) || (!index) || (!param))
     {
         return;
     }
@@ -661,7 +663,6 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     *table = 0;
     *index = 0;
     *param = 0;
-    right->attr = ATTRIBUTE_NO_ACCESS;
     
     if(!desc)
     {
@@ -674,7 +675,8 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         case CLASS_REGISTER:
         {
             Table = (void *)cosem_class_register;
-            amount = sizeof(cosem_class_register) / sizeof(struct __cosem_entry_register);
+            step = sizeof(struct __cosem_entry_register);
+            amount = sizeof(cosem_class_register) / step;
             
             for(count=0; count<amount; count++)
             {
@@ -716,22 +718,22 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     {
                         case DLMS_ACCESS_LOWEST:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.lowest;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.lowest;
                             break;
                         }
                         case DLMS_ACCESS_LOW:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.low;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.low;
                             break;
                         }
                         case DLMS_ACCESS_HIGH:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.high;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_register *)Table)->attr->right.high;
                             break;
                         }
                         default:
                         {
-                            right->attr = ATTRIBUTE_NO_ACCESS;
+                            right.attr = ATTRIBUTE_NO_ACCESS;
                             break;
                         }
                     }
@@ -757,22 +759,22 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     {
                         case DLMS_ACCESS_LOWEST:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.lowest;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.lowest;
                             break;
                         }
                         case DLMS_ACCESS_LOW:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.low;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.low;
                             break;
                         }
                         case DLMS_ACCESS_HIGH:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.high;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_register *)Table)->method->right.high;
                             break;
                         }
                         default:
                         {
-                            right->method = METHOD_NO_ACCESS;
+                            right.method = METHOD_NO_ACCESS;
                             break;
                         }
                     }
@@ -790,7 +792,8 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         case CLASS_ASSOCIATION_LN:
         {
             Table = (void *)cosem_class_association_ln;
-            amount = sizeof(cosem_class_association_ln) / sizeof(struct __cosem_entry_association_ln);
+            step = sizeof(struct __cosem_entry_association_ln);
+            amount = sizeof(cosem_class_association_ln) / step;
             
             for(count=0; count<amount; count++)
             {
@@ -832,22 +835,22 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     {
                         case DLMS_ACCESS_LOWEST:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.lowest;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.lowest;
                             break;
                         }
                         case DLMS_ACCESS_LOW:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.low;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.low;
                             break;
                         }
                         case DLMS_ACCESS_HIGH:
                         {
-                            right->attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.high;
+                            right.attr = (enum __dlms_attr_right)((struct __cosem_entry_association_ln *)Table)->attr->right.high;
                             break;
                         }
                         default:
                         {
-                            right->attr = ATTRIBUTE_NO_ACCESS;
+                            right.attr = ATTRIBUTE_NO_ACCESS;
                             break;
                         }
                     }
@@ -873,22 +876,22 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     {
                         case DLMS_ACCESS_LOWEST:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.lowest;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.lowest;
                             break;
                         }
                         case DLMS_ACCESS_LOW:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.low;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.low;
                             break;
                         }
                         case DLMS_ACCESS_HIGH:
                         {
-                            right->method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.high;
+                            right.method = (enum __dlms_method_right)((struct __cosem_entry_association_ln *)Table)->method->right.high;
                             break;
                         }
                         default:
                         {
-                            right->method = METHOD_NO_ACCESS;
+                            right.method = METHOD_NO_ACCESS;
                             break;
                         }
                     }
@@ -908,4 +911,17 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     
     return;
+}
+
+/**
+  * @brief  获取条目总数
+  */
+uint32_t dlms_lex_amount(void)
+{
+    uint32_t amount = 0;
+    
+    amount += sizeof(cosem_class_register) / sizeof(struct __cosem_entry_register);
+    amount += sizeof(cosem_class_association_ln) / sizeof(struct __cosem_entry_association_ln);
+    
+    return(amount);
 }

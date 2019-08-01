@@ -1,17 +1,19 @@
+/**
+ * @brief		
+ * @details		
+ * @date		azenk@2019-07-31
+ **/
+
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __DLMS_LEXICON_H__
-#define __DLMS_LEXICON_H__
+#ifndef __COSEM_OBJECTS_EXCEPTION_H__
+#define __COSEM_OBJECTS_EXCEPTION_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "stdint.h"
-#include "proto_dlms.h"
-#include "dlms_types.h"
+#include "object_template.h"
 
 /* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void dlms_lex_parse(const struct __cosem_request_desc *desc, const char **table, uint8_t *index, uint32_t *param);
-extern uint32_t dlms_lex_amount(void);
+extern const ObjectCluster CosemObjectsException;
 
-#endif /* __DLSM_LEXICON_H__ */
+#endif /* __COSEM_OBJECTS_EXCEPTION_H__ */

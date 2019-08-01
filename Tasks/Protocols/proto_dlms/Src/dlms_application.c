@@ -16,7 +16,7 @@
 #include "mbedtls/gcm.h"
 
 /* Private define ------------------------------------------------------------*/
-#define DLMS_REQ_LIST_MAX   ((uint8_t)8) //一次请求可接受的最大数据项数
+#define DLMS_REQ_LIST_MAX   ((uint8_t)6) //一次请求可接受的最大数据项数
 
 /* Private typedef -----------------------------------------------------------*/
 /**	
@@ -78,7 +78,15 @@ struct __cosem_request
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static struct __cosem_request *Current = (void *)0;
+/**	
+  * @brief 指向当前正在访问的数据对象
+  */
+static struct __cosem_request *Current = (struct __cosem_request *)0;
+
+/**	
+  * @brief 指向当前正在访问的数据标识
+  */
+static uint8_t *logicalname = (uint8_t *)0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -348,7 +356,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                 case GET_NORMAL:
                 {
                     request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[4];
+                    request->info[0].classid = (uint8_t *)&start[3];
                     request->info[0].obis = (uint8_t *)&start[5];
                     request->info[0].index = (uint8_t *)&start[11];
                     request->info[0].data = (uint8_t *)&start[12];
@@ -394,7 +402,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                     for(nloop=0; nloop<start[3]; nloop ++)
                     {
                         request->info[nloop].active = 0xff;
-                        request->info[nloop].classid = (uint8_t *)&start[ninfo + 1];
+                        request->info[nloop].classid = (uint8_t *)&start[ninfo + 0];
                         request->info[nloop].obis = (uint8_t *)&start[ninfo + 2];
                         request->info[nloop].index = (uint8_t *)&start[ninfo + 8];
                         request->info[nloop].data = (uint8_t *)&start[ninfo + 9];
@@ -430,7 +438,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                 case SET_NORMAL:
                 {
                     request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[4];
+                    request->info[0].classid = (uint8_t *)&start[3];
                     request->info[0].obis = (uint8_t *)&start[5];
                     request->info[0].index = (uint8_t *)&start[11];
                     request->info[0].data = (uint8_t *)&start[13];
@@ -444,7 +452,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                 case SET_FIRST_BLOCK:
                 {
                     request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[4];
+                    request->info[0].classid = (uint8_t *)&start[3];
                     request->info[0].obis = (uint8_t *)&start[5];
                     request->info[0].index = (uint8_t *)&start[11];
                     request->info[0].end = (uint8_t *)&start[13];
@@ -496,7 +504,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                 case ACTION_NORMAL:
                 {
                     request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[4];
+                    request->info[0].classid = (uint8_t *)&start[3];
                     request->info[0].obis = (uint8_t *)&start[5];
                     request->info[0].index = (uint8_t *)&start[11];
                     
@@ -541,7 +549,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                 case ACTION_FIRST_BLOCK:
                 {
                     request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[4];
+                    request->info[0].classid = (uint8_t *)&start[3];
                     request->info[0].obis = (uint8_t *)&start[5];
                     request->info[0].index = (uint8_t *)&start[11];
                     request->info[0].end = (uint8_t *)&start[12];
@@ -589,7 +597,6 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
     uint32_t param = 0;
     const char *table = (const char *)0;
     struct __cosem_request_desc desc;
-    union __dlms_right right;
     
     //获取当前链接下附属的对象内存
     Current = (struct __cosem_request *)dlms_asso_storage();
@@ -623,7 +630,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    dlms_lex_parse(&desc, &table, &index, &param);
                     
                     if(!table)
                     {
@@ -681,7 +688,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
                         desc.descriptor.index = request->info[cnt].index[0];
                         desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        dlms_lex_parse(&desc, &table, &index, &param);
                         
                         if(!table)
                         {
@@ -720,7 +727,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    dlms_lex_parse(&desc, &table, &index, &param);
                     
                     if(!table)
                     {
@@ -745,7 +752,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    dlms_lex_parse(&desc, &table, &index, &param);
                     
                     if(!table)
                     {
@@ -817,7 +824,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
                         desc.descriptor.index = request->info[cnt].index[0];
                         desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        dlms_lex_parse(&desc, &table, &index, &param);
                         
                         if(!table)
                         {
@@ -856,7 +863,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    dlms_lex_parse(&desc, &table, &index, &param);
                     
                     if(!table)
                     {
@@ -905,7 +912,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &table, &index, &param, &right);
+                    dlms_lex_parse(&desc, &table, &index, &param);
                     
                     if(!table)
                     {
@@ -953,7 +960,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
                         desc.descriptor.index = request->info[cnt].index[0];
                         desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &table, &index, &param, &right);
+                        dlms_lex_parse(&desc, &table, &index, &param);
                         
                         if(!table)
                         {
@@ -989,7 +996,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
 }
 
 /**	
-  * @brief 
+  * @brief 生成回复报文
   */
 static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
@@ -1555,7 +1562,7 @@ enc_faild:
 }
 
 /**	
-  * @brief 
+  * @brief 生成回复报文（产生错误）
   */
 static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
 {
@@ -1630,7 +1637,7 @@ static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t
 
 
 /**	
-  * @brief 
+  * @brief dlms规约入口
   */
 void dlms_appl_entrance(const uint8_t *info,
                         uint16_t length,
@@ -1644,7 +1651,7 @@ void dlms_appl_entrance(const uint8_t *info,
     enum __appl_result result;
     struct __appl_request request;
     
-    Current = (void *)0;
+    Current = (struct __cosem_request *)0;
     
     heap.set(&request, 0, sizeof(request));
     
@@ -1671,7 +1678,7 @@ void dlms_appl_entrance(const uint8_t *info,
         if(Current)
         {
             heap.set(Current, 0, sizeof(struct __cosem_request));
-            Current = (void *)0;
+            Current = (struct __cosem_request *)0;
         }
         
         reply_exception(result, buffer, buffer_length, filled_length);
@@ -1683,7 +1690,7 @@ void dlms_appl_entrance(const uint8_t *info,
     if((Current->Actived == 0) || (Current->Actived > DLMS_REQ_LIST_MAX))
     {
         reply_exception(APPL_OBJ_OVERFLOW, buffer, buffer_length, filled_length);
-        Current = (void *)0;
+        Current = (struct __cosem_request *)0;
         return;
     }
     else
@@ -1699,7 +1706,7 @@ void dlms_appl_entrance(const uint8_t *info,
         if(Current->Actived != alive)
         {
             reply_exception(APPL_OBJ_OVERFLOW, buffer, buffer_length, filled_length);
-            Current = (void *)0;
+            Current = (struct __cosem_request *)0;
             return;
         }
     }
@@ -1712,7 +1719,7 @@ void dlms_appl_entrance(const uint8_t *info,
         //清零链接内存
         heap.set(Current, 0, sizeof(struct __cosem_request));
         reply_exception(APPL_NOMEM, buffer, buffer_length, filled_length);
-        Current = (void *)0;
+        Current = (struct __cosem_request *)0;
         return;
     }
     
@@ -1734,7 +1741,12 @@ void dlms_appl_entrance(const uint8_t *info,
     {
         if(Current->Entry[cnt].Object)
         {
+            if(request.info[cnt].active)
+            {
+                logicalname = request.info[cnt].obis;
+            }
             Current->Entry[cnt].Errs = Current->Entry[cnt].Object(&Current->Entry[cnt].Para);
+            logicalname = (uint8_t *)0;
         }
     }
     
@@ -1777,5 +1789,20 @@ void dlms_appl_entrance(const uint8_t *info,
     //释放内存
     heap.free(cosem_data);
     
-    Current = (void *)0;
+    Current = (struct __cosem_request *)0;
+}
+
+/**	
+  * @brief dlms获取逻辑名
+  */
+uint8_t dlms_appl_logicalname(uint8_t *name)
+{
+    if(name && logicalname)
+    {
+        heap.copy(name, logicalname, 6);
+        
+        return(6);
+    }
+    
+    return(0);
 }

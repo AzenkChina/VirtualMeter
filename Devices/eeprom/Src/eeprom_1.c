@@ -169,7 +169,7 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
 	Sleep(10*size/EEP_PAGE_SIZE);
 #endif
     
-    return(EEP_PAGE_SIZE);
+    return(size);
 #endif
 }
 
@@ -225,7 +225,7 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
 	Sleep(10*size/EEP_PAGE_SIZE);
 #endif
     
-    return(EEP_PAGE_SIZE);
+    return(size);
 #endif
 }
 
