@@ -1953,6 +1953,19 @@ void dlms_asso_cleanup(uint8_t sap)
 }
 
 /**
+  * @brief 获取 client SAP
+  */
+uint8_t dlms_asso_client(void)
+{
+    if(!asso_current)
+    {
+        return(0);
+    }
+	
+	return(asso_current->sap.id);
+}
+
+/**
   * @brief 获取 Association Status
   */
 enum __asso_status dlms_asso_status(void)
@@ -2048,7 +2061,7 @@ uint8_t dlms_asso_stoc(uint8_t *buffer)
         return(0);
     }
     
-    if((asso_current->stoc[1] > 32) || (asso_current->stoc[1] == 0))
+    if((asso_current->stoc[1] > 64) || (asso_current->stoc[1] == 0))
     {
         return(0);
     }
@@ -2068,7 +2081,7 @@ uint8_t dlms_asso_ctos(uint8_t *buffer)
         return(0);
     }
     
-    if((asso_current->ctos[1] > 32) || (asso_current->ctos[1] == 0))
+    if((asso_current->ctos[1] > 64) || (asso_current->ctos[1] == 0))
     {
         return(0);
     }

@@ -689,12 +689,33 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                 }
                 
                 //判断属性或者方法的索引是否有效
-                if((desc->request == GET_REQUEST) || (desc->request == SET_REQUEST))
+                if((desc->request == GET_REQUEST) || \
+                (desc->request == GLO_GET_REQUEST) || \
+                (desc->request == DED_GET_REQUEST) || \
+                (desc->request == SET_REQUEST) || \
+                (desc->request == GLO_SET_REQUEST) || \
+				(desc->request == DED_SET_REQUEST))
                 {
-                    if(desc->descriptor.index < 2)
+                    if(desc->descriptor.index == 0)
                     {
                         break;
                     }
+                    
+                    if(desc->request == GET_REQUEST)
+                    {
+						if(desc->descriptor.index == 1)
+	                    {
+	                    	if(desc->request == GET_REQUEST)
+	                    	{
+		                        *table = "Exception";
+		                        *index = 2;
+		                        *param = 0;
+		                        right.attr = ATTRIBUTE_READ_ONLY;
+							}
+							
+							break;
+	                    }
+					}
                     
                     if(desc->descriptor.index > (sizeof((((struct __cosem_entry_register *)Table)->attr)) / sizeof(struct __dlms_attr_desc) + 1))
                     {
@@ -740,7 +761,9 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     
                     break;
                 }
-                else if(desc->request == ACTION_REQUEST)
+                else if(desc->request == ACTION_REQUEST || \
+				desc->request == GLO_ACTION_REQUEST || \
+				desc->request == DED_ACTION_REQUEST)
                 {
                     if(desc->descriptor.index < 1)
                     {
@@ -806,7 +829,12 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                 }
                 
                 //判断属性或者方法的索引是否有效
-                if((desc->request == GET_REQUEST) || (desc->request == SET_REQUEST))
+                if((desc->request == GET_REQUEST) || \
+                (desc->request == GLO_GET_REQUEST) || \
+                (desc->request == DED_GET_REQUEST) || \
+                (desc->request == SET_REQUEST) || \
+                (desc->request == GLO_SET_REQUEST) || \
+				(desc->request == DED_SET_REQUEST))
                 {
                     if(desc->descriptor.index < 2)
                     {
@@ -857,7 +885,9 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     
                     break;
                 }
-                else if(desc->request == ACTION_REQUEST)
+                else if(desc->request == ACTION_REQUEST || \
+				desc->request == GLO_ACTION_REQUEST || \
+				desc->request == DED_ACTION_REQUEST)
                 {
                     if(desc->descriptor.index < 1)
                     {

@@ -285,7 +285,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length,
                                                    12,
                                                    add,
                                                    (1 + len_akey),
-                                                   &info[frame_length - 12 + 1],
+                                                   &info[1 + frame_length - 12 + 1],
                                                    12,
                                                    input,
                                                    (unsigned char *)&info[7]);
@@ -1245,6 +1245,8 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                     return(APPL_UNSUPPORT);
                 }
             }
+            
+            break;
         }
         case ACTION_REQUEST:
         case GLO_ACTION_REQUEST:
@@ -1316,6 +1318,8 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                     return(APPL_UNSUPPORT);
                 }
             }
+            
+            break;
         }
         default:
         {
@@ -1334,7 +1338,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         {
             ekey_length = dlms_asso_ekey(ekey);
             akey_length = dlms_asso_akey(akey);
-            dlms_asso_callingtitle(iv);
+            dlms_asso_localtitle(iv);
             dlms_asso_fc(&iv[8]);
             break;
         }
@@ -1344,7 +1348,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
         {
             ekey_length = dlms_asso_dedkey(ekey);
             akey_length = dlms_asso_akey(akey);
-            dlms_asso_callingtitle(iv);
+            dlms_asso_localtitle(iv);
             dlms_asso_fc(&iv[8]);
             break;
         }
@@ -1368,191 +1372,194 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
     switch(request->service)
     {
         case GLO_GET_REQUEST:
+        	buffer[0] = GLO_GET_RESPONSE;
+        	break;
         case GLO_SET_REQUEST:
+        	buffer[0] = GLO_SET_RESPONSE;
+        	break;
         case GLO_ACTION_REQUEST:
+        	buffer[0] = GLO_ACTION_RESPONSE;
+        	break;
         case DED_GET_REQUEST:
+        	buffer[0] = DED_GET_RESPONSE;
+        	break;
         case DED_SET_REQUEST:
+        	buffer[0] = DED_SET_RESPONSE;
+        	break;
         case DED_ACTION_REQUEST:
-        {
-            buffer[0] = (request->service + 8);
-            cipher_length = 1;
-            
-            if((request->sc & 0xf0) == 0x10)
-            {
-                cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
-                
-                if(buffer_length < (cipher_length+5+plain_length+12))
-                {
-                    goto enc_faild;
-                }
-                
-                buffer[cipher_length] = request->sc;
-                cipher_length += 1;
-                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
-                
-                mbedtls_gcm_init(&ctx);
-                
-                ret = mbedtls_gcm_setkey(&ctx,
-                                         MBEDTLS_CIPHER_ID_AES,
-                                         ekey,
-                                         ekey_length*8);
-                
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                add = heap.dalloc(1 + akey_length + plain_length);
-                if(!add)
-                {
-                    goto enc_faild;
-                }
-                
-                add[0] = request->sc;
-                heap.copy(&add[1], akey, akey_length);
-                heap.copy(&add[1+akey_length], plain, plain_length);
-                
-                ret = mbedtls_gcm_crypt_and_tag(&ctx,
-                                                MBEDTLS_GCM_ENCRYPT,
-                                                0,
-                                                iv,
-                                                sizeof(iv),
-                                                add,
-                                                (1 + akey_length + plain_length),
-                                                (void *)0,
-                                                (void *)0,
-                                                sizeof(tag),
-                                                tag);
-                heap.free(add);
-                
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                mbedtls_gcm_free(&ctx);
-                
-                cipher_length += heap.copy(&buffer[cipher_length], plain, plain_length);
-                cipher_length += heap.copy(&buffer[cipher_length], tag, sizeof(tag));
-                *filled_length = cipher_length;
-            }
-            else if((request->sc & 0xf0) == 0x20)
-            {
-                cipher_length += axdr.length.encode((5+plain_length), &buffer[cipher_length]);
-                
-                if(buffer_length < (cipher_length+5+plain_length))
-                {
-                    goto enc_faild;
-                }
-                
-                buffer[cipher_length] = request->sc;
-                cipher_length += 1;
-                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
-                
-                mbedtls_gcm_init(&ctx);
-                
-                ret = mbedtls_gcm_setkey(&ctx,
-                                         MBEDTLS_CIPHER_ID_AES,
-                                         ekey,
-                                         ekey_length*8);
-                
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                ret = mbedtls_gcm_crypt_and_tag(&ctx,
-                                                MBEDTLS_GCM_ENCRYPT,
-                                                plain_length,
-                                                iv,
-                                                sizeof(iv),
-                                                (void *)0,
-                                                0,
-                                                plain,
-                                                (buffer + cipher_length),
-                                                0,
-                                                (void *)0);
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                mbedtls_gcm_free(&ctx);
-                
-                *filled_length = cipher_length + plain_length;
-            }
-            else if((request->sc & 0xf0) == 0x30)
-            {
-                cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
-                
-                if(buffer_length < (cipher_length+5+plain_length+12))
-                {
-                    goto enc_faild;
-                }
-                
-                buffer[cipher_length] = request->sc;
-                cipher_length += 1;
-                cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
-                
-                mbedtls_gcm_init(&ctx);
-                
-                ret = mbedtls_gcm_setkey(&ctx,
-                                         MBEDTLS_CIPHER_ID_AES,
-                                         ekey,
-                                         ekey_length*8);
-                
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                add = heap.dalloc(1 + akey_length);
-                if(!add)
-                {
-                    goto enc_faild;
-                }
-                
-                add[0] = request->sc;
-                heap.copy(&add[1], akey, akey_length);
-                
-                ret = mbedtls_gcm_crypt_and_tag(&ctx,
-                                                MBEDTLS_GCM_ENCRYPT,
-                                                plain_length,
-                                                iv,
-                                                sizeof(iv),
-                                                add,
-                                                (1 + akey_length),
-                                                plain,
-                                                (buffer + cipher_length),
-                                                sizeof(tag),
-                                                tag);
-                heap.free(add);
-                
-                if(ret != 0)
-                {
-                    goto enc_faild;
-                }
-                
-                mbedtls_gcm_free(&ctx);
-                
-                cipher_length += plain_length;
-                cipher_length += heap.copy((buffer + cipher_length), tag, sizeof(tag));
-                
-                *filled_length = cipher_length;
-            }
-            else
-            {
-                goto enc_faild;
-            }
-            
-            break;
-        }
-        default:
-        {
-            goto enc_faild;
-            break;
-        }
+        	buffer[0] = DED_ACTION_RESPONSE;
+        	break;
     }
+    
+    cipher_length = 1;
+	
+	if((request->sc & 0xf0) == 0x10)
+	{
+		cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+		
+		if(buffer_length < (cipher_length+5+plain_length+12))
+		{
+			goto enc_faild;
+		}
+		
+		buffer[cipher_length] = request->sc;
+		cipher_length += 1;
+		cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+		
+		mbedtls_gcm_init(&ctx);
+		
+		ret = mbedtls_gcm_setkey(&ctx,
+								 MBEDTLS_CIPHER_ID_AES,
+								 ekey,
+								 ekey_length*8);
+		
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		add = heap.dalloc(1 + akey_length + plain_length);
+		if(!add)
+		{
+			goto enc_faild;
+		}
+		
+		add[0] = request->sc;
+		heap.copy(&add[1], akey, akey_length);
+		heap.copy(&add[1+akey_length], plain, plain_length);
+		
+		ret = mbedtls_gcm_crypt_and_tag(&ctx,
+										MBEDTLS_GCM_ENCRYPT,
+										0,
+										iv,
+										sizeof(iv),
+										add,
+										(1 + akey_length + plain_length),
+										(void *)0,
+										(void *)0,
+										sizeof(tag),
+										tag);
+		heap.free(add);
+		
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		mbedtls_gcm_free(&ctx);
+		
+		cipher_length += heap.copy(&buffer[cipher_length], plain, plain_length);
+		cipher_length += heap.copy(&buffer[cipher_length], tag, sizeof(tag));
+		*filled_length = cipher_length;
+	}
+	else if((request->sc & 0xf0) == 0x20)
+	{
+		cipher_length += axdr.length.encode((5+plain_length), &buffer[cipher_length]);
+		
+		if(buffer_length < (cipher_length+5+plain_length))
+		{
+			goto enc_faild;
+		}
+		
+		buffer[cipher_length] = request->sc;
+		cipher_length += 1;
+		cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+		
+		mbedtls_gcm_init(&ctx);
+		
+		ret = mbedtls_gcm_setkey(&ctx,
+								 MBEDTLS_CIPHER_ID_AES,
+								 ekey,
+								 ekey_length*8);
+		
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		ret = mbedtls_gcm_crypt_and_tag(&ctx,
+										MBEDTLS_GCM_ENCRYPT,
+										plain_length,
+										iv,
+										sizeof(iv),
+										(void *)0,
+										0,
+										plain,
+										(buffer + cipher_length),
+										0,
+										(void *)0);
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		mbedtls_gcm_free(&ctx);
+		
+		*filled_length = cipher_length + plain_length;
+	}
+	else if((request->sc & 0xf0) == 0x30)
+	{
+		cipher_length += axdr.length.encode((5+plain_length+12), &buffer[cipher_length]);
+		
+		if(buffer_length < (cipher_length+5+plain_length+12))
+		{
+			goto enc_faild;
+		}
+		
+		buffer[cipher_length] = request->sc;
+		cipher_length += 1;
+		cipher_length += heap.copy(&buffer[cipher_length], &iv[8], 4);
+		
+		mbedtls_gcm_init(&ctx);
+		
+		ret = mbedtls_gcm_setkey(&ctx,
+								 MBEDTLS_CIPHER_ID_AES,
+								 ekey,
+								 ekey_length*8);
+		
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		add = heap.dalloc(1 + akey_length);
+		if(!add)
+		{
+			goto enc_faild;
+		}
+		
+		add[0] = request->sc;
+		heap.copy(&add[1], akey, akey_length);
+		
+		ret = mbedtls_gcm_crypt_and_tag(&ctx,
+										MBEDTLS_GCM_ENCRYPT,
+										plain_length,
+										iv,
+										sizeof(iv),
+										add,
+										(1 + akey_length),
+										plain,
+										(buffer + cipher_length),
+										sizeof(tag),
+										tag);
+		heap.free(add);
+		
+		if(ret != 0)
+		{
+			goto enc_faild;
+		}
+		
+		mbedtls_gcm_free(&ctx);
+		
+		cipher_length += plain_length;
+		cipher_length += heap.copy((buffer + cipher_length), tag, sizeof(tag));
+		
+		*filled_length = cipher_length;
+	}
+	else
+	{
+		goto enc_faild;
+	}
     
     heap.free(plain);
     return(APPL_SUCCESS);
