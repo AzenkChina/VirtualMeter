@@ -206,15 +206,13 @@ static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
         return(OBJECT_ERR_ENCODE);
     }
     
-    OBJ_OUT_ADDR(P)[0] = 0;
-    OBJ_OUT_ADDR(P)[1] = 0;
-    axdr.type.encode(AXDR_OCTET_STRING, &OBJ_OUT_ADDR(P)[2]);
-    axdr.length.encode(17, &OBJ_OUT_ADDR(P)[3]);
-    OBJ_OUT_ADDR(P)[4] = 0x10;
-    heap.copy(&OBJ_OUT_ADDR(P)[5], &iv[8], 4);
-    heap.copy(&OBJ_OUT_ADDR(P)[9], tag, 12);
+    axdr.type.encode(AXDR_OCTET_STRING, &OBJ_OUT_ADDR(P)[0]);
+    axdr.length.encode(17, &OBJ_OUT_ADDR(P)[1]);
+    OBJ_OUT_ADDR(P)[2] = 0x10;
+    heap.copy(&OBJ_OUT_ADDR(P)[3], &iv[8], 4);
+    heap.copy(&OBJ_OUT_ADDR(P)[7], tag, 12);
     
-    OBJ_PUSH_LENGTH(P, 21);
+    OBJ_PUSH_LENGTH(P, 19);
     
     return(OBJECT_NOERR);
 }

@@ -95,7 +95,9 @@ static uint8_t *logicalname = (uint8_t *)0;
   * @brief 索引数据报文中有效数据
   * 
   */
-static enum __appl_result parse_dlms_frame(const uint8_t *info, uint16_t length, struct __appl_request *request)
+static enum __appl_result parse_dlms_frame(const uint8_t *info, \
+                                           uint16_t length, \
+                                           struct __appl_request *request)
 {
     uint16_t frame_length = 0;
     uint16_t frame_decoded = 0;
@@ -998,7 +1000,10 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
 /**	
   * @brief 生成回复报文
   */
-static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
+static enum __appl_result reply_normal(struct __appl_request *request, \
+                                       uint8_t *buffer, \
+                                       uint16_t buffer_length, \
+                                       uint16_t *filled_length)
 {
     uint8_t cnt = 0;
     uint8_t *plain = (uint8_t *)0;
@@ -1038,103 +1043,106 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
             
             plain_length = 3;
             
-            if(Current->Actived > 1) //Get-Response-With-List
+            switch(request->type)
             {
-                plain[1] = GET_RESPONSE_WITH_LIST;
-                
-                for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                case GET_NORMAL:
                 {
-                    if(!Current->Entry[cnt].Object)
-                    {
-                        continue;
-                    }
-                    
-                    //Get-Response-With-List 不允许 Get-Response-With-Datablock
-                    if((Current->Entry[cnt].Para.Iterator.Status != ITER_NONE) || \
-                        (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End))
-                    {
-                        Current->Entry[cnt].Para.Iterator.Status = ITER_NONE;
-                        Current->Entry[cnt].Errs = OBJECT_ERR_MEM;
-                    }
-                    
-                    if(Current->Entry[cnt].Errs == OBJECT_NOERR)
-                    {
-                        if((Current->Entry[cnt].Para.Output.Filled > Current->Entry[cnt].Para.Output.Size) || \
-                            ((Current->Entry[cnt].Para.Output.Filled + plain_length) > (dlms_asso_mtu() - 20)))
-                        {
-                            plain[1] = GET_RESPONSE_NORMAL;
-                            plain[3] = 1;
-                            plain[4] = (uint8_t)OBJECT_ERR_MEM;
-                            plain_length = 5;
-                            break;
-                        }
-                        else
-                        {
-                            plain[plain_length + 0] = 0;
-                            plain_length += 1;
-                            plain_length += heap.copy(&plain[plain_length], Current->Entry[cnt].Para.Output.Buffer, Current->Entry[cnt].Para.Output.Filled);
-                        }
-                    }
-                    else
-                    {
-                        plain[plain_length + 0] = 1;
-                        plain[plain_length + 1] = (uint8_t)Current->Entry[cnt].Errs;
-                        plain_length += 2;
-                    }
-                }
-            }
-            else
-            {
-                if(!Current->Entry[0].Object) //Get-Response-Normal (Error)
-                {
-                    plain[1] = GET_RESPONSE_NORMAL;
-                    plain[3] = 1;
-                    plain[4] = (uint8_t)OBJECT_ERR_MEM;
-                    plain_length = 5;
-                }
-                else if(Current->Entry[0].Para.Iterator.Status != ITER_NONE) //Get-Response-With-Datablock
-                {
-                    if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
-                        (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
+                    if(!Current->Entry[0].Object) //Get-Response-Normal (Error)
                     {
                         plain[1] = GET_RESPONSE_NORMAL;
                         plain[3] = 1;
                         plain[4] = (uint8_t)OBJECT_ERR_MEM;
                         plain_length = 5;
-                        
-                        Current->Entry[0].Para.Iterator.Status = ITER_NONE;
                     }
-                    else
+                    else if(Current->Entry[0].Para.Iterator.Status != ITER_NONE) //Get-Response-With-Datablock
                     {
-                        plain[1] = GET_RESPONSE_WITH_BLOCK;
-                        
-                        if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
-                            (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                        if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
+                            (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
                         {
-                            plain[3] = (uint8_t)IS_LAST_BLOCK;
+                            plain[1] = GET_RESPONSE_NORMAL;
+                            plain[3] = 1;
+                            plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                            plain_length = 5;
+                            
+                            Current->Entry[0].Para.Iterator.Status = ITER_NONE;
                         }
                         else
                         {
-                            plain[3] = (uint8_t)NOT_LAST_BLOCK;
+                            plain[1] = GET_RESPONSE_WITH_BLOCK;
+                            
+                            if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
+                                (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                            {
+                                plain[3] = (uint8_t)IS_LAST_BLOCK;
+                            }
+                            else
+                            {
+                                plain[3] = (uint8_t)NOT_LAST_BLOCK;
+                            }
+                            
+                            plain[4] = (uint8_t)(Current->Block >> 24);
+                            plain[5] = (uint8_t)(Current->Block >> 16);
+                            plain[6] = (uint8_t)(Current->Block >> 8);
+                            plain[7] = (uint8_t)(Current->Block >> 0);
+                            
+                            plain[8] = 0;
+                            
+                            plain_length = 9;
+                            
+                            plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
+                            plain_length += heap.copy(&plain[plain_length], \
+                                                      Current->Entry[0].Para.Output.Buffer, \
+                                                      Current->Entry[0].Para.Output.Filled);
                         }
-                        
-                        plain[4] = (uint8_t)(Current->Block >> 24);
-                        plain[5] = (uint8_t)(Current->Block >> 16);
-                        plain[6] = (uint8_t)(Current->Block >> 8);
-                        plain[7] = (uint8_t)(Current->Block >> 0);
-                        
-                        plain[8] = 0;
-                        
-                        plain_length = 9;
-                        
-                        plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
-                        plain_length += heap.copy(&plain[plain_length], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
                     }
+                    else //Get-Response-Normal
+                    {
+                        plain[1] = GET_RESPONSE_NORMAL;
+                        if(Current->Entry[0].Errs == OBJECT_NOERR)
+                        {
+                            if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
+                                (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
+                            {
+                                plain[3] = 1;
+                                plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                                plain_length = 5;
+                            }
+                            else
+                            {
+                                plain[3] = 0;
+                                plain_length = 4;
+                                plain_length += heap.copy(&plain[4], \
+                                                          Current->Entry[0].Para.Output.Buffer, \
+                                                          Current->Entry[0].Para.Output.Filled);
+                            }
+                        }
+                        else
+                        {
+                            plain[3] = 1;
+                            plain[4] = (uint8_t)Current->Entry[0].Errs;
+                            plain_length = 5;
+                        }
+                    }
+                    
+                    break;
                 }
-                else //Get-Response-Normal
+                case GET_NEXT:
                 {
-                    plain[1] = GET_RESPONSE_NORMAL;
-                    if(Current->Entry[0].Errs == OBJECT_NOERR)
+                    plain[1] = GET_RESPONSE_WITH_BLOCK;
+                    
+                    if(!Current->Entry[0].Object)
+                    {
+                        plain[3] = 1;
+                        plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                        plain_length = 5;
+                    }
+                    else if(Current->Entry[0].Para.Iterator.Status == ITER_NONE)
+                    {
+                        plain[3] = 1;
+                        plain[4] = (uint8_t)OBJECT_ERR_NODEF;
+                        plain_length = 5;
+                    }
+                    else
                     {
                         if((Current->Entry[0].Para.Output.Filled > Current->Entry[0].Para.Output.Size) || \
                             (Current->Entry[0].Para.Output.Filled > (dlms_asso_mtu() - 20)))
@@ -1142,23 +1150,98 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                             plain[3] = 1;
                             plain[4] = (uint8_t)OBJECT_ERR_MEM;
                             plain_length = 5;
+                            
+                            Current->Entry[0].Para.Iterator.Status = ITER_NONE;
                         }
                         else
                         {
-                            plain[3] = 0;
-                            plain_length = 4;
-                            plain_length += heap.copy(&plain[4], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
+                            if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
+                                (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                            {
+                                plain[3] = (uint8_t)IS_LAST_BLOCK;
+                            }
+                            else
+                            {
+                                plain[3] = (uint8_t)NOT_LAST_BLOCK;
+                            }
+                            
+                            plain[4] = (uint8_t)(Current->Block >> 24);
+                            plain[5] = (uint8_t)(Current->Block >> 16);
+                            plain[6] = (uint8_t)(Current->Block >> 8);
+                            plain[7] = (uint8_t)(Current->Block >> 0);
+                            
+                            plain[8] = 0;
+                            
+                            plain_length = 9;
+                            
+                            plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
+                            plain_length += heap.copy(&plain[plain_length], \
+                                                      Current->Entry[0].Para.Output.Buffer, \
+                                                      Current->Entry[0].Para.Output.Filled);
                         }
                     }
-                    else
+                    break;
+                }
+                case GET_WITH_LIST:
+                {
+                    plain[1] = GET_RESPONSE_WITH_LIST;
+                    
+                    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
+                    {
+                        if(!Current->Entry[cnt].Object)
+                        {
+                            continue;
+                        }
+                        
+                        //Get-Response-With-List 不允许 Get-Response-With-Datablock
+                        if((Current->Entry[cnt].Para.Iterator.Status != ITER_NONE) || \
+                            (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End))
+                        {
+                            Current->Entry[cnt].Para.Iterator.Status = ITER_NONE;
+                            Current->Entry[cnt].Errs = OBJECT_ERR_MEM;
+                        }
+                        
+                        if(Current->Entry[cnt].Errs == OBJECT_NOERR)
+                        {
+                            if((Current->Entry[cnt].Para.Output.Filled > Current->Entry[cnt].Para.Output.Size) || \
+                                ((Current->Entry[cnt].Para.Output.Filled + plain_length) > (dlms_asso_mtu() - 20)))
+                            {
+                                plain[3] = 1;
+                                plain[4] = (uint8_t)OBJECT_ERR_MEM;
+                                plain_length = 5;
+                                break;
+                            }
+                            else
+                            {
+                                plain[plain_length + 0] = 0;
+                                plain_length += 1;
+                                plain_length += heap.copy(&plain[plain_length], \
+                                                          Current->Entry[cnt].Para.Output.Buffer, \
+                                                          Current->Entry[cnt].Para.Output.Filled);
+                            }
+                        }
+                        else
+                        {
+                            plain[plain_length + 0] = 1;
+                            plain[plain_length + 1] = (uint8_t)Current->Entry[cnt].Errs;
+                            plain_length += 2;
+                        }
+                    }
+                    
+                    if(plain_length == 3)
                     {
                         plain[3] = 1;
-                        plain[4] = (uint8_t)Current->Entry[0].Errs;
+                        plain[4] = (uint8_t)OBJECT_ERR_MEM;
                         plain_length = 5;
                     }
+                    break;
+                }
+                default:
+                {
+                    heap.free(plain);
+                    return(APPL_UNSUPPORT);
                 }
             }
-            
             break;
         }
         case SET_REQUEST:
@@ -1288,8 +1371,22 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                             else
                             {
                                 plain[3] = 0;
-                                plain_length = 4;
-                                plain_length += heap.copy(&plain[4], Current->Entry[0].Para.Output.Buffer, Current->Entry[0].Para.Output.Filled);
+                                
+                                if(Current->Entry[0].Para.Output.Filled)
+                                {
+                                    plain[4] = 1;
+                                    plain[5] = 0;
+                                    plain_length = 6;
+                                    
+                                    plain_length += heap.copy(&plain[6], \
+                                                              Current->Entry[0].Para.Output.Buffer, \
+                                                              Current->Entry[0].Para.Output.Filled);
+                                }
+                                else
+                                {
+                                    plain[4] = 0;
+                                    plain_length = 5;
+                                }
                             }
                         }
                         else
@@ -1302,13 +1399,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, uint8_t *
                     break;
                 }
                 case ACTION_NEXT_BLOCK:
-                {
-                    break;
-                }
                 case ACTION_FIRST_BLOCK:
-                {
-                    break;
-                }
                 case ACTION_WITH_LIST:
                 case ACTION_WITH_LIST_AND_FIRST_BLOCK:
                 case ACTION_WITH_BLOCK:
@@ -1571,43 +1662,27 @@ enc_faild:
 /**	
   * @brief 生成回复报文（产生错误）
   */
-static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t buffer_length, uint16_t *filled_length)
+static void reply_exception(enum __appl_result result, \
+                            uint8_t *buffer, \
+                            uint16_t buffer_length, \
+                            uint16_t *filled_length)
 {
     buffer[0] = EXCEPTION_RESPONSE;
     
     switch(result)
     {
         case APPL_DENIED:
-        {
-            buffer[1] = 1;
-            buffer[2] = 1;
-            break;
-        }
-        case APPL_NOMEM:
-        {
-            buffer[1] = 1;
-            buffer[2] = 3;
-            break;
-        }
         case APPL_BLOCK_MISS:
-        {
-            buffer[1] = 1;
-            buffer[2] = 1;
-            break;
-        }
         case APPL_OBJ_NODEF:
         {
             buffer[1] = 1;
             buffer[2] = 1;
             break;
         }
+        case APPL_NOMEM:
         case APPL_OBJ_MISS:
-        {
-            buffer[1] = 1;
-            buffer[2] = 3;
-            break;
-        }
         case APPL_OBJ_OVERFLOW:
+        case APPL_ENC_FAILD:
         {
             buffer[1] = 1;
             buffer[2] = 3;
@@ -1619,18 +1694,7 @@ static void reply_exception(enum __appl_result result, uint8_t *buffer, uint16_t
             buffer[2] = 2;
             break;
         }
-        case APPL_ENC_FAILD:
-        {
-            buffer[1] = 1;
-            buffer[2] = 3;
-            break;
-        }
         case APPL_OTHERS:
-        {
-            buffer[1] = 2;
-            buffer[2] = 3;
-            break;
-        }
         default:
         {
             buffer[1] = 2;
@@ -1800,7 +1864,7 @@ void dlms_appl_entrance(const uint8_t *info,
 }
 
 /**	
-  * @brief dlms获取逻辑名
+  * @brief dlms获取当前正在访问的数据项的逻辑名
   */
 uint8_t dlms_appl_logicalname(uint8_t *name)
 {
