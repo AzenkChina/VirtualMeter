@@ -164,7 +164,7 @@ static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
     
     if(memcmp(tag, &OBJ_IN_ADDR(P)[7], 12) != 0)
     {
-        return(OBJECT_ERR_DECODE);
+        return((ObjectErrs)2);
     }
     
     add[0] = 0x10;

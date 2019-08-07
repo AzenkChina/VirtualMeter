@@ -13,7 +13,7 @@
   * @brief 继电器动作
   *
   */
-enum __relay_req_action
+enum __relay_action
 {
     RELAY_ACT_RELEASE = 0,//忽略，无操作
     RELAY_ACT_CLOSE = 1,//合闸
@@ -24,98 +24,72 @@ enum __relay_req_action
   * @brief 继电器状态
   *
   */
-enum __relay_req_status
+enum __relay_status
 {
     RELAY_STA_CLOSE = 0,//合闸
-    RELAY_STA_READY = 1,//合闸允许
-    RELAY_STA_OPEN = 2,//拉闸
+    RELAY_STA_OPEN = 1,//拉闸
 };
 
 /**
   * @brief 策略输出
   *
   */
-enum __relay_req_policy
+enum __relay_policy
 {
-    RELAY_REQ_ACCEPT = 0,//接受
-    RELAY_REQ_DROP = 1,//丢弃
-    RELAY_REQ_MANGLE = 2,//修改
+    RELAY_POL_ACCEPT = 0,//接受
+    RELAY_POL_DROP = 1,//丢弃
+    RELAY_POL_MANGLE = 2,//修改
 };
 
 /**
-  * @brief 继电器请求源，最多8个请求源
+  * @brief 继电器请求源，共16个
   *
   */
-enum __relay_req_source
+enum __relay_requests
 {
-    RELAY_SRC_ACCOUNT = 0,//账户
-	RELAY_SRC_COMMAND = 1,//命令
-    RELAY_SRC_TEST = 2,//测试
-    RELAY_SRC_OVERPOWER = 3,//超限
-    RELAY_SRC_EVENTS = 4,//事件
-    RELAY_SRC_TAMPER = 5,//窃电
-    
-	RELAY_SRC_RESERVE6 = 6,
-	RELAY_SRC_RESERVE7 = 7,
+    RELAY_REQ_SLOT_01 = 0,
+	RELAY_REQ_SLOT_02,
+    RELAY_REQ_SLOT_03,
+    RELAY_REQ_SLOT_04,
+    RELAY_REQ_SLOT_05,
+    RELAY_REQ_SLOT_06,
+	RELAY_REQ_SLOT_07,
+	RELAY_REQ_SLOT_08,
+    RELAY_REQ_SLOT_09,
+	RELAY_REQ_SLOT_10,
+    RELAY_REQ_SLOT_11,
+    RELAY_REQ_SLOT_12,
+    RELAY_REQ_SLOT_13,
+    RELAY_REQ_SLOT_14,
+	RELAY_REQ_SLOT_15,
+	RELAY_REQ_SLOT_16,
 };
-
-/**
-  * @brief 继电器请求源优先级
-  *
-  */
-struct __relay_priority_entry
-{
-    uint8_t open:4;
-    uint8_t close:4;
-};
-
-/**
-  * @brief 继电器请求策略
-  *
-  */
-struct __relay_policy_entry
-{
-    uint16_t open2ready:2;
-    uint16_t open2close:2;
-    uint16_t close2open:2;
-    uint16_t close2ready:2;
-    uint16_t ready2open:2;
-    uint16_t ready2close:2;
-};
-
-/**
-  * @brief 继电器配置
-  *
-  */
-struct __relay_conf
-{
-    struct __relay_priority_entry   priority[8];
-    struct __relay_policy_entry     policy;
-};
-
-/**
-  * @brief 继电器数据
-  *
-  */
-struct __relay_db
-{
-    uint8_t                         conf_select;
-    enum __relay_req_status         status;
-    uint16_t                        requests;
-};
-
-
 
 /**
   * @brief  disconnect task 的对外接口
   */
-struct __disconnect
+struct __relay
 {
-    uint8_t							(*request)(enum __relay_req_source source, enum __relay_req_action action);
+    uint8_t							(*request)(enum __relay_requests source, enum __relay_action action);
+    enum __relay_status             (*status)(void);
+    enum __relay_requests           (*reason)(void);
+	struct
+	{
+		uint8_t						(*set)(enum __relay_requests source, enum __relay_action action, uint8_t priority);
+		uint8_t						(*get)(enum __relay_requests source, enum __relay_action action);
+									
+	}								priority;
 };
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
+#define RELAY_ACCOUNT       RELAY_REQ_SLOT_01
+#define RELAY_COMMAND       RELAY_REQ_SLOT_02
+#define RELAY_TEST          RELAY_REQ_SLOT_03
+#define RELAY_OVERPOWER     RELAY_REQ_SLOT_04
+#define RELAY_EVENTS        RELAY_REQ_SLOT_05
+#define RELAY_TAMPER        RELAY_REQ_SLOT_06
+
 /* Exported function prototypes ----------------------------------------------*/
 
 #endif /* __TYPES_DISCONNECT_H__ */

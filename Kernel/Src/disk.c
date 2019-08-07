@@ -53,8 +53,9 @@ struct __file_entry
 static const struct __file_entry file_entry[] = 
 {
     /* 文件名  文件大小  文件所在分区 */
-	{"display", 4*1024, FILE_FREQ},
-    {"firmware", 384*1024, FILE_ONCE},
+	{"display", 4*1024, FILE_FREQ}, //显示参数
+    {"lexicon", 512*1024, FILE_ONCE}, //规约数据项
+    {"firmware", 512*1024, FILE_ONCE}, //固件升级
 };
 
 

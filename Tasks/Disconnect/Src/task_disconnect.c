@@ -13,19 +13,87 @@
 #include "jiffy.h"
 
 /* Private typedef -----------------------------------------------------------*/
+/**
+  * @brief  
+  */
+struct __relay_runs
+{
+    enum __relay_status     status;
+    uint32_t                requests;
+	uint32_t                requests;
+	uint32_t				priority[32];//32个优先级，对应16个触发源
+};
+
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __relay_req_status req_status = RELAY_STA_CLOSE;
+static struct __relay_runs relay_runs;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  
   */
-static const struct __disconnect disconnecter = 
+static uint8_t relay_request(enum __relay_requests source, enum __relay_action action)
 {
-    .request            = (void *)0,
+    if(source > 15)
+    {
+        return(0);
+    }
+    
+    relay_runs.requests &= ~(0x03 << (source * 2));
+    action &= 0x03;
+    relay_runs.requests |= (action << (source * 2));
+    
+    return((uint8_t)action);
+}
+
+/**
+  * @brief  
+  */
+static enum __relay_status relay_status(void)
+{
+	
+}
+
+/**
+  * @brief  
+  */
+static enum __relay_requests relay_reason(void)
+{
+	
+}
+
+/**
+  * @brief  
+  */
+static uint8_t relay_priority_set(enum __relay_requests source, enum __relay_action action, uint8_t priority)
+{
+	
+}
+
+/**
+  * @brief  
+  */
+static uint8_t relay_priority_get(enum __relay_requests source, enum __relay_action action)
+{
+	
+}
+
+
+/**
+  * @brief  
+  */
+static const struct __relay relay = 
+{
+    .request            = relay_request,
+	.status				= relay_status,
+	.reason				= relay_reason,
+	.priority			= 
+	{
+		.set			= relay_priority_set,
+		.get			= relay_priority_get,
+	},
 };
 
 
@@ -35,7 +103,7 @@ static const struct __disconnect disconnecter =
 /**
   * @brief  根据全部的请求和请求的优先级仲裁出当前动作
   */
-static enum __relay_req_action req_arbitrate(void)
+static enum __relay_action req_arbitrate(void)
 {
     return(RELAY_ACT_RELEASE);
 }
@@ -43,7 +111,7 @@ static enum __relay_req_action req_arbitrate(void)
 /**
   * @brief  根据继电器当前状态和当前请求的动作确定当前策略
   */
-static enum __relay_req_policy req_policy(enum __relay_req_status status, enum __relay_req_action * action)
+static enum __relay_policy req_policy(enum __relay_status status, enum __relay_action * action)
 {
     return(RELAY_REQ_ACCEPT);
 }
@@ -51,7 +119,7 @@ static enum __relay_req_policy req_policy(enum __relay_req_status status, enum _
 /**
   * @brief  更新继电器当前状态
   */
-static void req_update(enum __relay_req_action action)
+static void req_update(enum __relay_action action)
 {
     return;
 }
@@ -64,7 +132,7 @@ static void req_update(enum __relay_req_action action)
 /**
   * @brief  
   */
-static void disconnect_init(void)
+static void disc_init(void)
 {
     
 }
@@ -72,12 +140,12 @@ static void disconnect_init(void)
 /**
   * @brief  
   */
-static void disconnect_loop(void)
+static void disc_loop(void)
 {
     static uint32_t timing = 0;
     
-    enum __relay_req_action action;
-    enum __relay_req_policy policy;
+    enum __relay_action action;
+    enum __relay_policy policy;
     
     if(jiffy.after(timing) < 1000)
     {
@@ -91,7 +159,7 @@ static void disconnect_loop(void)
     action = req_arbitrate();
     
     //获取当前继电器策略
-    policy = req_policy(req_status, &action);
+    policy = req_policy(relay_runs.status, &action);
     
     if(policy != RELAY_REQ_DROP)
     {
@@ -104,7 +172,7 @@ static void disconnect_loop(void)
 /**
   * @brief  
   */
-static void disconnect_exit(void)
+static void disc_exit(void)
 {
     
 }
@@ -112,7 +180,7 @@ static void disconnect_exit(void)
 /**
   * @brief  
   */
-static void disconnect_reset(void)
+static void disc_reset(void)
 {
     
 }
@@ -120,7 +188,7 @@ static void disconnect_reset(void)
 /**
   * @brief  
   */
-static enum __task_status disconnect_status(void)
+static enum __task_status disc_status(void)
 {
     return(TASK_INIT);
 }
@@ -132,10 +200,10 @@ static enum __task_status disconnect_status(void)
 const struct __task_sched task_disconnect = 
 {
     .name               = NAME_DISCONNECT,
-    .init               = disconnect_init,
-    .loop               = disconnect_loop,
-    .exit               = disconnect_exit,
-    .reset              = disconnect_reset,
-    .status             = disconnect_status,
-    .api                = (void *)&disconnecter,
+    .init               = disc_init,
+    .loop               = disc_loop,
+    .exit               = disc_exit,
+    .reset              = disc_reset,
+    .status             = disc_status,
+    .api                = (void *)&relay,
 };
