@@ -54,6 +54,7 @@ static const struct __file_entry file_entry[] =
 {
     /* 文件名  文件大小  文件所在分区 */
 	{"display", 4*1024, FILE_FREQ}, //显示参数
+    {"disconnect", 512, FILE_FREQ}, //继电器参数
     {"lexicon", 512*1024, FILE_ONCE}, //规约数据项
     {"firmware", 512*1024, FILE_ONCE}, //固件升级
 };
@@ -409,6 +410,28 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
     }
 }
 
+/**
+  * @brief  
+  */
+static uint32_t disk_size(const char *name)
+{
+	uint16_t loop;
+	
+	if(!name)
+	{
+		return(0);
+	}
+	
+	for(loop=0; loop<AMOUNT_FILE; loop++)
+	{
+		if(strcmp(file_entry[loop].name, name) == 0)
+		{
+			return(file_entry[loop].size);
+		}
+	}
+    
+    return(0);
+}
 
 /**
   * @brief  
@@ -417,4 +440,5 @@ struct __file file =
 {
 	.read				= disk_read,
 	.write				= disk_write,
+    .size               = disk_size,
 };

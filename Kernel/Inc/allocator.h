@@ -28,6 +28,7 @@ struct __file
 {
     uint32_t                    (*read)(const char *name, uint32_t offset, uint32_t count, void *buff);
     uint32_t                    (*write)(const char *name, uint32_t offset, uint32_t count, const void *buff);
+    uint32_t                    (*size)(const char *name);
 };
 
 /**

@@ -793,7 +793,24 @@ void * api(const char *name)
    
     for(cnt = 0; cnt < TASK_AMOUNT; cnt ++)
     {
-        if(strcmp(task_tables[cnt].task->name, name) == 0)
+        if(strcmp(task_tables[cnt].task->name, name) != 0)
+        {
+            continue;
+        }
+        
+        if(task_tables[cnt].task->status)
+        {
+            if((task_tables[cnt].task->status() == TASK_INIT) || \
+               (task_tables[cnt].task->status() == TASK_RUN))
+            {
+                return(task_tables[cnt].task->api);
+            }
+            else
+            {
+                return((void *)0);
+            }
+        }
+        else
         {
             return(task_tables[cnt].task->api);
         }
