@@ -24,6 +24,27 @@
   */
 static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
 {
+    /** 读取多条数据编程范例 */
+    
+    //判断迭代器是否已经在运行中
+    if(!OBJ_IS_ITERATING(P))
+    {
+        //初始化迭代器
+        OBJ_ITERATE_INIT(P, 0, 10);
+    }
+    
+    //迭代读取数据条目
+    for(; OBJ_ITERATE_FROM(P) != OBJ_ITERATE_TO(P);)
+    {
+        //...组包数据到输出缓冲
+        
+        
+        
+        //迭代器步进
+        OBJ_ITERATE_STEPPING(P);
+    }
+    
+    
     return(OBJECT_ERR_NODEF);
 }
 

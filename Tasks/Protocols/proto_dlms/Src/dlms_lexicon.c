@@ -6,7 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "dlms_lexicon.h"
-#include "types_metering.h"
+#include "mids.h"
 #include "string.h"
 
 /* Private define ------------------------------------------------------------*/

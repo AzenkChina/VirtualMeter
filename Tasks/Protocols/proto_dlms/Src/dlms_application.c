@@ -11,9 +11,9 @@
 #include "dlms_association.h"
 #include "object_template.h"
 #include "dlms_lexicon.h"
-#include "types_metering.h"
 #include "cosem_objects.h"
 #include "axdr.h"
+#include "mids.h"
 #include "mbedtls/gcm.h"
 
 /* Private define ------------------------------------------------------------*/
@@ -1243,31 +1243,36 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                         }
                         else
                         {
-                            plain[1] = GET_RESPONSE_WITH_BLOCK;
-                            
                             if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
-                                (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                                (Current->Entry[0].Para.Iterator.From == Current->Entry[0].Para.Iterator.To))
                             {
-                                plain[3] = (uint8_t)IS_LAST_BLOCK;
+                                plain[1] = GET_RESPONSE_NORMAL;
+                                plain[3] = 0;
+                                plain_length = 4;
+                                plain_length += response_formatter(Current->Entry[0].Para.Input.ID, \
+                                                                   Current->Entry[0].Para.Output.Buffer, \
+                                                                   Current->Entry[0].Para.Output.Filled, \
+                                                                   &plain[4]);
                             }
                             else
                             {
+                                plain[1] = GET_RESPONSE_WITH_BLOCK;
                                 plain[3] = (uint8_t)NOT_LAST_BLOCK;
+                                
+                                plain[4] = (uint8_t)(Current->Block >> 24);
+                                plain[5] = (uint8_t)(Current->Block >> 16);
+                                plain[6] = (uint8_t)(Current->Block >> 8);
+                                plain[7] = (uint8_t)(Current->Block >> 0);
+                                
+                                plain[8] = 0;
+                                
+                                plain_length = 9;
+                                
+                                plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
+                                plain_length += heap.copy(&plain[plain_length], \
+                                                          Current->Entry[0].Para.Output.Buffer, \
+                                                          Current->Entry[0].Para.Output.Filled);
                             }
-                            
-                            plain[4] = (uint8_t)(Current->Block >> 24);
-                            plain[5] = (uint8_t)(Current->Block >> 16);
-                            plain[6] = (uint8_t)(Current->Block >> 8);
-                            plain[7] = (uint8_t)(Current->Block >> 0);
-                            
-                            plain[8] = 0;
-                            
-                            plain_length = 9;
-                            
-                            plain_length += axdr.length.encode(Current->Entry[0].Para.Output.Filled, &plain[9]);
-                            plain_length += heap.copy(&plain[plain_length], \
-                                                      Current->Entry[0].Para.Output.Buffer, \
-                                                      Current->Entry[0].Para.Output.Filled);
                         }
                     }
                     else //Get-Response-Normal
@@ -1332,7 +1337,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                         else
                         {
                             if((Current->Entry[0].Para.Iterator.Status == ITER_FINISHED) || \
-                                (Current->Entry[0].Para.Iterator.Begin == Current->Entry[0].Para.Iterator.End))
+                                (Current->Entry[0].Para.Iterator.From == Current->Entry[0].Para.Iterator.To))
                             {
                                 plain[3] = (uint8_t)IS_LAST_BLOCK;
                             }
@@ -1371,7 +1376,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                         
                         //Get-Response-With-List 不允许 Get-Response-With-Datablock
                         if((Current->Entry[cnt].Para.Iterator.Status != ITER_NONE) || \
-                            (Current->Entry[cnt].Para.Iterator.Begin != Current->Entry[cnt].Para.Iterator.End))
+                            (Current->Entry[cnt].Para.Iterator.From != Current->Entry[cnt].Para.Iterator.To))
                         {
                             Current->Entry[cnt].Para.Iterator.Status = ITER_NONE;
                             Current->Entry[cnt].Errs = OBJECT_ERR_MEM;
@@ -1443,7 +1448,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                     else
                     {
                         if((Current->Entry[0].Para.Iterator.Status != ITER_NONE) || \
-                            (Current->Entry[0].Para.Iterator.Begin != Current->Entry[0].Para.Iterator.End))
+                            (Current->Entry[0].Para.Iterator.From != Current->Entry[0].Para.Iterator.To))
                         {
                             Current->Entry[0].Para.Iterator.Status = ITER_NONE;
                             Current->Entry[0].Errs = OBJECT_ERR_MEM;
@@ -1531,7 +1536,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                     else
                     {
                         if((Current->Entry[0].Para.Iterator.Status != ITER_NONE) || \
-                            (Current->Entry[0].Para.Iterator.Begin != Current->Entry[0].Para.Iterator.End))
+                            (Current->Entry[0].Para.Iterator.From != Current->Entry[0].Para.Iterator.To))
                         {
                             Current->Entry[0].Para.Iterator.Status = ITER_NONE;
                             Current->Entry[0].Errs = OBJECT_ERR_MEM;
@@ -2016,7 +2021,7 @@ void dlms_appl_entrance(const uint8_t *info,
         {
             //迭代器状态不在运行中，或者迭代器起始等于终止，或者调用结果为异常，生命周期结束
             if((Current->Entry[cnt].Para.Iterator.Status != ITER_ONGOING) || \
-                (Current->Entry[cnt].Para.Iterator.Begin == Current->Entry[cnt].Para.Iterator.End) || \
+                (Current->Entry[cnt].Para.Iterator.From == Current->Entry[cnt].Para.Iterator.To) || \
                 Current->Entry[cnt].Errs != OBJECT_NOERR)
             {
                 //清零条目

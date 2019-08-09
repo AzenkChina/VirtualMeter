@@ -61,8 +61,8 @@ typedef struct
     
 	struct
     {
-        uint32_t    Begin; //迭代器起始条目
-        uint32_t    End; //迭代器结束条目
+        uint32_t    From; //迭代器起始条目
+        uint32_t    To; //迭代器结束条目
         uint8_t     Status; //迭代器当前状态
         
     }               Iterator;
@@ -100,12 +100,21 @@ typedef struct
 #define OBJ_OUT_SIZE(P)                 (P->Output.Size)//获取输出缓冲字节大小
 #define OBJ_PUSH_LENGTH(P, n)           (P->Output.Filled = n)//设置输出数据字节长度
 
-#define OBJ_ITERATE_BEGIN(P)            (P->Iterator.Begin)//获取迭代器起始
-#define OBJ_ITERATE_END(P)              (P->Iterator.End)//获取迭代器结束
-#define OBJ_ITERATE_STATUS(P)           ((IterStatus)(P->Iterator.Status))//获取迭代器状态
-#define OBJ_ITERATE_SET_BEGIN(P, v)     (P->Iterator.Begin = v)//设置迭代器起始
-#define OBJ_ITERATE_SET_END(P, v)       (P->Iterator.End = v)//设置迭代器结束
-#define OBJ_ITERATE_SET_STATUS(P, v)    (P->Iterator.Status = (IterStatus)v)//设置迭代器状态
+#define OBJ_ITERATE_INIT(P, f, t)       P->Iterator.From = f; \
+                                        P->Iterator.To = t; \
+                                        if(P->Iterator.From != P->Iterator.To) \
+                                            {P->Iterator.Status = ITER_ONGOING;}//初始化迭代器
+#define OBJ_ITERATE_FROM(P)             (P->Iterator.From)//迭代器起始
+#define OBJ_ITERATE_TO(P)               (P->Iterator.To)//迭代器结束
+#define OBJ_ITERATE_STEPPING(P)         if(P->Iterator.From < P->Iterator.To) \
+                                            {P->Iterator.From += 1;} \
+                                        else if(P->Iterator.From > P->Iterator.To) \
+                                            {P->Iterator.From -= 1;} \
+                                        if(P->Iterator.From == P->Iterator.To) \
+                                            {P->Iterator.Status = ITER_FINISHED;}//迭代器步进
+
+#define OBJ_IS_ITERATING(P)             ((P->Iterator.Status == ITER_ONGOING) && \
+                                        (P->Iterator.From != P->Iterator.To))//判断是否正在迭代中
 
 /* Exported function prototypes ----------------------------------------------*/
 

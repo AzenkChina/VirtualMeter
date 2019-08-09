@@ -12,7 +12,7 @@
 
 #include "lcd.h"
 
-#include "types_metering.h"
+#include "mids.h"
 #include "types_protocol.h"
 #include "types_keyboard.h"
 #include "axdr.h"
