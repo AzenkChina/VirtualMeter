@@ -418,6 +418,7 @@ struct __switch
 {
     struct __device_ctrl            control;
     
+    void                            (*runner)(uint16_t msecond); //输入上次调用与本次调用之间的间隔时间，单位毫秒
     enum __switch_status             (*get)(void); //获取当前开关状态
     uint8_t                         (*set)(enum __switch_status status); //设置开关状态
 };

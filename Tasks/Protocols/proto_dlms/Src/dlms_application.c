@@ -11,6 +11,7 @@
 #include "dlms_association.h"
 #include "object_template.h"
 #include "dlms_lexicon.h"
+#include "types_metering.h"
 #include "cosem_objects.h"
 #include "axdr.h"
 #include "mbedtls/gcm.h"
@@ -90,6 +91,212 @@ static uint8_t *logicalname = (uint8_t *)0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/**
+  * @brief 格式化请求数据
+  * 
+  */
+static uint8_t *request_formatter(uint32_t param, const uint8_t *in, uint16_t size, uint16_t *out)
+{
+    static uint8_t result[9];
+    
+    struct __metering_identifier id;
+    enum __axdr_type type;
+    union __axdr_container container;
+    int64_t val = 0;
+    uint64_t *pval = (uint64_t *)&val;
+    
+	if(!M_UINTISID(param))
+    {
+        *out = size;
+        return((uint8_t *)in);
+    }
+    
+    if(!AXDR_CONTAINED(in[0]))
+    {
+        *out = size;
+        return((uint8_t *)in);
+    }
+    
+    axdr.decode(in, &type, &container);
+    
+    switch(type)
+    {
+        case AXDR_BOOLEAN:
+        case AXDR_ENUM:
+        case AXDR_UNSIGNED:
+        {
+            val = (int64_t)container.u8_t;
+            break;
+        }
+        case AXDR_INTEGER:
+        {
+            val = (int64_t)container.i8_t;
+            break;
+        }
+        case AXDR_LONG:
+        {
+            val = (int64_t)container.i16_t;
+            break;
+        }
+        case AXDR_LONG_UNSIGNED:
+        {
+            val = (int64_t)container.u16_t;
+            break;
+        }
+        case AXDR_DOUBLE_LONG:
+        {
+            val = (int64_t)container.i32_t;
+            break;
+        }
+        case AXDR_DOUBLE_LONG_UNSIGNED:
+        {
+            val = (int64_t)container.u32_t;
+            break;
+        }
+        case AXDR_FLOAT32:
+        {
+            val = (int64_t)container.float_t;
+            break;
+        }
+        case AXDR_FLOAT64:
+        {
+            val = (int64_t)container.double_t;
+            break;
+        }
+        case AXDR_LONG64:
+        {
+            val = (int64_t)container.i64_t;
+            break;
+        }
+        case AXDR_LONG64_UNSIGNED:
+        {
+            val = (int64_t)container.u64_t;
+            break;
+        }
+    }
+    
+    M_UINT2ID(param, id);
+    
+    M_SCALING(val, ~id.scale);
+    
+    result[0] = AXDR_LONG64;
+    result[1] = (*pval >> 56) & 0xff;
+    result[2] = (*pval >> 48) & 0xff;
+    result[3] = (*pval >> 40) & 0xff;
+    result[4] = (*pval >> 32) & 0xff;
+    result[5] = (*pval >> 24) & 0xff;
+    result[6] = (*pval >> 16) & 0xff;
+    result[7] = (*pval >> 8) & 0xff;
+    result[8] = (*pval >> 0) & 0xff;
+    
+    *out = 9;
+    return(result);
+}
+
+/**
+  * @brief 格式化返回数据
+  * 
+  */
+static uint16_t response_formatter(uint32_t param, const uint8_t *in, uint16_t size, uint8_t *out)
+{
+    struct __metering_identifier id;
+    uint64_t val = 0;
+    
+	if(!M_UINTISID(param))
+    {
+        return(heap.copy(out, in, size));
+    }
+    
+    if(in[0] != AXDR_LONG64)
+    {
+        return(heap.copy(out, in, size));
+    }
+    
+    axdr.decode(in, 0, &val);
+    
+    M_UINT2ID(param, id);
+    
+    M_SCALING(val, id.scale);
+    
+    switch((enum __axdr_type)id.type)
+    {
+        case AXDR_BOOLEAN:
+        case AXDR_ENUM:
+        case AXDR_INTEGER:
+        case AXDR_UNSIGNED:
+        {
+            out[0] = id.scale;
+            out[1] = (val >> 0) & 0xff;
+            return(2);
+        }
+        case AXDR_LONG:
+        case AXDR_LONG_UNSIGNED:
+        {
+            out[0] = id.scale;
+            out[1] = (val >> 8) & 0xff;
+            out[2] = (val >> 0) & 0xff;
+            return(3);
+        }
+        case AXDR_DOUBLE_LONG:
+        case AXDR_DOUBLE_LONG_UNSIGNED:
+        {
+            out[0] = id.scale;
+            out[1] = (val >> 24) & 0xff;
+            out[2] = (val >> 16) & 0xff;
+            out[3] = (val >> 8) & 0xff;
+            out[4] = (val >> 0) & 0xff;
+            return(5);
+        }
+        case AXDR_FLOAT32:
+        {
+            float conv = 0;
+            uint32_t *pconv = (uint32_t *)&conv;
+            conv = val;
+            
+            out[0] = id.scale;
+            out[1] = (*pconv >> 24) & 0xff;
+            out[2] = (*pconv >> 16) & 0xff;
+            out[3] = (*pconv >> 8) & 0xff;
+            out[4] = (*pconv >> 0) & 0xff;
+            return(5);
+        }
+        case AXDR_FLOAT64:
+        {
+            double conv = 0;
+            uint64_t *pconv = (uint64_t *)&conv;
+            conv = val;
+            
+            out[0] = id.scale;
+            out[1] = (*pconv >> 56) & 0xff;
+            out[2] = (*pconv >> 48) & 0xff;
+            out[3] = (*pconv >> 40) & 0xff;
+            out[4] = (*pconv >> 32) & 0xff;
+            out[5] = (*pconv >> 24) & 0xff;
+            out[6] = (*pconv >> 16) & 0xff;
+            out[7] = (*pconv >> 8) & 0xff;
+            out[8] = (*pconv >> 0) & 0xff;
+            return(9);
+        }
+        case AXDR_LONG64:
+        case AXDR_LONG64_UNSIGNED:
+        {
+            out[0] = id.scale;
+            out[1] = (val >> 56) & 0xff;
+            out[2] = (val >> 48) & 0xff;
+            out[3] = (val >> 40) & 0xff;
+            out[4] = (val >> 32) & 0xff;
+            out[5] = (val >> 24) & 0xff;
+            out[6] = (val >> 16) & 0xff;
+            out[7] = (val >> 8) & 0xff;
+            out[8] = (val >> 0) & 0xff;
+            return(9);
+        }
+        default:
+        {
+            return(heap.copy(out, in, size));
+        }
+    }
+}
 
 /**
   * @brief 索引数据报文中有效数据
@@ -741,8 +948,10 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     
                     heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
                     Current->Entry[0].Para.Input.ID = param;//赋值数据标识
-                    Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
-                    Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
+                    Current->Entry[0].Para.Input.Buffer = request_formatter(param, \
+                                                                            request->info[0].data, \
+                                                                            request->info[0].length, \
+                                                                            &Current->Entry[0].Para.Input.Size);
                     Current->Entry[0].Object = cosem_load_object(table, index);
                     break;
                 }
@@ -809,40 +1018,6 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     break;
                 }
                 case SET_WITH_LIST:
-                {
-                    Current->Block = 0;//块计数清零
-                    Current->Actived = 0;//一个请求条目
-                    
-                    for(cnt=0; cnt<DLMS_REQ_LIST_MAX; cnt++)
-                    {
-                        if(!request->info[cnt].active)
-                        {
-                            break;
-                        }
-                        
-                        desc.descriptor.classid = request->info[cnt].classid[0];
-                        desc.descriptor.classid <<= 8;
-                        desc.descriptor.classid += request->info[cnt].classid[1];
-                        heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
-                        desc.descriptor.index = request->info[cnt].index[0];
-                        desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &table, &index, &param);
-                        
-                        if(!table)
-                        {
-                            return(APPL_UNSUPPORT);
-                        }
-                        
-                        Current->Actived += 1;//一个请求条目
-                        
-                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
-                        Current->Entry[cnt].Para.Input.ID = param;//赋值数据标识
-                        Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;//赋值数据
-                        Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;//赋值数据长度
-                        Current->Entry[cnt].Object = cosem_load_object(table, index);
-                    }
-                    break;
-                }
                 case SET_WITH_LIST_AND_FIRST_BLOCK:
                 default:
                 {
@@ -1111,9 +1286,10 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                             {
                                 plain[3] = 0;
                                 plain_length = 4;
-                                plain_length += heap.copy(&plain[4], \
-                                                          Current->Entry[0].Para.Output.Buffer, \
-                                                          Current->Entry[0].Para.Output.Filled);
+                                plain_length += response_formatter(Current->Entry[0].Para.Input.ID, \
+                                                                   Current->Entry[0].Para.Output.Buffer, \
+                                                                   Current->Entry[0].Para.Output.Filled, \
+                                                                   &plain[4]);
                             }
                         }
                         else
@@ -1215,9 +1391,11 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                             {
                                 plain[plain_length + 0] = 0;
                                 plain_length += 1;
-                                plain_length += heap.copy(&plain[plain_length], \
-                                                          Current->Entry[cnt].Para.Output.Buffer, \
-                                                          Current->Entry[cnt].Para.Output.Filled);
+                                
+                                plain_length += response_formatter(Current->Entry[cnt].Para.Input.ID, \
+                                                                   Current->Entry[cnt].Para.Output.Buffer, \
+                                                                   Current->Entry[cnt].Para.Output.Filled, \
+                                                                   &plain[plain_length]);
                             }
                         }
                         else

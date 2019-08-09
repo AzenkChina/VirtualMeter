@@ -365,6 +365,8 @@ static void disc_loop(void)
     {
         task_status = TASK_RUN;
         
+        relay.runner(KERNEL_PERIOD);
+        
         //Ë¢ÐÂ¼ÌµçÆ÷×´Ì¬
         if(relay_runs.flush)
         {

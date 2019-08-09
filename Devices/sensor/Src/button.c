@@ -159,6 +159,11 @@ static enum __switch_status main_cover_get(void)
 #endif
 }
 
+static void main_cover_runner(uint16_t msecond)
+{
+    
+}
+
 static uint8_t main_cover_set(enum __switch_status status)
 {
     return(0);
@@ -179,6 +184,7 @@ static enum __dev_status sub_cover_status(void)
   */
 static void sub_cover_init(enum __dev_state state)
 {
+    
 }
 
 /**
@@ -186,6 +192,12 @@ static void sub_cover_init(enum __dev_state state)
   */
 static void sub_cover_suspend(void)
 {
+    
+}
+
+static void sub_cover_runner(uint16_t msecond)
+{
+    
 }
 
 static enum __switch_status sub_cover_get(void)
@@ -214,6 +226,7 @@ const struct __switch main_cover =
 		.suspend    = main_cover_suspend,
 	},
     
+    .runner         = main_cover_runner,
     .get            = main_cover_get,
     .set            = main_cover_set,
 };
@@ -228,6 +241,7 @@ const struct __switch sub_cover =
 		.suspend    = sub_cover_suspend,
 	},
     
+    .runner         = sub_cover_runner,
     .get            = sub_cover_get,
     .set            = sub_cover_set,
 };

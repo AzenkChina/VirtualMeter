@@ -79,6 +79,31 @@ enum __metering_quad
 };
 
 /**
+  * @brief  计量数据 缩放
+  */
+enum __metering_scale
+{
+    M_SCALE_N8 = 23,    //x 100000000 -> x100000
+	M_SCALE_N7 = 25,    //x 10000000 -> x10000
+	M_SCALE_N6 = 25,    //x 1000000 -> x1000
+	M_SCALE_N5 = 26,    //x 100000 -> x100
+    M_SCALE_N4 = 27,    //x 10000 -> x10
+	M_SCALE_N3 = 28,    //x 1000 -> x1
+	M_SCALE_N2 = 29,    //x 100 -> x1/10
+	M_SCALE_N1 = 30,    //x 10 -> x1/100
+    M_SCALE_ZN = 31,    //x 1 -> x1000
+    M_SCALE_ZP = 0,     //x 1 -> x1/1000
+    M_SCALE_P1 = 1,     //x 1/10 -> x1/10000
+    M_SCALE_P2 = 2,     //x 1/100 -> x1/100000
+    M_SCALE_P3 = 3,     //x 1/1000 -> x1/1000000
+    M_SCALE_P4 = 4,     //x 1/10000 -> x1/10000000
+    M_SCALE_P5 = 5,     //x 1/100000 -> x1/100000000
+    M_SCALE_P6 = 6,     //x 1/1000000 -> x1/1000000000
+    M_SCALE_P7 = 7,     //x 1/10000000 -> x1/10000000000
+    M_SCALE_P8 = 8,     //x 1/100000000 -> x1/100000000000
+};
+
+/**
   * @brief  计量数据 标识符
   */
 struct __metering_identifier
@@ -87,7 +112,8 @@ struct __metering_identifier
     uint32_t phase      :3;// enum __metering_phase
     uint32_t quad       :8;// enum __metering_quad
     uint32_t rate       :4;//费率0 ~ 15
-	uint32_t offset		:12;//自定义字段
+    uint32_t scale      :5;//enum __metering_scale
+	uint32_t type		:7;//enum __axdr_type
 };
 
 
@@ -207,36 +233,72 @@ struct __metering
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 //将一个计量数据标识转换成U32 ID
-#define M_ID2UINT(i,p,q,r,o)		((uint32_t)(((i&0x1f)<<27)|((p&0x07)<<24)|((q&0xff)<<16)|((r&0x0f)<<12))|((o&0xfff)<<0))
+#define M_ID2UINT(i,p,q,r,s,t)      ((uint32_t)\
+                                    ((((i)&0x1f)<<27)|\
+                                    (((p)&0x07)<<24)|\
+                                    (((q)&0xff)<<16)|\
+                                    (((r)&0x0f)<<12)|\
+                                    (((s)&0x1f)<<7)|\
+                                    (((t)&0x7f)<<0)))
 
 //将一个U32 ID转换成计量数据标识
-#define M_UINT2ID(val, i)           i.item = ((val>>27)&0x1f);\
-                                    i.phase = ((val>>24)&0x07);\
-                                    i.quad = ((val>>16)&0xff);\
-                                    i.rate = ((val>>12)&0x0f);\
-									i.offset = ((val>>0)&0xfff)
+#define M_UINT2ID(val, i)           i.item = (((val)>>27)&0x1f);\
+                                    i.phase = (((val)>>24)&0x07);\
+                                    i.quad = (((val)>>16)&0xff);\
+                                    i.rate = (((val)>>12)&0x0f);\
+                                    i.scale = (((val)>>7)&0x1f);\
+                                    i.type = (((val)>>0)&0x7f)
+
+//将一个数字写入到U32 ID
+#define M_2NUMBER(n)                ((uint32_t)((n)&0x07ffffff))
 
 
-//判断一个U32 ID是否为显示格式
-#define M_UINTISFMT(val)            ((((val>>27)&0x1f) >= FMT_BIN) && (((val>>27)&0x1f) <= FMT_STR))
+
 
 //判断一个U32 ID是否为计量数据标识
-#define M_UINTISID(val)             ((((val>>27)&0x1f) >= M_P_ENERGY) && (((val>>27)&0x1f) <= M_FREQUENCY))
+#define M_UINTISID(val)             (((((val)>>27)&0x1f) >= M_P_ENERGY) && ((((val)>>27)&0x1f) <= M_FREQUENCY))
+
+//判断一个U32 ID是否为显示格式
+#define M_UINTISFMT(val)            (((((val)>>27)&0x1f) >= FMT_BIN) && ((((val)>>27)&0x1f) <= FMT_STR))
+
+//判断一个U32 ID是否为一个数字
+#define M_UINTISNUM(val)            (!((n)&(~0x07ffffff)))
+
+
+
 
 //判断一个U32 ID是否为电能
-#define M_UINTISENERGY(val)         ((((val>>27)&0x1f) >= M_P_ENERGY) && (((val>>27)&0x1f) <= M_S_ENERGY))
+#define M_UINTISENERGY(val)         (((((val)>>27)&0x1f) >= M_P_ENERGY) && ((((val)>>27)&0x1f) <= M_S_ENERGY))
 //判断一个U32 ID是否为功率
-#define M_UINTISPOWER(val)          ((((val>>27)&0x1f) >= M_P_POWER) && (((val>>27)&0x1f) <= M_S_POWER))
+#define M_UINTISPOWER(val)          (((((val)>>27)&0x1f) >= M_P_POWER) && ((((val)>>27)&0x1f) <= M_S_POWER))
 //判断一个U32 ID是否为电压
-#define M_UINTISVOLTAGE(val)        (((val>>27)&0x1f) == M_VOLTAGE)
+#define M_UINTISVOLTAGE(val)        ((((val)>>27)&0x1f) == M_VOLTAGE)
 //判断一个U32 ID是否为电流
-#define M_UINTISCURRENT(val)        (((val>>27)&0x1f) == M_CURRENT)
+#define M_UINTISCURRENT(val)        ((((val)>>27)&0x1f) == M_CURRENT)
 //判断一个U32 ID是否为功率因数
-#define M_UINTISPF(val)             (((val>>27)&0x1f) == M_POWER_FACTOR)
+#define M_UINTISPF(val)             ((((val)>>27)&0x1f) == M_POWER_FACTOR)
 //判断一个U32 ID是否为相角
-#define M_UINTISANGLE(val)          (((val>>27)&0x1f) == M_ANGLE)
+#define M_UINTISANGLE(val)          ((((val)>>27)&0x1f) == M_ANGLE)
 //判断一个U32 ID是否为频率
-#define M_UINTISFREQ(val)           (((val>>27)&0x1f) == M_FREQUENCY)
+#define M_UINTISFREQ(val)           ((((val)>>27)&0x1f) == M_FREQUENCY)
+
+
+
+
+//缩放数据
+#define M_SCALING(val, scale)       switch((enum __metering_scale)((scale)&0x1f)) { \
+                                    case M_SCALE_ZP: (val) = (val)/1000;break; \
+                                    case M_SCALE_N1: val = (val)/100;break; \
+                                    case M_SCALE_N2: (val) = (val)/10;break; \
+                                    case M_SCALE_N3: break; \
+                                    case M_SCALE_ZN: (val) = (val)*1000;break; \
+									default: \
+									{if((((scale)&0x1f) >= M_SCALE_P1) && (((scale)&0x1f) <= M_SCALE_P8))\
+									{uint8_t i;(val)=(val)/1000;for(i=0; i<((scale)&0x1f); i++){(val)=(val)/10;}}\
+									else if((((scale)&0x1f) >= M_SCALE_N8) && (((scale)&0x1f) <= M_SCALE_N4))\
+									{uint8_t i; for(i=3; i<((~((scale)&0x1f))&0x1f); i++){(val)=(val)*10;}}}}
+
+
 
 /* Exported function prototypes ----------------------------------------------*/
 

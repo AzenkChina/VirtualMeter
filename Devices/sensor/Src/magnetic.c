@@ -46,6 +46,11 @@ static void hsensor_suspend(void)
     status = DEVICE_NOTINIT;
 }
 
+static void hsensor_runner(uint16_t msecond)
+{
+    
+}
+
 static enum __switch_status hsensor_get(void)
 {
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
@@ -70,6 +75,7 @@ const struct __switch hsensor =
 		.suspend    = hsensor_suspend,
 	},
     
+    .runner         = hsensor_runner,
     .get            = hsensor_get,
     .set            = hsensor_set,
 };

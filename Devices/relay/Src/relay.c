@@ -142,6 +142,11 @@ static void relay_suspend(void)
 #endif
 }
 
+static void relay_runner(uint16_t msecond)
+{
+    
+}
+
 static enum __switch_status relay_get(void)
 {
 	return(relay_state);
@@ -167,6 +172,7 @@ const struct __switch relay =
 		.suspend    = relay_suspend,
 	},
     
+    .runner         = relay_runner,
     .get            = relay_get,
     .set            = relay_set,
 };

@@ -6,8 +6,6 @@
 #include "stdint.h"
 
 /* Exported types ------------------------------------------------------------*/
-#define RELAY_CONF_CONTENT              (8) //策略配置套数
-
 
 /**
   * @brief 继电器动作
@@ -28,17 +26,6 @@ enum __relay_status
 {
     RELAY_STA_CLOSE = 0,//合闸
     RELAY_STA_OPEN = 1,//拉闸
-};
-
-/**
-  * @brief 策略输出
-  *
-  */
-enum __relay_policy
-{
-    RELAY_POL_ACCEPT = 0,//接受
-    RELAY_POL_DROP = 1,//丢弃
-    RELAY_POL_MANGLE = 2,//修改
 };
 
 /**
@@ -68,17 +55,29 @@ enum __relay_requests
 /**
   * @brief  disconnect task 的对外接口
   */
-struct __relay
+struct __disconnect
 {
-    uint8_t							(*request)(enum __relay_requests source, enum __relay_action action);
+    enum __relay_action             (*request)(enum __relay_requests source, enum __relay_action action);
     enum __relay_status             (*status)(void);
     enum __relay_requests           (*reason)(void);
 	struct
 	{
-		uint8_t						(*set)(enum __relay_requests source, enum __relay_action action, uint8_t priority);
-		uint8_t						(*get)(enum __relay_requests source, enum __relay_action action);
-									
+		uint8_t						(*write)(uint8_t selection, const uint8_t *priority);
+		uint8_t						(*read)(uint8_t selection, uint8_t *priority);
+        
 	}								priority;
+	struct
+	{
+		uint8_t                     (*set)(uint8_t selection);
+		uint8_t                     (*get)(void);
+        
+	}								selection;
+	struct
+	{
+		uint32_t                    (*set)(uint32_t mask);
+		uint32_t                    (*get)(void);
+        
+	}								mask;
 };
 
 /* Exported constants --------------------------------------------------------*/
@@ -89,6 +88,7 @@ struct __relay
 #define RELAY_OVERPOWER     RELAY_REQ_SLOT_04
 #define RELAY_EVENTS        RELAY_REQ_SLOT_05
 #define RELAY_TAMPER        RELAY_REQ_SLOT_06
+#define RELAY_TIMER         RELAY_REQ_SLOT_07
 
 /* Exported function prototypes ----------------------------------------------*/
 
