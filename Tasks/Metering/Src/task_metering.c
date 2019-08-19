@@ -28,7 +28,7 @@ static enum __task_status status = TASK_NOTINIT;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-static enum __metering_item metering_instant(struct __metering_identifier id, int64_t *val)
+static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *val)
 {
     int32_t read;
     
@@ -98,12 +98,12 @@ static enum __metering_item metering_instant(struct __metering_identifier id, in
 	return(M_NULL);
 }
 
-static enum __metering_item metering_recent(struct __metering_identifier id, int64_t *val)
+static enum __meta_item metering_recent(struct __meta_identifier id, int64_t *val)
 {
 	
 }
 
-static int64_t metering_primary(struct __metering_identifier id, int64_t val)
+static int64_t metering_primary(struct __meta_identifier id, int64_t val)
 {
 	
 }

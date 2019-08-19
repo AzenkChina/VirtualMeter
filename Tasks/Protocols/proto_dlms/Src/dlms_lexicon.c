@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "dlms_lexicon.h"
+#include "dlms_types.h"
 #include "mids.h"
 #include "string.h"
 
@@ -15,58 +16,133 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**
-  * @brief  属性 描述符
+  * @brief  对象 键值
   */
-struct __dlms_attr
+struct __dlms_key
 {
-    uint8_t         table[2];//函数表索引
-    uint8_t         index[2];//函数索引
-    
-    struct
-    {
-        uint16_t    lowest:4;
-        uint16_t    low:4;
-        uint16_t    high:4;
-        uint16_t    reserve:4;
-        
-    }               right;
-    
-    uint32_t        param;//输入参数
+	uint8_t id;//class id
+	uint8_t a;//obis a
+	uint8_t b;//obis b
+	uint8_t c;//obis c
+	uint8_t d;//obis d
+	uint8_t e;//obis e
+	uint8_t f;//obis f
+	uint8_t suit;//suit
 };
 
 /**
-  * @brief  方法 描述符
+  * @brief  权限
   */
-struct __dlms_method
+struct __dlms_authority
 {
-    uint8_t         table;//函数表索引
-    uint8_t         index;//函数索引
-    
-    struct
-    {
-        uint16_t    lowest:4;
-        uint16_t    low:4;
-        uint16_t    high:4;
-        uint16_t    reserve:4;
-        
-    }               right;
+    uint8_t none;//权限一
+    uint8_t low;//权限二
+    uint8_t high;//权限三
 };
 
 /**
-  * @brief  cosem 数据项
+  * @brief  cosem 数据项（需要保证结构体长度不大于（256-4）字节）
   */
 struct __cosem_entry
 {
-    uint8_t suit;
-    uint8_t classid;
-    uint8_t obis[6];
-    
-    struct __dlms_attr attr[LEX_CONFIG_MAX_ATTR];
-    struct __dlms_method method[LEX_CONFIG_MAX_METHOD];
+    uint8_t key[8];//8
+    uint32_t mid[LEX_CONFIG_MAX_ATTR];//4*24
+    uint8_t attr[3*LEX_CONFIG_MAX_ATTR];//3*24
+    uint8_t method[3*LEX_CONFIG_MAX_METHOD];//3*12
 };
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/**
+  * @brief  本地数据项
+  */
+static const struct __cosem_entry communal[] = 
+{
+    /** cosem logical device name */
+    {
+        {0x01, 0x00, 0x00, 0x2a, 0x00, 0x00, 0xff, 0xff},\
+
+        {M_ID2U(FMT_ASCII, 0, 0, 0, 0, 0)},\
+
+        {ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ},\
+        {METHOD_NONE, METHOD_NONE, METHOD_NONE},
+    },
+    
+    /** clock */
+    {
+        {0x08, 0x00, 0x00, 0x01, 0x00, 0x00, 0xff, 0xff},\
+
+        {0, 0, 0, 0, 0, 0, 0, 0},\
+
+        {ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE),\
+        ATTR_READ, ATTR_READ, (ATTR_READ | ATTR_WRITE)},\
+
+        {METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE},
+    },
+    
+    /** association ln */
+    {
+        {0x0f, 0x00, 0x00, 0x28, 0x00, 0x00, 0xff, 0xff},\
+
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},\
+
+        {ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_NONE, (ATTR_READ | ATTR_WRITE), (ATTR_READ | ATTR_WRITE), \
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ,\
+        ATTR_READ, ATTR_READ, ATTR_READ},\
+
+        {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ,\
+        METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE},
+    },
+    
+    /** security setup */
+    {
+        {0x40, 0x00, 0x00, 0x2B, 0x00, 0x00, 0xff, 0xff},\
+
+        {0, 0, 0, 0, 0},\
+
+        {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ,\
+        ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ,\
+        ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ,\
+        ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ,\
+        ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ,\
+        ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ},\
+
+        {METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE,\
+        METHOD_NONE, METHOD_NONE, METHOD_NONE},
+    },
+};
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 

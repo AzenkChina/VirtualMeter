@@ -29,14 +29,14 @@ enum __metering_status
 struct __metering
 {
     //读取一个当前的数据项
-    enum __metering_item                    (*instant)(struct __metering_identifier id, int64_t *val);
+    enum __meta_item                        (*instant)(struct __meta_identifier id, int64_t *val);
     
     //读取最近整分钟冻结的数据项
-    enum __metering_item                    (*recent)(struct __metering_identifier id, int64_t *val);
+    enum __meta_item                        (*recent)(struct __meta_identifier id, int64_t *val);
     
     //将一个数据项转换为一次侧值
     //当宏定义 __USE_PRIMARY_ENERGY__ 打开时，这些函数将不对输入的数据做任何处理
-    int64_t                                 (*primary)(struct __metering_identifier id, int64_t val);
+    int64_t                                 (*primary)(struct __meta_identifier id, int64_t val);
 	
     struct
     {

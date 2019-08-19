@@ -23,12 +23,12 @@
   */
 static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 {
-    struct __metering_identifier id;
+    struct __meta_identifier id;
     struct __metering *api_metering;
     int64_t val = 0;
     uint16_t Length;
 	
-    M_UINT2ID(OBJ_IN_ID(P), id);
+    M_U2ID(OBJ_IN_ID(P), id);
     
     api_metering = (struct __metering *)api("task_metering");
     if(!api_metering)

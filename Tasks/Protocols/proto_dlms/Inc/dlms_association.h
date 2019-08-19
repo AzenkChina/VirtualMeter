@@ -15,14 +15,14 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void dlms_asso_gateway(uint8_t sap,
+extern void dlms_asso_gateway(uint8_t ap,
                               const uint8_t *info,
                               uint16_t length,
                               uint8_t *buffer,
                               uint16_t buffer_length,
                               uint16_t *filled_length);
-extern void dlms_asso_cleanup(uint8_t sap);
-extern uint8_t dlms_asso_client(void);
+extern void dlms_asso_cleanup(uint8_t ap);
+extern uint8_t dlms_asso_ap(void);
 extern enum __asso_status dlms_asso_status(void);
 extern uint16_t dlms_asso_mtu(void);
 extern uint8_t dlms_asso_callingtitle(uint8_t *buffer);

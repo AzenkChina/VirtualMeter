@@ -99,13 +99,13 @@ static uint8_t *request_formatter(uint32_t param, const uint8_t *in, uint16_t si
 {
     static uint8_t result[9];
     
-    struct __metering_identifier id;
+    struct __meta_identifier id;
     enum __axdr_type type;
     union __axdr_container container;
     int64_t val = 0;
     uint64_t *pval = (uint64_t *)&val;
     
-	if(!M_UINTISID(param))
+	if(!M_UISID(param))
     {
         *out = size;
         return((uint8_t *)in);
@@ -175,7 +175,7 @@ static uint8_t *request_formatter(uint32_t param, const uint8_t *in, uint16_t si
         }
     }
     
-    M_UINT2ID(param, id);
+    M_U2ID(param, id);
     
     M_SCALING(val, ~id.scale);
     
@@ -199,10 +199,10 @@ static uint8_t *request_formatter(uint32_t param, const uint8_t *in, uint16_t si
   */
 static uint16_t response_formatter(uint32_t param, const uint8_t *in, uint16_t size, uint8_t *out)
 {
-    struct __metering_identifier id;
+    struct __meta_identifier id;
     uint64_t val = 0;
     
-	if(!M_UINTISID(param))
+	if(!M_UISID(param))
     {
         return(heap.copy(out, in, size));
     }
@@ -214,7 +214,7 @@ static uint16_t response_formatter(uint32_t param, const uint8_t *in, uint16_t s
     
     axdr.decode(in, 0, &val);
     
-    M_UINT2ID(param, id);
+    M_U2ID(param, id);
     
     M_SCALING(val, id.scale);
     

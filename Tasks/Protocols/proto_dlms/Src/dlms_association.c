@@ -16,9 +16,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**	
-  * @brief SAP
+  * @brief AP
   */
-struct __sap
+struct __ap
 {
     uint8_t id;//client id
     uint8_t conformance[3];//conformance block
@@ -71,7 +71,7 @@ struct __dlms_association
 {
     enum __asso_status status;
     enum __asso_diagnose diagnose;
-    struct __sap sap;
+    struct __ap ap;
     struct __object_identifier appl_name;
     struct __object_identifier mech_name;
     uint8_t callingtitle[8+2];
@@ -127,20 +127,20 @@ struct __aarq_request
 
 //定义外部接口
 //COSEM层请求（info, length, buffer, max buffer length, filled buffer length）
-#define DLMS_CONFIG_COSEM_REQUEST(i,l,b,m,f)  dlms_appl_entrance(i,l,b,m,f)
+#define DLMS_CONFIG_COSEM_REQUEST(i,l,b,m,f)    dlms_appl_entrance(i,l,b,m,f)
 ////验证密码（info）
-//#define DLMS_CONFIG_PASSWD_VALID(i)            0
+//#define DLMS_CONFIG_PASSWD_VALID(i)           0
 ////加载认证密钥（info）
-//#define DLMS_CONFIG_LOAD_AKEY(i)                ;
+//#define DLMS_CONFIG_LOAD_AKEY(i)              ;
 ////加载加密密钥（info）
-//#define DLMS_CONFIG_LOAD_EKEY(i)                ;
+//#define DLMS_CONFIG_LOAD_EKEY(i)              ;
 ////加载本机system title（info）
-//#define DLMS_CONFIG_LOAD_TITLE(i)               ;
+//#define DLMS_CONFIG_LOAD_TITLE(i)             ;
 
 ////////////////////////////////////////////////////////////////////////////
 //Just for debug
 //验证密码（info）
-#define DLMS_CONFIG_PASSWD_VALID(i)            ((memcmp(i, "\x80\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18) == 0))
+#define DLMS_CONFIG_PASSWD_VALID(i)             ((memcmp(i, "\x80\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18) == 0))
 //加载认证密钥（info）
 #define DLMS_CONFIG_LOAD_AKEY(i)                memcpy(i, "\x45\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
 //加载加密密钥（info）
@@ -150,13 +150,13 @@ struct __aarq_request
 ///////////////////////////////////////////////////////////////////////////
 
 /* Private macro -------------------------------------------------------------*/
-#define DLMS_SAP_AMOUNT             ((uint8_t)(sizeof(sap_support_list) / sizeof(struct __sap)))
+#define DLMS_AP_AMOUNT                          ((uint8_t)(sizeof(ap_support_list) / sizeof(struct __ap)))
 
 /* Private variables ---------------------------------------------------------*/
 /**	
-  * @brief 已注册支持的SAP
+  * @brief 已注册支持的AP
   */
-static const struct __sap sap_support_list[] = 
+static const struct __ap ap_support_list[] = 
 {
     //内容依次为
     //客户端地址
@@ -395,7 +395,7 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
     
     if(!info)
     {
-        heap.set(asso->sap.conformance, 0, sizeof(asso->sap.conformance));
+        heap.set(asso->ap.conformance, 0, sizeof(asso->ap.conformance));
         return;
     }
     
@@ -574,7 +574,7 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
         
         if(ret)
         {
-            heap.set(asso->sap.conformance, 0, sizeof(asso->sap.conformance));
+            heap.set(asso->ap.conformance, 0, sizeof(asso->ap.conformance));
             if(output)
             {
                 heap.free(output);
@@ -639,9 +639,9 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
     //conformance_block
     for(cnt=0; cnt<3; cnt++)
     {
-        if((asso->sap.conformance[cnt] & msg[offset+4+cnt]) != asso->sap.conformance[cnt])
+        if((asso->ap.conformance[cnt] & msg[offset+4+cnt]) != asso->ap.conformance[cnt])
         {
-            heap.set(asso->sap.conformance, 0, sizeof(asso->sap.conformance));
+            heap.set(asso->ap.conformance, 0, sizeof(asso->ap.conformance));
         }
     }
     
@@ -794,7 +794,7 @@ static void asso_aarq_none(struct __dlms_association *asso,
         *(buffer + *filled_length + 7) = 0x01;
         *filled_length += 8;
     }
-    else if((asso->sap.conformance[0] == 0) && (asso->sap.conformance[1] == 0) && (asso->sap.conformance[2] == 0))
+    else if((asso->ap.conformance[0] == 0) && (asso->ap.conformance[1] == 0) && (asso->ap.conformance[2] == 0))
     {
         *(buffer + *filled_length + 7) = 0x02;
         *filled_length += 8;
@@ -835,9 +835,9 @@ static void asso_aarq_none(struct __dlms_association *asso,
         *(buffer + *filled_length + 9) = 0x04;
         *(buffer + *filled_length + 10) = 0x00;
         //ref "Green_Book_8th_edition" page 265
-        *(buffer + *filled_length + 11) = asso->sap.conformance[0];
-        *(buffer + *filled_length + 12) = asso->sap.conformance[1];
-        *(buffer + *filled_length + 13) = asso->sap.conformance[2];
+        *(buffer + *filled_length + 11) = asso->ap.conformance[0];
+        *(buffer + *filled_length + 12) = asso->ap.conformance[1];
+        *(buffer + *filled_length + 13) = asso->ap.conformance[2];
         
         //server-max-receive-pdu-size
         *(buffer + *filled_length + 14) = (uint8_t)(asso->info.max_pdu >> 8);
@@ -1060,7 +1060,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
         *(input + 3) = 0x01;
         input_length = 4;
     }
-    else if((asso->sap.conformance[0] == 0) && (asso->sap.conformance[1] == 0) && (asso->sap.conformance[2] == 0))
+    else if((asso->ap.conformance[0] == 0) && (asso->ap.conformance[1] == 0) && (asso->ap.conformance[2] == 0))
     {
         *(input + 3) = 0x02;
         input_length = 4;
@@ -1090,9 +1090,9 @@ static void asso_aarq_low(struct __dlms_association *asso,
         *(input + 5) = 0x04;
         *(input + 6) = 0x00;
         //ref "Green_Book_8th_edition" page 265
-        *(input + 7) = asso->sap.conformance[0];
-        *(input + 8) = asso->sap.conformance[1];
-        *(input + 9) = asso->sap.conformance[2];
+        *(input + 7) = asso->ap.conformance[0];
+        *(input + 8) = asso->ap.conformance[1];
+        *(input + 9) = asso->ap.conformance[2];
         
         //server-max-receive-pdu-size
         *(input + 10) = (uint8_t)(asso->info.max_pdu >> 8);
@@ -1413,7 +1413,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
         *(input + 3) = 0x01;
         input_length = 4;
     }
-    else if((asso->sap.conformance[0] == 0) && (asso->sap.conformance[1] == 0) && (asso->sap.conformance[2] == 0))
+    else if((asso->ap.conformance[0] == 0) && (asso->ap.conformance[1] == 0) && (asso->ap.conformance[2] == 0))
     {
         *(input + 3) = 0x02;
         input_length = 4;
@@ -1443,9 +1443,9 @@ static void asso_aarq_high(struct __dlms_association *asso,
         *(input + 5) = 0x04;
         *(input + 6) = 0x00;
         //ref "Green_Book_8th_edition" page 265
-        *(input + 7) = asso->sap.conformance[0];
-        *(input + 8) = asso->sap.conformance[1];
-        *(input + 9) = asso->sap.conformance[2];
+        *(input + 7) = asso->ap.conformance[0];
+        *(input + 8) = asso->ap.conformance[1];
+        *(input + 9) = asso->ap.conformance[2];
         
         //server-max-receive-pdu-size
         *(input + 10) = (uint8_t)(asso->info.max_pdu >> 8);
@@ -1712,18 +1712,18 @@ static void asso_aarq(struct __dlms_association *asso,
         encode_object_identifier((request.mechanism_name + 2), &asso->mech_name);
     }
     
-    //通过 sap 来判别要建立什么级别的连接
-    if(asso->sap.level == DLMS_ACCESS_LOWEST)
+    //通过 ap 来判别要建立什么级别的连接
+    if(asso->ap.level == DLMS_ACCESS_LOWEST)
     {
         //无认证
         asso_aarq_none(asso, &request, buffer, buffer_length, filled_length);
     }
-    else if(asso->sap.level == DLMS_ACCESS_LOW)
+    else if(asso->ap.level == DLMS_ACCESS_LOW)
     {
         //低级别认证
         asso_aarq_low(asso, &request, buffer, buffer_length, filled_length);
     }
-    else if(asso->sap.level == DLMS_ACCESS_HIGH)
+    else if(asso->ap.level == DLMS_ACCESS_HIGH)
     {
         //高级别认证
         asso_aarq_high(asso, &request, buffer, buffer_length, filled_length);
@@ -1794,7 +1794,7 @@ static void asso_request(const uint8_t *info,
 /**	
   * @brief 
   */
-void dlms_asso_gateway(uint8_t sap,
+void dlms_asso_gateway(uint8_t ap,
                        const uint8_t *info,
                        uint16_t length,
                        uint8_t *buffer,
@@ -1802,8 +1802,8 @@ void dlms_asso_gateway(uint8_t sap,
                        uint16_t *filled_length)
 {
     uint8_t cnt;
-    const struct __sap *sap_support = (void *)0;
-    uint8_t id = (sap >> 1);
+    const struct __ap *ap_support = (void *)0;
+    uint8_t id = (ap >> 1);
     
     //有效性判断
     if((!info) || (!length) || (!buffer) || (!buffer_length) || (!filled_length))
@@ -1816,7 +1816,7 @@ void dlms_asso_gateway(uint8_t sap,
     //清零当前连接指针
     asso_current = (void *)0;
     
-    //查询SAP是否已完成协商
+    //查询AP是否已完成协商
     for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
     {
         if(!asso_list[cnt])
@@ -1824,7 +1824,7 @@ void dlms_asso_gateway(uint8_t sap,
             continue;
         }
         
-        if(asso_list[cnt]->sap.id == id)
+        if(asso_list[cnt]->ap.id == id)
         {
             asso_current = asso_list[cnt];
         }
@@ -1835,23 +1835,23 @@ void dlms_asso_gateway(uint8_t sap,
     {
         case AARQ:
         {
-		    //查询SAP是否在支持的SAP列表中
-		    for(cnt=0; cnt<DLMS_SAP_AMOUNT; cnt++)
+		    //查询AP是否在支持的AP列表中
+		    for(cnt=0; cnt<DLMS_AP_AMOUNT; cnt++)
 		    {
-		        if(sap_support_list[cnt].id == id)
+		        if(ap_support_list[cnt].id == id)
 		        {
-		            sap_support = &sap_support_list[cnt];
+		            ap_support = &ap_support_list[cnt];
 		            break;
 		        }
 		    }
 		    
-		    //没有查询到支持的SAP
-		    if(!sap_support)
+		    //没有查询到支持的AP
+		    if(!ap_support)
 		    {
 		        return;
 		    }
 		    
-		    //SAP不在已完成的协商列表中，生成一个新的SAP对象
+		    //AP不在已完成的协商列表中，生成一个新的AP对象
 		    if(!asso_current)
 		    {
 			    //查询一个未被占用的节点
@@ -1871,7 +1871,7 @@ void dlms_asso_gateway(uint8_t sap,
 		            }
 		        }
 		        
-		        //SAP对象生成失败
+		        //AP对象生成失败
 		        if(!asso_current)
 		        {
 		            return;
@@ -1884,7 +1884,7 @@ void dlms_asso_gateway(uint8_t sap,
 		        heap.free(asso_current->appl);
 		    }
     		heap.set(asso_current, 0, sizeof(struct __dlms_association));
-    		asso_current->sap = *sap_support;
+    		asso_current->ap = *ap_support;
     		
 	        //初始化FC
 	        srand((unsigned int)jiffy.value());
@@ -1922,17 +1922,17 @@ void dlms_asso_gateway(uint8_t sap,
 /**
   * @brief 清理 Association
   */
-void dlms_asso_cleanup(uint8_t sap)
+void dlms_asso_cleanup(uint8_t ap)
 {
     uint8_t cnt;
-    uint8_t id = (sap >> 1);
+    uint8_t id = (ap >> 1);
     
-    if(!sap)
+    if(!ap)
     {
         return;
     }
     
-    //查询SAP是否已经在协商列表中
+    //查询AP是否已经在协商列表中
     for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
     {
         if(!asso_list[cnt])
@@ -1940,7 +1940,7 @@ void dlms_asso_cleanup(uint8_t sap)
             continue;
         }
         
-        if(asso_list[cnt]->sap.id == id)
+        if(asso_list[cnt]->ap.id == id)
         {
             if(asso_list[cnt]->appl)
             {
@@ -1953,16 +1953,16 @@ void dlms_asso_cleanup(uint8_t sap)
 }
 
 /**
-  * @brief 获取 client SAP
+  * @brief 获取 client AP
   */
-uint8_t dlms_asso_client(void)
+uint8_t dlms_asso_ap(void)
 {
     if(!asso_current)
     {
         return(0);
     }
 	
-	return(asso_current->sap.id);
+	return(asso_current->ap.id);
 }
 
 /**
@@ -2104,7 +2104,7 @@ uint8_t dlms_asso_accept_fctos(void)
     if(asso_current->status == ASSOCIATION_PENDING)
     {
         asso_current->status = ASSOCIATED;
-        asso_current->sap.level = DLMS_ACCESS_HIGH;
+        asso_current->ap.level = DLMS_ACCESS_HIGH;
         return(0xff);
     }
     
@@ -2259,7 +2259,7 @@ enum __dlms_access_level dlms_asso_level(void)
         return(DLMS_ACCESS_NO);
     }
     
-    return(asso_current->sap.level);
+    return(asso_current->ap.level);
 }
 
 /**
@@ -2272,7 +2272,7 @@ uint8_t dlms_asso_suit(void)
         return(0);
     }
     
-    return(asso_current->sap.suit);
+    return(asso_current->ap.suit);
 }
 
 /**
