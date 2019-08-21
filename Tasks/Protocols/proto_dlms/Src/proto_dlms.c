@@ -8,11 +8,11 @@
 #include "system.h"
 #include "proto_dlms.h"
 #include "dlms_types.h"
-#include "object_template.h"
 #include "cosem_objects.h"
 #include "allocator.h"
 #include "axdr.h"
 #include "dlms_lexicon.h"
+#include "dlms_utilities.h"
 #include "hdlc_datalink.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,7 +38,28 @@ static void dlms_exit(void)
 
 static void dlms_reset(void)
 {
+    uint8_t buff[34];
+    
 	hdlc_init();
+    
+    hdlc_set_address(1);//本机地址
+    hdlc_set_timeout(30);//链路超时时间
+    
+    heap.set(buff, 0x30, sizeof(buff));
+    buff[1] = 16;
+    
+    buff[0] = 'A';
+    dlms_util_write_akey(buff);//认证密钥
+    
+    buff[0] = 'E';
+    dlms_util_write_ekey(buff);//加密密钥
+    
+    buff[0] = 'P';
+    dlms_util_write_passwd(buff);//密码
+    
+    buff[1] = 8;
+    buff[0] = 'S';
+    dlms_util_write_title(buff);//system title
 }
 
 static enum __task_status dlms_status(void)
@@ -51,8 +72,7 @@ static enum __task_status dlms_status(void)
 static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
 {
     struct __cosem_request_desc desc;
-    const char *table;
-    uint8_t index;
+    union __dlms_right right;
     TypeObject Func;
     uint8_t input[8];
     ObjectPara P;
@@ -73,19 +93,20 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     P.Output.Buffer = buff;
     P.Output.Size = size;
     
+    desc.suit = 0xff;
     desc.level = DLMS_ACCESS_HIGH;
     desc.request = GET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &P.Input.ID);
-	Func = cosem_load_object(table, index);
+    dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
+	Func = CosemLoadAttrGet(cosem_descriptor.classid, cosem_descriptor.index);
     
     if(Func)
     {
     	Func(&P);
 	}
 	
-	*id = P.Input.ID;
+	*id = P.Input.MID;
 	
 	return(P.Output.Filled);
 }
@@ -93,8 +114,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
 static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 {
     struct __cosem_request_desc desc;
-    const char *table;
-    uint8_t index;
+    union __dlms_right right;
     TypeObject Func;
     uint8_t output[8];
     ObjectPara P;
@@ -115,12 +135,13 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     P.Output.Buffer = output;
     P.Output.Size = sizeof(output);
     
+    desc.suit = 0xff;
     desc.level = DLMS_ACCESS_HIGH;
     desc.request = SET_REQUEST;
     desc.descriptor = cosem_descriptor;
 	
-    dlms_lex_parse(&desc, &table, &index, &P.Input.ID);
-	Func = cosem_load_object(table, index);
+    dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
+	Func = CosemLoadAttrGet(cosem_descriptor.classid, cosem_descriptor.index);
     
     if(Func)
     {

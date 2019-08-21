@@ -103,8 +103,6 @@ enum __metering_quad
 	M_QUAD_NII = 0x20,//减2象限
 	M_QUAD_NIII = 0x40,//减3象限
     M_QUAD_NV = 0x80,//减4象限
-    
-    M_INDEXING = 0x100,//索引开始
 };
 
 /**
@@ -112,72 +110,66 @@ enum __metering_quad
   */
 struct __meta_identifier
 {
-	uint32_t write		:1;//标记为写动作还是读动作
     uint32_t item       :5;//分类 enum __meta_item
     uint32_t phase      :3;//分相 enum __meta_phase
     uint32_t rate       :4;//费率 0 ~ 15
     uint32_t scale      :5;//缩放 enum __meta_scale
 	uint32_t type		:5;//enum __axdr_type
-	uint32_t flexible	:9;//当item 为电能或者功率时，解析为 enum __metering_quad 否则解析为 index
-    
+	uint32_t flex       :10;//当item 为电能或者功率时，解析为 enum __metering_quad 否则自由定义
 };
 
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-//将一个数据标识转换成U32   i=item p=phase r=rate s=scale t=type f=flexible
+//将一个数据标识转换成U32   i=item p=phase r=rate s=scale t=type f=quad or flexable
 #define M_ID2U(i,p,r,s,t,f)         ((uint32_t)\
-                                    (((i)&0x1f)<<26)|\
-                                    (((p)&0x07)<<23)|\
-                                    (((r)&0x0f)<<19)|\
-                                    (((s)&0x1f)<<14)|\
-                                    (((t)&0x1f)<<9)|\
-									(((f)&0x1ff)<<0))
+                                    (((i)&0x1f)<<27)|\
+                                    (((p)&0x07)<<24)|\
+                                    (((r)&0x0f)<<20)|\
+                                    (((s)&0x1f)<<15)|\
+                                    (((t)&0x1f)<<10)|\
+									(((f)&0x3ff)<<0))
 
 //将一个数字转换成U32
-#define M_NUMBER2U(n)               ((uint32_t)((n)&0x03ffffff))
+#define M_NUMBER2U(n)               ((uint32_t)((n)&0x07ffffff))
 
 //将一个U32转换成数据标识
-#define M_U2ID(val, i)              i.write = (((val)>>31)&0x01);\
-									i.item = (((val)>>26)&0x1f);\
-                                    i.phase = (((val)>>23)&0x07);\
-                                    i.rate = (((val)>>19)&0x0f);\
-                                    i.scale = (((val)>>14)&0x1f);\
-                                    i.type = (((val)>>9)&0x1f);\
-									i.flexible = (((val)>>0)&0x1ff)
+#define M_U2ID(val, i)              i.item = (((val)>>27)&0x1f);\
+                                    i.phase = (((val)>>24)&0x07);\
+                                    i.rate = (((val)>>20)&0x0f);\
+                                    i.scale = (((val)>>15)&0x1f);\
+                                    i.type = (((val)>>10)&0x1f);\
+									i.flex = (((val)>>0)&0x3ff)
 
 
 
 
 //判断一个U32 ID是否为数据标识
-#define M_UISID(val)                (((((val)>>26)&0x1f) >= M_P_ENERGY) && ((((val)>>26)&0x1f) <= M_FREQUENCY))
+#define M_UISID(val)                (((((val)>>27)&0x1f) >= M_P_ENERGY) && ((((val)>>27)&0x1f) <= M_FREQUENCY))
 
 //判断一个U32 ID是否为显示格式
-#define M_UISFMT(val)               (((((val)>>26)&0x1f) >= FMT_BIN) && ((((val)>>26)&0x1f) <= FMT_STR))
+#define M_UISFMT(val)               (((((val)>>27)&0x1f) >= FMT_BIN) && ((((val)>>27)&0x1f) <= FMT_STR))
 
 //判断一个U32 ID是否为一个数字
-#define M_UISNUM(val)               (!((n)&(~0x03ffffff)))
-
-//判断一个U32 ID是否写动作
-#define M_UISWRITE(val)             (val & 0x80000000)
+#define M_UISNUM(val)               (!((n)&(~0x07ffffff)))
 
 
 
 
 //判断一个U32 ID是否为电能
-#define M_UISENERGY(val)            (((((val)>>26)&0x1f) >= M_P_ENERGY) && ((((val)>>26)&0x1f) <= M_S_ENERGY))
+#define M_UISENERGY(val)            (((((val)>>27)&0x1f) >= M_P_ENERGY) && ((((val)>>27)&0x1f) <= M_S_ENERGY))
 //判断一个U32 ID是否为功率
-#define M_UISPOWER(val)             (((((val)>>26)&0x1f) >= M_P_POWER) && ((((val)>>26)&0x1f) <= M_S_POWER))
+#define M_UISPOWER(val)             (((((val)>>27)&0x1f) >= M_P_POWER) && ((((val)>>27)&0x1f) <= M_S_POWER))
 //判断一个U32 ID是否为电压
-#define M_UISVOLTAGE(val)           ((((val)>>26)&0x1f) == M_VOLTAGE)
+#define M_UISVOLTAGE(val)           ((((val)>>27)&0x1f) == M_VOLTAGE)
 //判断一个U32 ID是否为电流
-#define M_UISCURRENT(val)           ((((val)>>26)&0x1f) == M_CURRENT)
+#define M_UISCURRENT(val)           ((((val)>>27)&0x1f) == M_CURRENT)
 //判断一个U32 ID是否为功率因数
-#define M_UISPF(val)                ((((val)>>26)&0x1f) == M_POWER_FACTOR)
+#define M_UISPF(val)                ((((val)>>27)&0x1f) == M_POWER_FACTOR)
 //判断一个U32 ID是否为相角
-#define M_UISANGLE(val)             ((((val)>>26)&0x1f) == M_ANGLE)
+#define M_UISANGLE(val)             ((((val)>>27)&0x1f) == M_ANGLE)
 //判断一个U32 ID是否为频率
-#define M_UISFREQ(val)              ((((val)>>26)&0x1f) == M_FREQUENCY)
+#define M_UISFREQ(val)              ((((val)>>27)&0x1f) == M_FREQUENCY)
 
 
 

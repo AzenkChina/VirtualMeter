@@ -36,6 +36,7 @@ extern uint8_t dlms_asso_fc(uint8_t *buffer);
 extern uint8_t dlms_asso_akey(uint8_t *buffer);
 extern uint8_t dlms_asso_ekey(uint8_t *buffer);
 extern uint8_t dlms_asso_dedkey(uint8_t *buffer);
+extern void dlms_asso_key_eliminate(void);
 extern uint8_t dlms_asso_applname(uint8_t *buffer);
 extern uint8_t dlms_asso_mechname(uint8_t *buffer);
 extern uint8_t dlms_asso_contextinfo(uint8_t *buffer);

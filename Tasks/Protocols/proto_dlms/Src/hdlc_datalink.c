@@ -23,9 +23,6 @@
 #define HDLC_CONFIG_INFO_LEN_DEFAULT    ((uint16_t)(128))
 #define HDLC_CONFIG_INFO_LEN_MAX        ((uint16_t)(220)) // >=128
 
-//链路超时时间
-#define HDLC_CONFIG_INACTIVE_TIMEOUT    ((uint32_t)(120*1000))
-
 //支持的通道数
 #define HDLC_CONFIG_MAX_CHANNEL         ((uint8_t)(4))
 
@@ -36,10 +33,14 @@
 #define HDLC_CONFIG_APPL_RELEASE(s)             dlms_asso_cleanup(s)
 //应用层最大报文长度
 #define HDLC_CONFIG_APPL_MTU()                  dlms_asso_mtu()
-//获取本机地址
-#define HDLC_CONFIG_LOCAL_ADDRESS()				0x0001
 
 /* Private typedef -----------------------------------------------------------*/
+struct __hdlc_configs
+{
+    uint16_t local_addr;//本地地址
+    uint16_t inact_time;//链路超时时间
+};
+
 enum __hdlc_link_status
 {
     LINK_DISCONNECTED = 0,
@@ -172,6 +173,7 @@ static const uint16_t fcstab[256] =
     0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
 
+//通道连接信息
 static struct __hdlc_link hdlc_links[HDLC_CONFIG_MAX_CHANNEL];
 
 /* Private function prototypes -----------------------------------------------*/
@@ -228,7 +230,7 @@ static uint8_t add_chk(uint8_t *in, uint16_t length, uint8_t *out)
   */
 static uint8_t add_address(uint8_t *out)
 {
-	uint16_t address = HDLC_CONFIG_LOCAL_ADDRESS();
+	uint16_t address = hdlc_get_address();
 #ifndef HDLC_CONFIG_ADDR_LENGTH
 #error hdld server address length is not defined.
 #endif
@@ -552,7 +554,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     link->max_len_trans = HDLC_CONFIG_INFO_LEN_DEFAULT;
     
     //初始化超时时间
-    link->link_inactive_timer = HDLC_CONFIG_INACTIVE_TIMEOUT;
+    link->link_inactive_timer = hdlc_get_timeout();
     
     //初始化客户端的帧计数
     link->crrr = 0xff;
@@ -1390,6 +1392,114 @@ void hdlc_tick(uint16_t tick)
 }
 
 /**
+  * @brief 获取HDLC地址
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_get_address(void)
+{
+    uint16_t address = 0;
+    
+    file.read("hdlc", \
+              STRUCT_OFFSET(struct __hdlc_configs, local_addr), \
+              STRUCT_SIZE(struct __hdlc_configs, local_addr), \
+              &address);
+    
+    if((address < 0x10) || (address > 0x3FFD))
+    {
+        address = 0x10;
+    }
+    
+    return(address);
+}
+
+/**
+  * @brief 设置HDLC地址
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_set_address(uint16_t addr)
+{
+    if(addr < 0x10)
+    {
+        addr = 0x10;
+    }
+    else if(addr > 0x3FFD)
+    {
+        addr = 0x3FFD;
+    }
+    
+    file.write("hdlc", \
+              STRUCT_OFFSET(struct __hdlc_configs, local_addr), \
+              STRUCT_SIZE(struct __hdlc_configs, local_addr), \
+              &addr);
+    
+    return(addr);
+}
+
+/**
+  * @brief 获取HDLC超时时间
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_get_timeout(void)
+{
+    uint16_t timeout = 0;
+    
+    file.read("hdlc", \
+              STRUCT_OFFSET(struct __hdlc_configs, inact_time), \
+              STRUCT_SIZE(struct __hdlc_configs, inact_time), \
+              &timeout);
+    
+    if(timeout < 10)
+    {
+        timeout = 10;
+    }
+    
+    return(timeout);
+}
+
+/**
+  * @brief 设置HDLC超时时间
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_set_timeout(uint16_t sec)
+{
+    if(sec < 10)
+    {
+        sec = 10;
+    }
+    
+    file.write("hdlc", \
+              STRUCT_OFFSET(struct __hdlc_configs, inact_time), \
+              STRUCT_SIZE(struct __hdlc_configs, inact_time), \
+              &sec);
+    
+    return(sec);
+}
+
+/**
+  * @brief HDLC窗口大小
+  * @param  
+  * @retval 
+  */
+uint8_t hdlc_get_window_size(void)
+{
+    return(1);
+}
+
+/**
+  * @brief HDLC最大帧长度
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_get_max_info_length(void)
+{
+    return(HDLC_CONFIG_INFO_LEN_MAX);
+}
+
+/**
   * @brief 链路数据请求
   * @param  
   * @retval 
@@ -1481,7 +1591,7 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
         if(hdlc_errors == HDLC_NO_ERR)
         {
             //重新初始化定时器
-            hdlc_links[channel].link_inactive_timer = HDLC_CONFIG_INACTIVE_TIMEOUT;
+            hdlc_links[channel].link_inactive_timer = hdlc_get_timeout() * 1000;
             
             return(0xff);
         }

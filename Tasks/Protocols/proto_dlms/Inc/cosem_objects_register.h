@@ -9,11 +9,11 @@
 #define __COSEM_OBJECTS_REGISTER_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "object_template.h"
+#include "cosem_objects.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const ObjectCluster CosemObjectsRegister;
+extern const ClassRegister Register;
 
 #endif /* __COSEM_OBJECTS_REGISTER_H__ */

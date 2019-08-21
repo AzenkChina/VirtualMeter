@@ -149,7 +149,7 @@ static struct __disp_runs disp_runs;
 static void clear_unit(void);
 static uint32_t pow_uint(uint8_t base, uint8_t exp);
 static enum __lcd_unit select_unit(struct __meta_identifier id);
-static void select_data(uint32_t param, uint8_t *data);
+static void select_data(uint32_t mid, uint8_t *data);
 static void flush_data(void);
 static uint8_t display_list_show_index(uint8_t val);
 
@@ -227,7 +227,7 @@ static uint32_t pow_uint(uint8_t base, uint8_t exp)
     return(result);
 }
 
-static void select_data(uint32_t param, uint8_t *data)
+static void select_data(uint32_t mid, uint8_t *data)
 {
     enum __axdr_type type;
     union __axdr_container container;
@@ -244,11 +244,11 @@ static void select_data(uint32_t param, uint8_t *data)
         return;
     }
     
-    M_U2ID(param, id);
+    M_U2ID(mid, id);
     
-    if(M_UISID(param))
+    if(M_UISID(mid))
     {
-        if(M_UISVOLTAGE(param))
+        if(M_UISVOLTAGE(mid))
         {
             if(disp_runs.dots.voltage > 3)
             {
@@ -260,7 +260,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.voltage, select_unit(id));
         }
-        else if(M_UISCURRENT(param))
+        else if(M_UISCURRENT(mid))
         {
             if(disp_runs.dots.current > 3)
             {
@@ -272,7 +272,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.current, select_unit(id));
         }
-        else if(M_UISPOWER(param))
+        else if(M_UISPOWER(mid))
         {
             if(disp_runs.dots.power > 3)
             {
@@ -284,7 +284,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.power, select_unit(id));
         }
-        else if(M_UISENERGY(param))
+        else if(M_UISENERGY(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
@@ -296,7 +296,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.energy, select_unit(id));
         }
-        else if(M_UISPF(param))
+        else if(M_UISPF(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
@@ -308,7 +308,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.pf, select_unit(id));
         }
-        else if(M_UISANGLE(param))
+        else if(M_UISANGLE(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
@@ -320,7 +320,7 @@ static void select_data(uint32_t param, uint8_t *data)
             }
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.angle, select_unit(id));
         }
-        else if(M_UISFREQ(param))
+        else if(M_UISFREQ(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
@@ -337,7 +337,7 @@ static void select_data(uint32_t param, uint8_t *data)
             lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, LCD_DOT_NONE, select_unit(id));
         }
     }
-    else if(M_UISFMT(param))
+    else if(M_UISFMT(mid))
     {
         switch(id.item)
         {
@@ -374,7 +374,7 @@ static void select_data(uint32_t param, uint8_t *data)
 
 static void flush_data(void)
 {
-    uint32_t param;
+    uint32_t mid;
     uint8_t buff[32];
     struct __protocol *api_stream;
     
@@ -392,12 +392,12 @@ static void flush_data(void)
         return;
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
+    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return;
     }
     
-    select_data(param, buff);
+    select_data(mid, buff);
     
     return;
 }
@@ -436,7 +436,7 @@ static uint8_t display_channel(void)
 static uint8_t display_list_show_next(void)
 {
     uint32_t offset;
-    uint32_t param;
+    uint32_t mid;
     uint8_t buff[32];
     struct __protocol *api_stream;
     
@@ -471,14 +471,14 @@ static uint8_t display_list_show_next(void)
         return(disp_runs.index);
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
+    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }
     
     
     //根据获取到的数据和参数，刷新显示
-    select_data(param, buff);
+    select_data(mid, buff);
     
     return(disp_runs.index);
 }
@@ -486,7 +486,7 @@ static uint8_t display_list_show_next(void)
 static uint8_t display_list_show_last(void)
 {
     uint32_t offset;
-    uint32_t param;
+    uint32_t mid;
     uint8_t buff[32];
     struct __protocol *api_stream;
     
@@ -518,12 +518,12 @@ static uint8_t display_list_show_last(void)
         return(disp_runs.index);
     }
 	
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
+    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }
     
-    select_data(param, buff);
+    select_data(mid, buff);
     
     return(disp_runs.index);
 }
@@ -531,7 +531,7 @@ static uint8_t display_list_show_last(void)
 static uint8_t display_list_show_index(uint8_t val)
 {
     uint32_t offset;
-    uint32_t param;
+    uint32_t mid;
     uint8_t buff[32];
     struct __protocol *api_stream;
     
@@ -561,12 +561,12 @@ static uint8_t display_list_show_index(uint8_t val)
         return(disp_runs.index);
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &param))
+    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }
     
-    select_data(param, buff);
+    select_data(mid, buff);
     
     return(disp_runs.index);
 }

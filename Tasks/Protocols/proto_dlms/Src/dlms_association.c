@@ -11,6 +11,7 @@
 #include "jiffy.h"
 #include "dlms_association.h"
 #include "dlms_application.h"
+#include "dlms_utilities.h"
 #include "axdr.h"
 #include "mbedtls/gcm.h"
 
@@ -119,8 +120,8 @@ struct __aarq_request
 /* Private define ------------------------------------------------------------*/
 //DLMS 配置参数
 
-//DLMS 最大报文长度
-#define DLMS_CONFIG_MAX_BLOCK_SIZE              ((uint16_t)(512)) //>=32
+//DLMS 最大APDU长度
+#define DLMS_CONFIG_MAX_APDU                    ((uint16_t)(512)) //>=32
 
 //DLMS 同时最多支持的ASSOCIATION数量
 #define DLMS_CONFIG_MAX_ASSO                    ((uint8_t)(6))
@@ -128,26 +129,14 @@ struct __aarq_request
 //定义外部接口
 //COSEM层请求（info, length, buffer, max buffer length, filled buffer length）
 #define DLMS_CONFIG_COSEM_REQUEST(i,l,b,m,f)    dlms_appl_entrance(i,l,b,m,f)
-////验证密码（info）
-//#define DLMS_CONFIG_PASSWD_VALID(i)           0
-////加载认证密钥（info）
-//#define DLMS_CONFIG_LOAD_AKEY(i)              ;
-////加载加密密钥（info）
-//#define DLMS_CONFIG_LOAD_EKEY(i)              ;
-////加载本机system title（info）
-//#define DLMS_CONFIG_LOAD_TITLE(i)             ;
-
-////////////////////////////////////////////////////////////////////////////
-//Just for debug
-//验证密码（info）
-#define DLMS_CONFIG_PASSWD_VALID(i)             ((memcmp(i, "\x80\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18) == 0))
+//加载密码（info）
+#define DLMS_CONFIG_LOAD_PASSWD(i)              dlms_util_load_passwd(i)
 //加载认证密钥（info）
-#define DLMS_CONFIG_LOAD_AKEY(i)                memcpy(i, "\x45\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
+#define DLMS_CONFIG_LOAD_AKEY(i)                dlms_util_load_akey(i)
 //加载加密密钥（info）
-#define DLMS_CONFIG_LOAD_EKEY(i)                memcpy(i, "\x41\x10\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30", 18)
+#define DLMS_CONFIG_LOAD_EKEY(i)                dlms_util_load_ekey(i)
 //加载本机system title（info）
-#define DLMS_CONFIG_LOAD_TITLE(i)               memcpy(i, "\x53\x08\x57\x53\x44\x30\x30\x30\x30\x30", 10)
-///////////////////////////////////////////////////////////////////////////
+#define DLMS_CONFIG_LOAD_TITLE(i)               dlms_util_load_title(i)
 
 /* Private macro -------------------------------------------------------------*/
 #define DLMS_AP_AMOUNT                          ((uint8_t)(sizeof(ap_support_list) / sizeof(struct __ap)))
@@ -158,14 +147,14 @@ struct __aarq_request
   */
 static const struct __ap ap_support_list[] = 
 {
-    //内容依次为
+    //内容依次为：
     //客户端地址
     //支持的 conformance
     //使用的 objectlist 的标识
     //认证等级
-    {0x10,{0x00, 0x10, 0x11},0x01,DLMS_ACCESS_LOWEST},
-    {0x20,{0x00, 0x10, 0x11},0x01,DLMS_ACCESS_LOW},
-    {0x30,{0x00, 0x30, 0x1D},0x01,DLMS_ACCESS_HIGH},
+    {0x10,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOWEST},
+    {0x20,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOW},
+    {0x30,{0x00, 0x30, 0x1D},(1<<0),DLMS_ACCESS_HIGH},
 };
 
 /**	
@@ -177,6 +166,11 @@ static struct __dlms_association *asso_list[DLMS_CONFIG_MAX_ASSO] = {0};
   * @brief 当前正在处理的连接对象
   */
 static struct __dlms_association *asso_current = (void *)0;
+
+/**	
+  * @brief 标记密钥需要在完成本次通信之后需要刷新
+  */
+static uint8_t key_is_eliminate = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -650,14 +644,39 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
     asso->info.max_pdu <<= 8;
     asso->info.max_pdu += msg[offset + 8];
     
-    if(asso->info.max_pdu > DLMS_CONFIG_MAX_BLOCK_SIZE)
+    if(asso->info.max_pdu > DLMS_CONFIG_MAX_APDU)
     {
-        asso->info.max_pdu = DLMS_CONFIG_MAX_BLOCK_SIZE;
+        asso->info.max_pdu = DLMS_CONFIG_MAX_APDU;
     }
     
     if(output)
     {
         heap.free(output);
+    }
+}
+
+/**	
+  * @brief 
+  */
+static void asso_keys_flush(void)
+{
+    uint8_t cnt;
+    
+    for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
+    {
+        if(!asso_list[cnt])
+        {
+            continue;
+        }
+        
+        if((asso_list[cnt]->status == ASSOCIATED) && (asso_list[cnt]->diagnose == SUCCESS_HLS) || \
+            (asso_list[cnt]->status == ASSOCIATION_PENDING))
+        {
+            //加载 ekay
+            DLMS_CONFIG_LOAD_EKEY(asso_list[cnt]->ekey);
+            //加载 akey
+            DLMS_CONFIG_LOAD_AKEY(asso_list[cnt]->akey);
+        }
     }
 }
 
@@ -944,8 +963,8 @@ static void asso_aarq_low(struct __dlms_association *asso,
         }
         else
         {
-            heap.copy(asso->akey, &request->calling_authentication_value[2], request->calling_authentication_value[1]);
-            if(!DLMS_CONFIG_PASSWD_VALID(asso->akey))
+            DLMS_CONFIG_LOAD_PASSWD(asso->akey);
+            if(!memcmp(&asso->akey[2], &request->calling_authentication_value[4], asso->akey[1]))
             {
                 //拒绝建立链接
                 asso->diagnose = FAILURE_CONTEXT_NAME;
@@ -1912,6 +1931,12 @@ void dlms_asso_gateway(uint8_t ap,
             if(asso_current->status != NON_ASSOCIATED)
             {
                 asso_request(info, length, buffer, buffer_length, filled_length);
+                
+                if(key_is_eliminate)
+                {
+                    key_is_eliminate = 0;
+                    asso_keys_flush();
+                }
             }
             break;
         }
@@ -1983,12 +2008,12 @@ enum __asso_status dlms_asso_status(void)
   */
 uint16_t dlms_asso_mtu(void)
 {
-    if(DLMS_CONFIG_MAX_BLOCK_SIZE < 32)
+    if(DLMS_CONFIG_MAX_APDU < 32)
     {
         return(32);
     }
     
-    return(DLMS_CONFIG_MAX_BLOCK_SIZE);
+    return(DLMS_CONFIG_MAX_APDU);
 }
 
 /**
@@ -2202,6 +2227,11 @@ uint8_t dlms_asso_dedkey(uint8_t *buffer)
     heap.copy(buffer, &asso_current->info.dedkey[2], asso_current->info.dedkey[1]);
     
     return(asso_current->info.dedkey[1]);
+}
+
+void dlms_asso_key_eliminate(void)
+{
+    key_is_eliminate = 0xff;
 }
 
 /**

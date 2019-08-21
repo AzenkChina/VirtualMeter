@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "cosem_objects.h"
+#include "dlms_types.h"
 #include "string.h"
 
 /** 在这里添加所有任务模块输出的基础函数列表对应头文件 */
@@ -21,59 +22,33 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/** 在这里添加所有任务模块输出的基础函数列表 */
-static const ObjectCluster *ObjectClusterTable[] = 
-{
-    (ObjectCluster *)&CosemObjectsException,
-    (ObjectCluster *)&CosemObjectsAssociation,
-    (ObjectCluster *)&CosemObjectsRegister,
-};
-
 /* Private macro -------------------------------------------------------------*/
-#define FUNC_LIST_AMOUNT        ((uint16_t)(sizeof(ObjectClusterTable) / sizeof(ObjectCluster *)))
-
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
 /**
-  * 获取一个基础函数
+  * 获取一个属性的Get
   *
   */
-TypeObject cosem_load_object(const char *table, uint8_t index)
+TypeObject CosemLoadAttrGet(uint16_t classid, uint8_t index)
 {
-    uint16_t cnt;
     
-    if(!table)
-    {
-        return((TypeObject)0);
-    }
-    
-    for(cnt=0; cnt<FUNC_LIST_AMOUNT; cnt++)
-    {
-    	if(!ObjectClusterTable[cnt])
-    	{
-    		continue;
-		}
-		
-    	if(!ObjectClusterTable[cnt]->Name)
-    	{
-    		continue;
-		}
-		
-        if(strcmp(table, ObjectClusterTable[cnt]->Name) != 0)
-        {
-            continue;
-        }
-        
-        if(index >= ObjectClusterTable[cnt]->Amount)
-        {
-            return((TypeObject)0);
-        }
-        
-        return(ObjectClusterTable[cnt]->Func[index]);
-    }
-    
-    return((TypeObject)0);
 }
 
+/**
+  * 获取一个属性的Set
+  *
+  */
+TypeObject CosemLoadAttrSet(uint16_t classid, uint8_t index)
+{
+    
+}
+
+/**
+  * 获取一个方法
+  *
+  */
+TypeObject CosemLoadMethod(uint16_t classid, uint8_t index)
+{
+    
+}

@@ -326,6 +326,7 @@ struct __cosem_descriptor
   */
 struct __cosem_request_desc
 {
+    uint8_t                     suit;
     enum __dlms_access_level    level;
     enum __dlms_request_type    request;
     struct __cosem_descriptor   descriptor;

@@ -63,16 +63,3 @@ static const TypeObject ObjectList[] =
 	ExceptionDenied,
     ExceptionLogicalName,
 };
-
-
-
-
-/**	
-  * @brief 对象包，用于注册
-  */
-const ObjectCluster CosemObjectsException = 
-{
-    .Name = "Exception",
-    .Amount = sizeof(ObjectList) / sizeof(TypeObject),
-    .Func = ObjectList,
-};

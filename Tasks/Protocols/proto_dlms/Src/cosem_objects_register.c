@@ -17,18 +17,37 @@
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/**	
+  * @brief 读取逻辑名
+  */
+static ObjectErrs RegisterGetLogicalName(ObjectPara *P)
+{
+    uint16_t Length;
+    uint8_t Name[6] = {0};
+    
+    Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
+    
+    if(!Length)
+	{
+		return(OBJECT_ERR_ENCODE);
+	}
+    
+    OBJ_PUSH_LENGTH(P, Length);
+    
+    return(OBJECT_NOERR);
+}
 
 /**	
-  * @brief 读取二次侧瞬时量
+  * @brief 读取数值
   */
-static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
+static ObjectErrs RegisterGetValue(ObjectPara *P)
 {
     struct __meta_identifier id;
     struct __metering *api_metering;
     int64_t val = 0;
     uint16_t Length;
 	
-    M_U2ID(OBJ_IN_ID(P), id);
+    M_U2ID(OBJ_IN_MID(P), id);
     
     api_metering = (struct __metering *)api("task_metering");
     if(!api_metering)
@@ -55,22 +74,39 @@ static ObjectErrs MeteringReadSecondaryInstant(ObjectPara *P)
 }
 
 /**	
-  * @brief 对象列表
+  * @brief 设置数值
   */
-static const TypeObject ObjectList[] = 
+static ObjectErrs RegisterSetValue(ObjectPara *P)
 {
-    MeteringReadSecondaryInstant,
-};
-
-
-
+    return(OBJECT_ERR_LOWLEVEL);
+}
 
 /**	
-  * @brief 对象包，用于注册
+  * @brief 读取单位和缩放
   */
-const ObjectCluster CosemObjectsRegister = 
+static ObjectErrs RegisterGetScalerUnit(ObjectPara *P)
 {
-    .Name = "Register",
-    .Amount = sizeof(ObjectList) / sizeof(TypeObject),
-    .Func = ObjectList,
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
+  * @brief 复位
+  */
+static ObjectErrs RegisterReset(ObjectPara *P)
+{
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
+  * @brief 对象列表
+  */
+const ClassRegister Register = 
+{
+    .GetLogicalName     = RegisterGetLogicalName,
+    .SetLogicalName     = (TypeObject)0,
+    .GetValue           = RegisterGetValue,
+    .SetValue           = RegisterSetValue,
+    .GetScalerUnit      = RegisterGetScalerUnit,
+    .SetScalerUnit      = (TypeObject)0,
+    .Reset              = RegisterReset,
 };

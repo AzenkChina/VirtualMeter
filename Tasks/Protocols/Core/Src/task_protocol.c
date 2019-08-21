@@ -105,7 +105,7 @@ static enum __task_status proto_status(void)
 /**
   * @brief  协议栈 读取一个数据项
   */
-static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *param)
+static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *mid)
 {
 	uint8_t cnt;
     uint16_t length;
@@ -114,7 +114,7 @@ static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, ui
 	{
     	if(proto_table[cnt]->protocol.read)
     	{
-			length = proto_table[cnt]->protocol.read(descriptor, buff, size, param);
+			length = proto_table[cnt]->protocol.read(descriptor, buff, size, mid);
 		}
         else
         {

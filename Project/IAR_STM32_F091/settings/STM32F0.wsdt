@@ -12,7 +12,7 @@
           
           
           
-        <Column0>376</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>391</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -31,7 +31,7 @@
         
         
       <ColumnWidth0>556</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>953</ColumnWidth2></Select-Ambiguous-Definitions>
-    <TerminalIO/><Tool-Output/></Static>
+    <TerminalIO/><Tool-Output/><Breakpoints><col-names><item>Breakpoint</item><item>_I0</item></col-names><col-widths><item>500</item><item>35</item></col-widths></Breakpoints></Static>
     <Windows>
       
       
@@ -43,7 +43,7 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Libraries</ExpandedNode><ExpandedNode>STM32F0/Libraries/Convert</ExpandedNode><ExpandedNode>STM32F0/Middleware</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols/proto_dlms</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols</ExpandedNode><ExpandedNode>STM32F0/Tasks/Protocols/proto_dlms</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
@@ -67,7 +67,7 @@
             <Factory>Select-Ambiguous-Definitions</Factory>
             <Session/>
           </Tab>
-        <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab></Tabs>
+        <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab><Tab><Identity>TabID-1329-825</Identity><TabName>Breakpoints</TabName><Factory>Breakpoints</Factory></Tab></Tabs>
         
       <SelectedTab>0</SelectedTab></Wnd2></Windows>
     <Editor>
@@ -75,14 +75,14 @@
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_association.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>115</YPos2><SelStart2>2380</SelStart2><SelEnd2>2380</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\hdlc_datalink.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>15</YPos2><SelStart2>829</SelStart2><SelEnd2>829</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_lexicon.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>129</YPos2><SelStart2>8765</SelStart2><SelEnd2>8765</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_application.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>197</SelStart2><SelEnd2>226</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>6</YPos2><SelStart2>112</SelStart2><SelEnd2>112</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_exception.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>37</YPos2><SelStart2>1144</SelStart2><SelEnd2>1144</SelEnd2></Tab><ActiveTab>5</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_register.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>36</YPos2><SelStart2>1498</SelStart2><SelEnd2>1551</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Libraries\Convert\Src\axdr.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>276</YPos2><SelStart2>7393</SelStart2><SelEnd2>7393</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\dlms_lexicon.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>144</YPos2><SelStart2>2227</SelStart2><SelEnd2>2227</SelEnd2></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc\dlms_lexicon.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>284</SelStart2><SelEnd2>284</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>1128</SelStart2><SelEnd2>1128</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-05BF8628><key>iaridepm.enu1</key></Toolbar-05BF8628></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>470</Bottom><Right>467</Right><x>-2</x><y>-2</y><xscreen>136</xscreen><yscreen>196</yscreen><sizeHorzCX>85535</sizeHorzCX><sizeHorzCY>217536</sizeHorzCY><sizeVertCX>294969</sizeVertCX><sizeVertCY>523862</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>386</Bottom><Right>1592</Right><x>-2</x><y>-2</y><xscreen>1594</xscreen><yscreen>388</yscreen><sizeHorzCX>1002516</sizeHorzCX><sizeHorzCY>430633</sizeHorzCY><sizeVertCX>85535</sizeVertCX><sizeVertCY>217536</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-02CB8628><key>iaridepm.enu1</key></Toolbar-02CB8628></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>490</Bottom><Right>482</Right><x>-2</x><y>-2</y><xscreen>133</xscreen><yscreen>257</yscreen><sizeHorzCX>82763</sizeHorzCX><sizeHorzCY>276642</sizeHorzCY><sizeVertCX>301182</sizeVertCX><sizeVertCY>529602</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>394</Bottom><Right>1609</Right><x>-2</x><y>-2</y><xscreen>1611</xscreen><yscreen>396</yscreen><sizeHorzCX>1002489</sizeHorzCX><sizeHorzCY>426265</sizeHorzCY><sizeVertCX>82763</sizeVertCX><sizeVertCY>276642</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

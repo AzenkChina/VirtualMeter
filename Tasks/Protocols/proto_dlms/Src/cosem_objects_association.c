@@ -20,6 +20,26 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /**	
+  * @brief 读取逻辑名
+  */
+static ObjectErrs AssociationLNGetLogicalName(ObjectPara *P)
+{
+    uint16_t Length;
+    uint8_t Name[6] = {0};
+    
+    Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
+    
+    if(!Length)
+	{
+		return(OBJECT_ERR_ENCODE);
+	}
+    
+    OBJ_PUSH_LENGTH(P, Length);
+    
+    return(OBJECT_NOERR);
+}
+
+/**	
   * @brief 
   */
 static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
@@ -246,34 +266,35 @@ static ObjectErrs AssociationLNChangeHLSSecret(ObjectPara *P)
     return(OBJECT_ERR_NODEF);
 }
 
-/**	
-  * @brief 对象列表
-  */
-static const TypeObject ObjectList[] = 
+
+const ClassAssociationLN AssociationLN = 
 {
-    AssociationLNGetObjectList,
-    AssociationLNGetAssociatedPartnersID,
-    AssociationLNGetApplicationContextName,
-    AssociationLNGetxDLMSContextInfo,
-    AssociationLNGetAuthenticationMechanismName,
-    AssociationLNSetSecret,
-    AssociationLNGetAssociationStatus,
-    AssociationLNSecuritySetupReference,
-    AssociationLNUserList,
-    AssociationLNCurrentUser,
-    AssociationLNActionreplyToHLSAuthentication,
-    AssociationLNChangeHLSSecret,
-};
-
-
-
-
-/**	
-  * @brief 对象包，用于注册
-  */
-const ObjectCluster CosemObjectsAssociation = 
-{
-    .Name = "Association",
-    .Amount = sizeof(ObjectList) / sizeof(TypeObject),
-    .Func = ObjectList,
+    .GetLogicalName                     = AssociationLNGetLogicalName,
+    .SetLogicalName                     = (TypeObject)0,
+    .GetObjectList                      = AssociationLNGetObjectList,
+    .SetObjectList                      = (TypeObject)0,
+    .GetAssociatedPartnersID            = AssociationLNGetAssociatedPartnersID,
+    .SetAssociatedPartnersID            = (TypeObject)0,
+    .GetApplicationContextName          = AssociationLNGetApplicationContextName,
+    .SetApplicationContextName          = (TypeObject)0,
+    .GetXDLMSContextInfo                = AssociationLNGetxDLMSContextInfo,
+    .SetXDLMSContextInfo                = (TypeObject)0,
+    .GetAuthenticationMechanismName     = AssociationLNGetAuthenticationMechanismName,
+    .SetAuthenticationMechanismName     = (TypeObject)0,
+    .GetSecret                          = (TypeObject)0,
+    .SetSecret                          = AssociationLNSetSecret,
+    .GetAssociationStatus               = AssociationLNGetAssociationStatus,
+    .SetAssociationStatus               = (TypeObject)0,
+    .GetSecuritySetupReference          = AssociationLNSecuritySetupReference,
+    .SetSecuritySetupReference          = (TypeObject)0,
+    .GetUserList                        = AssociationLNUserList,
+    .SetUserList                        = (TypeObject)0,
+    .GetCurrentUser                     = AssociationLNCurrentUser,
+    .SetCurrentUser                     = (TypeObject)0,
+    .ReplytoHLSAuthentication           = AssociationLNActionreplyToHLSAuthentication,
+    .ChangeHLSSecret                    = AssociationLNChangeHLSSecret,
+    .AddObject                          = (TypeObject)0,
+    .RemoveObject                       = (TypeObject)0,
+    .AddUser                            = (TypeObject)0,
+    .RemoveUser                         = (TypeObject)0,
 };

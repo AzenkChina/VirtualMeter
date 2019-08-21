@@ -14,6 +14,5 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const ObjectCluster CosemObjectsException;
 
 #endif /* __COSEM_OBJECTS_EXCEPTION_H__ */

@@ -47,7 +47,8 @@ typedef struct
     {
         uint8_t     *Buffer; //输入数据
         uint16_t    Size; //输入数据长度
-        uint32_t    ID; //内部数据标识
+        uint32_t    OID; //对象索引
+        uint32_t    MID; //内部数据标识
         
     }               Input;
     
@@ -77,24 +78,12 @@ typedef struct
   */
 typedef ObjectErrs (*TypeObject)(ObjectPara *P);
 
-
-/**
-  * 对象组注册结构
-  *
-  */
-typedef struct
-{
-    char                *Name;
-    uint16_t            Amount;
-    const TypeObject    *Func;
-    
-} ObjectCluster;
-
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 #define OBJ_IN_ADDR(P)                  ((const uint8_t *)(P->Input.Buffer))//获取输入数据首地址
 #define OBJ_IN_SIZE(P)                  ((uint16_t)(P->Input.Size))//获取输入数据字节长度
-#define OBJ_IN_ID(P)                    ((uint32_t)(P->Input.ID))//获取数据标识
+#define OBJ_IN_OID(P)                   ((uint32_t)(P->Input.OID))//获取对象索引
+#define OBJ_IN_MID(P)                   ((uint32_t)(P->Input.MID))//获取数据标识
 
 #define OBJ_OUT_ADDR(P)                 (P->Output.Buffer)//获取输出缓冲首地址
 #define OBJ_OUT_SIZE(P)                 (P->Output.Size)//获取输出缓冲字节大小

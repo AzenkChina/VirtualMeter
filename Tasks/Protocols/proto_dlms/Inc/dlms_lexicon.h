@@ -11,7 +11,9 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void dlms_lex_parse(const struct __cosem_request_desc *desc, const char **table, uint8_t *index, uint32_t *param);
-extern uint32_t dlms_lex_amount(enum __dlms_class val);
+extern void dlms_lex_parse(const struct __cosem_request_desc *desc,
+                           union __dlms_right *right,
+                           uint32_t *oid,
+                           uint32_t *mid);
 
 #endif /* __DLSM_LEXICON_H__ */
