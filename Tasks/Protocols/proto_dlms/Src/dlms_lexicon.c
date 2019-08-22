@@ -74,19 +74,21 @@ struct __cosem_param_header
 {
     struct
     {
-        uint32_t    from; //数据项在文件中的起始位置
-        uint16_t    amount; //数据项条数
-        
-    }           lite;
+        uint32_t from; //数据项在文件中的起始位置
+        uint16_t amount; //数据项条数
+		
+    } lite;
     
     struct
     {
-        uint32_t    from; //数据项在文件中的起始位置
-        uint16_t    amount; //数据项条数
-        
-    }           normal;
+		uint32_t from; //数据项在文件中的起始位置
+		uint16_t amount; //数据项条数
+		
+    } normal;
+	
+	uint16_t amount[8]; //分类后数据项条数（suit 1~8）
     
-    uint32_t    check; //crc32校验
+    uint32_t check; //crc32校验
 };
 
 /**
@@ -95,7 +97,7 @@ struct __cosem_param_header
 struct __cosem_param
 {
     struct __cosem_param_header header;
-    uint8_t         space[250*1024];
+    uint8_t space[62*1024];
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -107,9 +109,9 @@ static const struct __cosem_entry_lite communal_lite[] =
 {
     /** cosem logical device name */
     {
-        0x0100002A0000FFFF,
+        0x0100002A0000FF80,/** suit 8 only */
 
-        0, //uid
+        0x00000000, //uid
 
         {M_ID2U(FMT_ASCII, 0, 0, 0, 0, 0)}, //mid attr 2
 
@@ -121,9 +123,9 @@ static const struct __cosem_entry_lite communal_lite[] =
 
     /** clock */
     {
-        0x080000010000FFFF,
+        0x080000010000FF80,/** suit 8 only */
 
-        0, //uid
+        0x00000000, //uid
 
         {M_ID2U(FMT_DTIME, 0, 0, 0, 0, 0), 0}, //mid attr 2 3
 
@@ -151,26 +153,26 @@ static const struct __cosem_entry_lite communal_lite[] =
 /**
   * @brief  本地数据项 表 2
   */
-static const struct __cosem_entry_normal communal[] = 
+static const struct __cosem_entry_normal communal_normal[] = 
 {
     /** association ln */
     {
-        0x0F0000280000FFFF,
+        0x0F0000280000FF80,/** suit 8 only */
 
-        0, //uid
+        0x00000000, //uid
 
         {
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 1
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 2
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 3
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 4
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 5
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 6
-            {ATTR_NONE, (ATTR_READ | ATTR_WRITE), (ATTR_READ | ATTR_WRITE)}, //attribute 7
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 8
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 9
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 10
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 11
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 2
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 3
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 4
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 5
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 6
+            {ATTR_NONE, ATTR_NONE, (ATTR_READ | ATTR_WRITE)}, //attribute 7
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 8
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 9
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 10
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 11
             
             {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ}, //method 1
             {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ}, //method 2
@@ -182,33 +184,33 @@ static const struct __cosem_entry_normal communal[] =
     },
 
     /** image transfer */
-    /** 用于下载运行参数文件到系统 */
+    /** 用于下载lexicon参数文件到系统 */
     {
-        0x1200002C0080FFFF,
+        0x1200002C0080FF80,/** suit 8 only */
 
-        0x80, //uid
+        0x00000080, //uid
 
         {
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 1
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 2
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 3
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 4
-            {(ATTR_READ | ATTR_WRITE), (ATTR_READ | ATTR_WRITE), (ATTR_READ | ATTR_WRITE)}, //attribute 5
-            {ATTR_READ, ATTR_READ, ATTR_READ}, //attribute 6
-            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 7
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 2
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 3
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 4
+            {ATTR_NONE, ATTR_NONE, (ATTR_READ | ATTR_WRITE)}, //attribute 5
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 6
+            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 7
             
-            {METHOD_ACCESS, METHOD_ACCESS, METHOD_ACCESS}, //method 1
-            {METHOD_ACCESS, METHOD_ACCESS, METHOD_ACCESS}, //method 2
-            {METHOD_ACCESS, METHOD_ACCESS, METHOD_ACCESS}, //method 3
-            {METHOD_ACCESS, METHOD_ACCESS, METHOD_ACCESS}, //method 4
+            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 1
+            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 2
+            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 3
+            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 4
         },
     },
 
     /** security setup */
     {
-        0x4000002B0000FFFF,
+        0x4000002B0000FF80,/** suit 8 only */
 
-        0, //uid
+        0x00000000, //uid
 
         {
             {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 1
@@ -661,9 +663,9 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     else
     {
-        data = (void *)communal;
+        data = (void *)communal_normal;
         
-        for(cnt=0; cnt<(sizeof(communal)/sizeof(struct __cosem_entry_normal)); cnt++)
+        for(cnt=0; cnt<(sizeof(communal_normal)/sizeof(struct __cosem_entry_normal)); cnt++)
         {
             if(key == ((((struct __cosem_entry_normal *)data) + cnt)->key & 0xffffffffffffff00))
             {
@@ -812,4 +814,71 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     
     return;
+}
+
+/**
+  * @brief  获取指定suit的配置信息条数
+  */
+uint16_t dlms_lex_amount(uint8_t suit)
+{
+    uint16_t cnt;
+    void *data;
+    struct __cosem_param_header header;
+	uint16_t amount = 0;
+	
+	if(!suit)
+	{
+		return(0);
+	}
+    
+    //查找本地数据项表
+    data = (void *)communal_lite;
+    
+    for(cnt=0; cnt<(sizeof(communal_lite)/sizeof(struct __cosem_entry_lite)); cnt++)
+    {
+        if(((((struct __cosem_entry_lite *)data) + cnt)->key & suit))
+        {
+            amount += 1;
+        }
+    }
+    
+    data = (void *)communal_normal;
+    
+    for(cnt=0; cnt<(sizeof(communal_normal)/sizeof(struct __cosem_entry_normal)); cnt++)
+    {
+        if((((struct __cosem_entry_normal *)data) + cnt)->key & suit)
+        {
+            amount += 1;
+        }
+    }
+    
+    //读取参数文件中的信息头，并检查是否正确
+    if(file.read("lexicon", 0, sizeof(struct __cosem_param_header), &header) != \
+        sizeof(struct __cosem_param_header))
+    {
+        return(amount);
+    }
+    else if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+            header.check)
+    {
+        return(amount);
+    }
+	
+	for(cnt=0; cnt<8; cnt++)
+	{
+		if((suit >> cnt) & 0x01)
+		{
+			amount += header.amount[cnt];
+		}
+	}
+	
+	return(amount);
+}
+
+/**
+  * @brief  获取指定suit下的指定条目信息
+  */
+uint16_t dlms_lex_entry(uint8_t suit, uint16_t index, void *buff)
+{
+    return(0);
 }

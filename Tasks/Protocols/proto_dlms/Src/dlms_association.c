@@ -150,11 +150,12 @@ static const struct __ap ap_support_list[] =
     //内容依次为：
     //客户端地址
     //支持的 conformance
-    //使用的 objectlist 的标识
+    //使用的 suit
     //认证等级
     {0x10,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOWEST},
     {0x20,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOW},
-    {0x30,{0x00, 0x30, 0x1D},(1<<0),DLMS_ACCESS_HIGH},
+    {0x40,{0x00, 0x30, 0x1D},(1<<0),DLMS_ACCESS_HIGH},
+	{0x4c,{0x00, 0x30, 0x1D},(1<<8),DLMS_ACCESS_HIGH},//suit 8 管理维护专用
 };
 
 /**	

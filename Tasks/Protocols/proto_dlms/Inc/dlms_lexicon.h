@@ -15,5 +15,6 @@ extern void dlms_lex_parse(const struct __cosem_request_desc *desc,
                            union __dlms_right *right,
                            uint32_t *oid,
                            uint32_t *mid);
+extern uint16_t dlms_lex_amount(uint8_t suit);
 
 #endif /* __DLSM_LEXICON_H__ */
