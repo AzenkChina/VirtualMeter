@@ -53,11 +53,7 @@ struct __cosem_entry_normal
   */
 struct __cosem_entry_lite_file
 {
-    uint64_t key;
-    uint32_t oid;
-    uint32_t mid[3];
-    uint8_t right[15][3];
-    
+    struct __cosem_entry_lite entry;
     uint32_t check;//crc32校验
 };
 
@@ -67,10 +63,7 @@ struct __cosem_entry_lite_file
   */
 struct __cosem_entry_normal_file
 {
-    uint64_t key;
-    uint32_t oid;
-    uint8_t right[22][3];
-    
+    struct __cosem_entry_normal entry;
     uint32_t check;//crc32校验
 };
 
@@ -82,14 +75,14 @@ struct __cosem_param_header
     struct
     {
         uint32_t    from; //数据项在文件中的起始位置
-        uint32_t    size; //数据项条数
+        uint16_t    amount; //数据项条数
         
     }           lite;
     
     struct
     {
         uint32_t    from; //数据项在文件中的起始位置
-        uint32_t    size; //数据项条数
+        uint16_t    amount; //数据项条数
         
     }           normal;
     
@@ -102,13 +95,13 @@ struct __cosem_param_header
 struct __cosem_param
 {
     struct __cosem_param_header header;
-    uint8_t         space[510*1024];
+    uint8_t         space[250*1024];
 };
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /**
-  * @brief  本地数据项
+  * @brief  本地数据项 表 1
   */
 static const struct __cosem_entry_lite communal_lite[] = 
 {
@@ -155,6 +148,9 @@ static const struct __cosem_entry_lite communal_lite[] =
     },
 };
 
+/**
+  * @brief  本地数据项 表 2
+  */
 static const struct __cosem_entry_normal communal[] = 
 {
     /** association ln */
@@ -237,9 +233,44 @@ static const struct __cosem_entry_normal communal[] =
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /**
-  * @brief   
+  * @brief  计算 log2(n)
   */
-static void get_class_map(const struct __cosem_request_desc *desc, uint8_t *attr, uint8_t *method)
+static uint16_t clog2(uint16_t x)
+{
+    static const uint8_t log_2[256] = 
+    {
+        0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+        6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+        7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+        7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+    };
+    
+    int16_t l = -1;
+    
+    while (x >= 256)
+    {
+        l += 8;
+        x >>= 8;
+    }
+    
+    if((l + log_2[x]) < 0)
+    {
+        return(0);
+    }
+    
+    return l + log_2[x];
+}
+
+/**
+  * @brief   获取 类的 属性 和 方法 个数
+  */
+static void get_class_map(const struct __cosem_request_desc *desc,
+                          uint8_t *attr,
+                          uint8_t *method)
 {
     if((!desc) || (!attr) || (!method))
     {
@@ -274,7 +305,7 @@ static void get_class_map(const struct __cosem_request_desc *desc, uint8_t *attr
 }
 
 /**
-  * @brief   
+  * @brief   获取 类 属性 的内部数据标识
   */
 static void get_class_mid(const struct __cosem_request_desc *desc,
                           const struct __cosem_entry_lite *entry,
@@ -379,13 +410,13 @@ static void get_class_mid(const struct __cosem_request_desc *desc,
 }
 
 /**
-  * @brief   
+  * @brief   解析 struct __cosem_entry_lite 数据
   */
 static void prase_cosem_entry_lite(const struct __cosem_request_desc *desc,
-                            const struct __cosem_entry_lite *entry,
-                            union __dlms_right *right,
-                            uint32_t *oid,
-                            uint32_t *mid)
+                                   const struct __cosem_entry_lite *entry,
+                                   union __dlms_right *right,
+                                   uint32_t *oid,
+                                   uint32_t *mid)
 {
     uint8_t attr = 0;
     uint8_t method = 0;
@@ -474,12 +505,12 @@ static void prase_cosem_entry_lite(const struct __cosem_request_desc *desc,
 }
 
 /**
-  * @brief  
+  * @brief  解析 struct __cosem_entry_normal 数据
   */
-static void prase_cosem_entry(const struct __cosem_request_desc *desc,
-                       const struct __cosem_entry_normal *entry,
-                       union __dlms_right *right,
-                       uint32_t *oid)
+static void prase_cosem_entry_normal(const struct __cosem_request_desc *desc,
+                                     const struct __cosem_entry_normal *entry,
+                                     union __dlms_right *right,
+                                     uint32_t *oid)
 {
     uint8_t attr = 0;
     uint8_t method = 0;
@@ -566,7 +597,12 @@ static void prase_cosem_entry(const struct __cosem_request_desc *desc,
 }
 
 /**
-  * @brief  输入由报文解析出来的 struct __cosem_request_desc 结构，定位函数属于哪个表以及索引号
+  * @brief  根据 struct __cosem_request_desc 中的内容，获取对象的配置信息
+  * @param  desc 输入参数，由请求报文以及当前的连接状态合成
+  * @param  right 当前对象的访问权限
+  * @param  oid 对象索引
+  * @param  mid 内部数据标识
+  * @retval None
   */
 void dlms_lex_parse(const struct __cosem_request_desc *desc,
                     union __dlms_right *right,
@@ -575,6 +611,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
 {
     uint64_t key;
     uint16_t cnt;
+    uint16_t position;
     void *data;
     struct __cosem_param_header header;
     
@@ -584,7 +621,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     
     right->attr = ATTR_NONE;
-    *oid = 0;
+    *oid = 0xffffffff;
     *mid = 0;
     
     if(!desc)
@@ -592,6 +629,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         return;
     }
     
+    //生成比对键值
     key = (desc->descriptor.classid & 0xff);
     key <<= 8;
     key += (desc->descriptor.obis[0] & 0xff);
@@ -607,37 +645,170 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     key += (desc->descriptor.obis[5] & 0xff);
     key <<= 8;
     
-    data = (void *)communal_lite;
-    
-    for(cnt=0; cnt<(sizeof(communal_lite)/sizeof(struct __cosem_entry_lite)); cnt++)
+    //查找本地数据项表
+    if(desc->descriptor.classid <= 8)
     {
-        if(((((struct __cosem_entry_lite *)data) + cnt)->key & 0xffffffffffffff00) == key)
+        data = (void *)communal_lite;
+        
+        for(cnt=0; cnt<(sizeof(communal_lite)/sizeof(struct __cosem_entry_lite)); cnt++)
         {
-            prase_cosem_entry_lite(desc, (((struct __cosem_entry_lite *)data) + cnt), right, oid, mid);
-            return;
+            if(key == ((((struct __cosem_entry_lite *)data) + cnt)->key & 0xffffffffffffff00))
+            {
+                prase_cosem_entry_lite(desc, (((struct __cosem_entry_lite *)data) + cnt), right, oid, mid);
+                return;
+            }
+        }
+    }
+    else
+    {
+        data = (void *)communal;
+        
+        for(cnt=0; cnt<(sizeof(communal)/sizeof(struct __cosem_entry_normal)); cnt++)
+        {
+            if(key == ((((struct __cosem_entry_normal *)data) + cnt)->key & 0xffffffffffffff00))
+            {
+                prase_cosem_entry_normal(desc, (((struct __cosem_entry_normal *)data) + cnt), right, oid);
+                return;
+            }
         }
     }
     
-    data = (void *)communal;
-    
-    for(cnt=0; cnt<(sizeof(communal)/sizeof(struct __cosem_entry_normal)); cnt++)
-    {
-        if(((((struct __cosem_entry_normal *)data) + cnt)->key & 0xffffffffffffff00) == key)
-        {
-            prase_cosem_entry(desc, (((struct __cosem_entry_normal *)data) + cnt), right, oid);
-            return;
-        }
-    }
-    
+    //读取参数文件中的信息头，并检查是否正确
     if(file.read("lexicon", 0, sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return;
     }
-    
-    if(crc32(&header, sizeof(struct __cosem_param_header)) != 0)
+    else if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+            header.check)
     {
         return;
+    }
+    
+    //查找参数文件中数据项表
+    if(desc->descriptor.classid <= 8)
+    {
+        //申请内存用于读取条目
+        data = heap.dalloc(sizeof(struct __cosem_entry_lite_file));
+        if(!data)
+        {
+            return;
+        }
+        
+        //从中间开始查找
+        position = header.lite.amount / 2;
+        
+        //开始二分法查找
+        for(cnt=0; cnt<clog2(header.lite.amount); cnt++)
+        {
+            //读取
+            if(file.read("lexicon", \
+                         STRUCT_OFFSET(struct __cosem_param, space) + header.lite.from + position * sizeof(struct __cosem_entry_lite_file), 
+                         sizeof(struct __cosem_entry_lite_file), \
+                         data) != \
+               sizeof(struct __cosem_entry_lite_file))
+            {
+                heap.free(data);
+                return;
+            }
+            
+            //校验
+            if(crc32(&(((struct __cosem_entry_lite_file *)data)->entry), sizeof(struct __cosem_entry_lite)) != \
+               ((struct __cosem_entry_lite_file *)data)->check)
+            {
+                //校验失败，尝试位置微调
+                if(position)
+                {
+                    position -= 1;
+                    continue;
+                }
+                else
+                {
+                    heap.free(data);
+                    return;
+                }
+            }
+            
+            //键值比对
+            if(key == (((struct __cosem_entry_lite_file *)data)->entry.key & 0xffffffffffffff00))
+            {
+                prase_cosem_entry_lite(desc, &(((struct __cosem_entry_lite_file *)data)->entry), right, oid, mid);
+                heap.free(data);
+                return;
+            }
+            else if(key < (((struct __cosem_entry_lite_file *)data)->entry.key & 0xffffffffffffff00))
+            {
+                position -= (position / 2);
+            }
+            else
+            {
+                position += (position / 2);
+            }
+        }
+        
+        heap.free(data);
+    }
+    else
+    {
+        //申请内存用于读取条目
+        data = heap.dalloc(sizeof(struct __cosem_entry_normal_file));
+        if(!data)
+        {
+            return;
+        }
+        
+        //从中间开始查找
+        position = header.normal.amount / 2;
+        
+        //开始二分法查找
+        for(cnt=0; cnt<clog2(header.normal.amount); cnt++)
+        {
+            //读取
+            if(file.read("lexicon", \
+                         STRUCT_OFFSET(struct __cosem_param, space) + header.normal.from + position * sizeof(struct __cosem_entry_normal_file), 
+                         sizeof(struct __cosem_entry_normal_file), \
+                         data) != \
+               sizeof(struct __cosem_entry_normal_file))
+            {
+                heap.free(data);
+                return;
+            }
+            
+            //校验
+            if(crc32(&(((struct __cosem_entry_normal_file *)data)->entry), sizeof(struct __cosem_entry_normal)) != \
+               ((struct __cosem_entry_normal_file *)data)->check)
+            {
+                //校验失败，尝试位置微调
+                if(position)
+                {
+                    position -= 1;
+                    continue;
+                }
+                else
+                {
+                    heap.free(data);
+                    return;
+                }
+            }
+            
+            //键值比对
+            if(key == (((struct __cosem_entry_normal_file *)data)->entry.key & 0xffffffffffffff00))
+            {
+                prase_cosem_entry_normal(desc, &(((struct __cosem_entry_normal_file *)data)->entry), right, oid);
+                heap.free(data);
+                return;
+            }
+            else if(key < (((struct __cosem_entry_normal_file *)data)->entry.key & 0xffffffffffffff00))
+            {
+                position -= (position / 2);
+            }
+            else
+            {
+                position += (position / 2);
+            }
+        }
+        
+        heap.free(data);
     }
     
     return;
