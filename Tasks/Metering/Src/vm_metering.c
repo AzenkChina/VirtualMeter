@@ -21,7 +21,7 @@
 /* Private functions ---------------------------------------------------------*/
 static int metering_instant(lua_State *L)
 {
-    struct __metering_identifier id;
+    struct __meta_identifier id;
     uint32_t vid = 0;
     struct __metering *api_metering;
     int64_t val = 0;
@@ -34,7 +34,7 @@ static int metering_instant(lua_State *L)
     }
     
     vid = (uint32_t)luaL_checknumber(L, 1);
-    M_UINT2ID(vid, id);
+    M_U2ID(vid, id);
     
     if(api_metering->instant(id, &val) == M_NULL)
     {
