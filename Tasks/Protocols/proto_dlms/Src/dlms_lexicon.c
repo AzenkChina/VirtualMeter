@@ -11,6 +11,7 @@
 #include "mids.h"
 #include "string.h"
 #include "crc.h"
+#include "mbedtls/md5.h"
 
 /* Private define ------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -73,6 +74,7 @@ struct __cosem_entry_high_file
   */
 union __cosem_entry_file
 {
+    uint64_t key;
     struct __cosem_entry_low_file low;
     struct __cosem_entry_high_file high;
     uint8_t size[96];
@@ -89,11 +91,23 @@ struct __cosem_param_header
 };
 
 /**
+  * @brief  cosem 数据项文件信息
+  */
+struct __cosem_param_info
+{
+    uint64_t version; //数据发布版本
+    uint64_t date; //数据发布时间（时间戳）
+    uint8_t md5[16];//amount 个 entry 的md5校验
+    uint32_t check; //crc32校验
+};
+
+/**
   * @brief  cosem 数据项存储空间分布
   */
 struct __cosem_param
 {
     struct __cosem_param_header header;
+    struct __cosem_param_info info;
     union __cosem_entry_file entry[(63*1024+512)/sizeof(union __cosem_entry_file)];
 };
 
@@ -108,7 +122,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x0F0000280000FF80,/** suit 8 only */
 
-        0x80000000, //uid
+        0x80000000, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
@@ -137,7 +151,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x1200002C0080FF80,/** suit 8 only */
 
-        0x80000000, //uid
+        0x80000000, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
@@ -159,7 +173,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x4000002B0000FF80,/** suit 8 only */
 
-        0x80000000, //uid
+        0x80000000, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 1
@@ -608,7 +622,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     
     //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", 0, sizeof(struct __cosem_param_header), &header) != \
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return;
@@ -636,12 +650,12 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         }
         
         //键值比对
-        if(key < (entry.low.entry.key & 0xffffffffffffff00))
+        if(key < (entry.key & 0xffffffffffffff00))
         {
             position -= (position / 2);
             continue;
         }
-        else if(key > (entry.low.entry.key & 0xffffffffffffff00))
+        else if(key > (entry.key & 0xffffffffffffff00))
         {
             position += (position / 2);
             continue;
@@ -683,8 +697,8 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
 uint16_t dlms_lex_amount(uint8_t suit)
 {
     uint16_t cnt;
+    uint16_t amount = 0;
     struct __cosem_param_header header;
-	uint16_t amount = 0;
 	
 	if(!suit)
 	{
@@ -701,7 +715,7 @@ uint16_t dlms_lex_amount(uint8_t suit)
     }
     
     //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", 0, sizeof(struct __cosem_param_header), &header) != \
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return(amount);
@@ -752,7 +766,7 @@ uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry)
     }
     
     //判断类号
-    if(((fil.low.entry.key >> 56) & 0xff) <= 8)
+    if(((fil.key >> 56) & 0xff) <= 8)
     {
         //校验数据是否有效
         if(crc32(&fil.low.entry, sizeof(fil.low.entry)) != fil.low.check)
@@ -822,4 +836,162 @@ uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry)
     }
     
     return(sizeof(fil));
+}
+
+/**
+  * @brief  获取条目信息文件的版本
+  */
+uint64_t dlms_lex_version(void)
+{
+    struct __cosem_param_info info;
+    
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+        sizeof(struct __cosem_param_info))
+    {
+        return(0);
+    }
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+            info.check)
+    {
+        return(0);
+    }
+    
+    return(info.version);
+}
+
+/**
+  * @brief  获取条目信息文件的发布日期
+  */
+uint64_t dlms_lex_date(void)
+{
+    struct __cosem_param_info info;
+    
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+        sizeof(struct __cosem_param_info))
+    {
+        return(0);
+    }
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+            info.check)
+    {
+        return(0);
+    }
+    
+    return(info.date);
+}
+
+/**
+  * @brief  验证条目信息文件是否有效
+  */
+bool dlms_lex_is_valid(void)
+{
+    uint16_t cnt;
+    uint16_t amount = 0;
+    uint64_t accumulate = 0;
+    struct __cosem_param_info info;
+    struct __cosem_param_header header;
+    union __cosem_entry_file entry;
+    mbedtls_md5_context ctx;
+    uint8_t md5_output[16] = {0};
+    
+    //读取参数文件中的信息头，并检查是否正确
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+        sizeof(struct __cosem_param_header))
+    {
+        return(false);
+    }
+    
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+            header.check)
+    {
+        return(false);
+    }
+    
+	for(cnt=0; cnt<8; cnt++)
+	{
+        amount += header.spread[cnt];
+	}
+    
+    if(amount != header.amount)
+    {
+        return(false);
+    }
+    
+    //读取参数文件中的信息，并检查是否正确
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+        sizeof(struct __cosem_param_info))
+    {
+        return(false);
+    }
+    
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+            info.check)
+    {
+        return(false);
+    }
+    
+    mbedtls_md5_init( &ctx );
+    if(mbedtls_md5_starts_ret( &ctx ) != 0 )
+    {
+        goto exit;
+    }
+    
+	for(cnt=0; cnt<header.amount; cnt++)
+	{
+        //读取
+        if(file.read("lexicon", \
+                     STRUCT_OFFSET(struct __cosem_param, entry[cnt]), \
+                     sizeof(entry), \
+                     &entry) != sizeof(entry))
+        {
+            goto exit;
+        }
+        
+        if(mbedtls_md5_update_ret( &ctx, (const unsigned char *)&entry, sizeof(entry) ) != 0)
+        {
+            goto exit;
+        }
+        
+        if((entry.key & 0xffffffffffffff00) < accumulate)
+        {
+            goto exit;
+        }
+        
+        accumulate = (entry.key & 0xffffffffffffff00);
+        
+        if(((entry.key >> 56) & 0xff) <= 8)
+        {
+            //校验
+            if(crc32(&entry.low.entry, sizeof(entry.low.entry)) != entry.low.check)
+            {
+                goto exit;
+            }
+        }
+        else
+        {
+            //校验
+            if(crc32(&entry.high.entry, sizeof(entry.high.entry)) != entry.high.check)
+            {
+                goto exit;
+            }
+        }
+	}
+
+    if(mbedtls_md5_finish_ret( &ctx, md5_output ) != 0)
+    {
+        goto exit;
+    }
+    
+    if(memcmp(md5_output, info.md5, 16) != 0)
+    {
+        goto exit;
+    }
+    
+    
+    mbedtls_md5_free( &ctx );
+    return(true);
+    
+exit:
+    mbedtls_md5_free( &ctx );
+    return( false );
 }

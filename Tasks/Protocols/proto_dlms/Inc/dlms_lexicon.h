@@ -4,6 +4,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 #include "proto_dlms.h"
 #include "dlms_types.h"
 
@@ -33,5 +34,8 @@ extern void dlms_lex_parse(const struct __cosem_request_desc *desc,
                            uint32_t *mid);
 extern uint16_t dlms_lex_amount(uint8_t suit);
 extern uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry);
+extern uint64_t dlms_lex_version(void);
+extern uint64_t dlms_lex_date(void);
+extern bool dlms_lex_is_valid(void);
 
 #endif /* __DLSM_LEXICON_H__ */
