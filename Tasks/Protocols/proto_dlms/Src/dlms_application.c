@@ -72,6 +72,7 @@ struct __cosem_request
         TypeObject Object; //数据对象
         ObjectPara Para; //对象参数
         ObjectErrs Errs; //调用结果
+        uint8_t Right; //对象访问权限
         
     } Entry[DLMS_REQ_LIST_MAX]; //总条目
 };
@@ -801,9 +802,6 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 static enum __appl_result make_cosem_instance(const struct __appl_request *request)
 {
     uint8_t cnt = 0;
-    uint32_t oid = 0;
-    uint32_t mid = 0;
-    union __dlms_right right;
     struct __cosem_request_desc desc;
     
     //获取当前链接下附属的对象内存
@@ -833,23 +831,25 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case GET_NORMAL:
                 {
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &right, &oid, &mid);
+                    dlms_lex_parse(&desc, \
+                                   (union __dlms_right *)&Current->Entry[0].Right, \
+                                   &Current->Entry[0].Para.Input.OID, \
+                                   &Current->Entry[0].Para.Input.MID);
                     
                     Current->Block = 0;//块计数清零
                     Current->Actived = 1;//一个请求条目
                     
-                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
-                    Current->Entry[0].Para.Input.MID = mid;//赋值数据标识
-                    Current->Entry[0].Para.Input.OID = oid;//赋值对象索引
                     Current->Entry[0].Para.Input.Buffer = request->info[0].data;
                     Current->Entry[0].Para.Input.Size = request->info[0].length;
-                    Current->Entry[0].Object = CosemLoadAttrGet(desc.descriptor.classid, desc.descriptor.index);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_GET);
                     
                     break;
                 }
@@ -887,22 +887,23 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                             break;
                         }
                         
+                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
+                        
                         desc.descriptor.classid = request->info[cnt].classid[0];
                         desc.descriptor.classid <<= 8;
                         desc.descriptor.classid += request->info[cnt].classid[1];
                         heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
                         desc.descriptor.index = request->info[cnt].index[0];
                         desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &right, &oid, &mid);
+                        dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[cnt].Right, \
+                                       &Current->Entry[cnt].Para.Input.OID, \
+                                       &Current->Entry[cnt].Para.Input.MID);
                         
                         Current->Actived += 1;//一个请求条目
                         
-                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
-                        Current->Entry[cnt].Para.Input.MID = mid;//赋值数据标识
-                        Current->Entry[cnt].Para.Input.OID = oid;//赋值对象索引
                         Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;
                         Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;
-                        Current->Entry[cnt].Object = CosemLoadAttrGet(desc.descriptor.classid, desc.descriptor.index);
+                        Current->Entry[cnt].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_GET);
                     }
                     
                     break;
@@ -922,37 +923,42 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case SET_NORMAL:
                 {
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &right, &oid, &mid);
+                    dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[0].Right, \
+                                   &Current->Entry[0].Para.Input.OID, \
+                                   &Current->Entry[0].Para.Input.MID);
                     
                     Current->Block = 0;//块计数清零
                     Current->Actived = 1;//一个请求条目
                     
-                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
-                    Current->Entry[0].Para.Input.MID = mid;//赋值数据标识
-                    Current->Entry[0].Para.Input.OID = oid;//赋值对象索引
                     
-                    Current->Entry[0].Para.Input.Buffer = request_formatter(mid, \
+                    Current->Entry[0].Para.Input.Buffer = request_formatter(Current->Entry[0].Para.Input.MID, \
                                                                             request->info[0].data, \
                                                                             request->info[0].length, \
                                                                             &Current->Entry[0].Para.Input.Size);
-                    Current->Entry[0].Object = CosemLoadAttrSet(desc.descriptor.classid, desc.descriptor.index);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_SET);
                     break;
                 }
                 case SET_FIRST_BLOCK:
                 {
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &right, &oid, &mid);
+                    dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[0].Right, \
+                                   &Current->Entry[0].Para.Input.OID, \
+                                   &Current->Entry[0].Para.Input.MID);
                     
                     if(!request->info->block)
                     {
@@ -962,9 +968,6 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     Current->Block = request->info->block;//块计数
                     Current->Actived = 1;//一个请求条目
                     
-                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
-                    Current->Entry[0].Para.Input.MID = mid;//赋值数据标识
-                    Current->Entry[0].Para.Input.OID = oid;//赋值对象索引
                     Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
                     Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
                     if((request->info->end) && !(*(request->info->end)))
@@ -975,7 +978,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     {
                         Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
                     }
-                    Current->Entry[0].Object = CosemLoadAttrSet(desc.descriptor.classid, desc.descriptor.index);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_SET);
                     break;
                 }
                 case SET_WITH_BLOCK:
@@ -1019,20 +1022,21 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
             {
                 case ACTION_NORMAL:
                 {
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &right, &oid, &mid);
+                    dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[0].Right, \
+                                   &Current->Entry[0].Para.Input.OID, \
+                                   &Current->Entry[0].Para.Input.MID);
                     
                     Current->Block = 0;//块计数清零
                     Current->Actived = 1;//一个请求条目
                     
-                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
-                    Current->Entry[0].Para.Input.MID = mid;//赋值数据标识
-                    Current->Entry[0].Para.Input.OID = oid;//赋值对象索引
                     Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
                     Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
                     Current->Entry[0].Object = CosemLoadMethod(desc.descriptor.classid, desc.descriptor.index);
@@ -1064,13 +1068,17 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                 }
                 case ACTION_FIRST_BLOCK:
                 {
+                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
+                    
                     desc.descriptor.classid = request->info[0].classid[0];
                     desc.descriptor.classid <<= 8;
                     desc.descriptor.classid += request->info[0].classid[1];
                     heap.copy(desc.descriptor.obis, request->info[0].obis, 6);
                     desc.descriptor.index = request->info[0].index[0];
                     desc.descriptor.selector = 0;
-                    dlms_lex_parse(&desc, &right, &oid, &mid);
+                    dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[0].Right, \
+                                   &Current->Entry[0].Para.Input.OID, \
+                                   &Current->Entry[0].Para.Input.MID);
                     
                     if(!request->info->block)
                     {
@@ -1080,9 +1088,6 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     Current->Block = request->info->block;//块计数
                     Current->Actived = 1;//一个请求条目
                     
-                    heap.set(&Current->Entry[0], 0, sizeof(Current->Entry[0]));
-                    Current->Entry[0].Para.Input.MID = mid;//赋值数据标识
-                    Current->Entry[0].Para.Input.OID = oid;//赋值对象索引
                     Current->Entry[0].Para.Input.Buffer = request->info[0].data;//赋值数据
                     Current->Entry[0].Para.Input.Size = request->info[0].length;//赋值数据长度
                     if((request->info->end) && !(*(request->info->end)))
@@ -1108,19 +1113,20 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                             break;
                         }
                         
+                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
+                        
                         desc.descriptor.classid = request->info[cnt].classid[0];
                         desc.descriptor.classid <<= 8;
                         desc.descriptor.classid += request->info[cnt].classid[1];
                         heap.copy(desc.descriptor.obis, request->info[cnt].obis, 6);
                         desc.descriptor.index = request->info[cnt].index[0];
                         desc.descriptor.selector = 0;
-                        dlms_lex_parse(&desc, &right, &oid, &mid);
+                        dlms_lex_parse(&desc, (union __dlms_right *)&Current->Entry[cnt].Right, \
+                                       &Current->Entry[cnt].Para.Input.OID, \
+                                       &Current->Entry[cnt].Para.Input.MID);
                         
                         Current->Actived += 1;//一个请求条目
                         
-                        heap.set(&Current->Entry[cnt], 0, sizeof(Current->Entry[cnt]));
-                        Current->Entry[cnt].Para.Input.MID = mid;//赋值数据标识
-                        Current->Entry[cnt].Para.Input.OID = oid;//赋值对象索引
                         Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;//赋值数据
                         Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;//赋值数据长度
                         Current->Entry[cnt].Object = CosemLoadMethod(desc.descriptor.classid, desc.descriptor.index);
@@ -1972,6 +1978,10 @@ void dlms_appl_entrance(const uint8_t *info,
             {
                 logicalname = request.info[cnt].obis;
             }
+            
+            //...判断是否有访问权限
+#warning 判断是否有访问权限
+            
             Current->Entry[cnt].Errs = Current->Entry[cnt].Object(&Current->Entry[cnt].Para);
             logicalname = (uint8_t *)0;
         }

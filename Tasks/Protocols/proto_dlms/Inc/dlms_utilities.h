@@ -9,12 +9,14 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern uint8_t dlms_util_load_akey(uint8_t *buffer);
-extern uint8_t dlms_util_write_akey(uint8_t *buffer);
-extern uint8_t dlms_util_load_ekey(uint8_t *buffer);
-extern uint8_t dlms_util_write_ekey(uint8_t *buffer);
 extern uint8_t dlms_util_load_passwd(uint8_t *buffer);
 extern uint8_t dlms_util_write_passwd(uint8_t *buffer);
+extern uint8_t dlms_util_load_akey(uint8_t *buffer);
+extern uint8_t dlms_util_write_akey(uint8_t *buffer);
+extern uint8_t dlms_util_load_bekey(uint8_t *buffer);
+extern uint8_t dlms_util_write_bekey(uint8_t *buffer);
+extern uint8_t dlms_util_load_uekey(uint8_t *buffer);
+extern uint8_t dlms_util_write_uekey(uint8_t *buffer);
 extern uint8_t dlms_util_load_title(uint8_t *buffer);
 extern uint8_t dlms_util_write_title(uint8_t *buffer);
 

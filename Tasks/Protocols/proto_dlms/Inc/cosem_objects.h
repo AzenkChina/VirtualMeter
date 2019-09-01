@@ -19,11 +19,8 @@
   */
 typedef struct
 {
-    TypeObject  GetLogicalName;
-    TypeObject  SetLogicalName;
-    
-    TypeObject  GetValue;
-    TypeObject  SetValue;
+    TypeObject  GetLogicalName; TypeObject  SetLogicalName;
+    TypeObject  GetValue; TypeObject  SetValue;
     
 } ClassData;
 
@@ -33,14 +30,9 @@ typedef struct
   */
 typedef struct
 {
-    TypeObject  GetLogicalName;
-    TypeObject  SetLogicalName;
-    
-    TypeObject  GetValue;
-    TypeObject  SetValue;
-    
-    TypeObject  GetScalerUnit;
-    TypeObject  SetScalerUnit;
+    TypeObject  GetLogicalName; TypeObject  SetLogicalName;
+    TypeObject  GetValue; TypeObject  SetValue;
+    TypeObject  GetScalerUnit; TypeObject  SetScalerUnit;
     
     TypeObject  Reset;
     
@@ -52,38 +44,17 @@ typedef struct
   */
 typedef struct
 {
-    TypeObject  GetLogicalName;
-    TypeObject  SetLogicalName;
-    
-    TypeObject  GetObjectList;
-    TypeObject  SetObjectList;
-    
-    TypeObject  GetAssociatedPartnersID;
-    TypeObject  SetAssociatedPartnersID;
-    
-    TypeObject  GetApplicationContextName;
-    TypeObject  SetApplicationContextName;
-    
-    TypeObject  GetXDLMSContextInfo;
-    TypeObject  SetXDLMSContextInfo;
-    
-    TypeObject  GetAuthenticationMechanismName;
-    TypeObject  SetAuthenticationMechanismName;
-    
-    TypeObject  GetSecret;
-    TypeObject  SetSecret;
-    
-    TypeObject  GetAssociationStatus;
-    TypeObject  SetAssociationStatus;
-    
-    TypeObject  GetSecuritySetupReference;
-    TypeObject  SetSecuritySetupReference;
-    
-    TypeObject  GetUserList;
-    TypeObject  SetUserList;
-    
-    TypeObject  GetCurrentUser;
-    TypeObject  SetCurrentUser;
+    TypeObject  GetLogicalName; TypeObject  SetLogicalName;
+    TypeObject  GetObjectList; TypeObject  SetObjectList;
+    TypeObject  GetAssociatedPartnersID; TypeObject  SetAssociatedPartnersID;
+    TypeObject  GetApplicationContextName; TypeObject  SetApplicationContextName;
+    TypeObject  GetXDLMSContextInfo; TypeObject  SetXDLMSContextInfo;
+    TypeObject  GetAuthenticationMechanismName; TypeObject  SetAuthenticationMechanismName;
+    TypeObject  GetSecret; TypeObject  SetSecret;
+    TypeObject  GetAssociationStatus; TypeObject  SetAssociationStatus;
+    TypeObject  GetSecuritySetupReference; TypeObject  SetSecuritySetupReference;
+    TypeObject  GetUserList; TypeObject  SetUserList;
+    TypeObject  GetCurrentUser; TypeObject  SetCurrentUser;
     
     TypeObject  ReplytoHLSAuthentication;
     TypeObject  ChangeHLSSecret;
@@ -96,10 +67,12 @@ typedef struct
 
 
 /* Exported constants --------------------------------------------------------*/
+#define MOTIV_GET       ((uint8_t)0x0f)
+#define MOTIV_SET       ((uint8_t)0xf0)
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern TypeObject CosemLoadAttrGet(uint16_t classid, uint8_t index);
-extern TypeObject CosemLoadAttrSet(uint16_t classid, uint8_t index);
-extern TypeObject CosemLoadMethod(uint16_t classid, uint8_t index);
+extern TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive);
+extern TypeObject CosemLoadMethod(uint16_t ClassID, uint8_t Index);
 
 #endif /* __COSEM_OBJECTS_H__ */

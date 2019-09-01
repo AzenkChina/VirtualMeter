@@ -55,7 +55,7 @@ static const struct __file_entry file_entry[] =
     /* 文件名  文件大小  文件所在分区 */
 	{"display", 4*1024, FILE_FREQ}, //显示参数
     {"hdlc", 64, FILE_FREQ}, //HDLC协议参数
-    {"dlms", 8*1024, FILE_FREQ}, //DLMS协议参数
+    {"dlms", 4*1024, FILE_FREQ}, //DLMS协议参数
     {"lexicon", 64*1024, FILE_ONCE}, //电表数据项词典
     {"disconnect", 512, FILE_FREQ}, //继电器参数
     {"firmware", 512*1024, FILE_ONCE}, //固件升级

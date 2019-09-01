@@ -17,6 +17,7 @@
 #include "cosem_objects_extendedregister.h"
 #include "cosem_objects_hdlc_setup.h"
 #include "cosem_objects_register.h"
+#include "cosem_objects_imagetransfer.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -27,19 +28,10 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /**
-  * 获取一个属性的Get
+  * 获取一个属性
   *
   */
-TypeObject CosemLoadAttrGet(uint16_t classid, uint8_t index)
-{
-    
-}
-
-/**
-  * 获取一个属性的Set
-  *
-  */
-TypeObject CosemLoadAttrSet(uint16_t classid, uint8_t index)
+TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
 {
     
 }
@@ -48,7 +40,7 @@ TypeObject CosemLoadAttrSet(uint16_t classid, uint8_t index)
   * 获取一个方法
   *
   */
-TypeObject CosemLoadMethod(uint16_t classid, uint8_t index)
+TypeObject CosemLoadMethod(uint16_t ClassID, uint8_t Index)
 {
     
 }

@@ -134,7 +134,7 @@ struct __aarq_request
 //加载认证密钥（info）
 #define DLMS_CONFIG_LOAD_AKEY(i)                dlms_util_load_akey(i)
 //加载加密密钥（info）
-#define DLMS_CONFIG_LOAD_EKEY(i)                dlms_util_load_ekey(i)
+#define DLMS_CONFIG_LOAD_EKEY(i)                dlms_util_load_uekey(i)
 //加载本机system title（info）
 #define DLMS_CONFIG_LOAD_TITLE(i)               dlms_util_load_title(i)
 

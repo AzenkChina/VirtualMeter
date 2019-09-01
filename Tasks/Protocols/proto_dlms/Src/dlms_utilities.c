@@ -13,12 +13,25 @@
 /**	
   * @brief 
   */
+struct __dlms_sym_key
+{
+    uint8_t length;//密钥长度 < 32
+    uint8_t val[63];//密钥，使用base64编码
+    uint32_t check;
+};
+
+
+/**	
+  * @brief 
+  */
 struct __dlms_configs
 {
-    uint8_t akey[2+32];
-    uint8_t ekey[2+32];
-    uint8_t passwd[2+32];
-    uint8_t title[2+8];
+    struct __dlms_sym_key passwd; //Password for LLS
+    struct __dlms_sym_key akey; //Authentication key
+    struct __dlms_sym_key bekey; //Broadcast encryption key
+    struct __dlms_sym_key uekey; //Unicast encryption key
+    struct __dlms_sym_key mkey; //Master key (KEK)
+    uint8_t title[10]; //System title
 };
 
 /* Private define ------------------------------------------------------------*/
@@ -29,94 +42,27 @@ struct __dlms_configs
 /**	
   * @brief 
   */
-uint8_t dlms_util_load_akey(uint8_t *buffer)
-{
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, akey), \
-              STRUCT_SIZE(struct __dlms_configs, akey), \
-              buffer);
-    
-    if((buffer[1] != 16) && (buffer[1] != 32))
-    {
-        buffer[1] = 16;
-        heap.set(&buffer[2], 0x30, 16);
-    }
-    
-    return(STRUCT_SIZE(struct __dlms_configs, akey));
-}
-
-/**	
-  * @brief 
-  */
-uint8_t dlms_util_write_akey(uint8_t *buffer)
-{
-    if((buffer[1] != 16) && (buffer[1] != 32))
-    {
-        return(0);
-    }
-    
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, akey), \
-              2+buffer[1], \
-              buffer);
-    
-    return(2+buffer[1]);
-}
-
-/**	
-  * @brief 
-  */
-uint8_t dlms_util_load_ekey(uint8_t *buffer)
-{
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, ekey), \
-              STRUCT_SIZE(struct __dlms_configs, ekey), \
-              buffer);
-    
-    if((buffer[1] != 16) && (buffer[1] != 32))
-    {
-        buffer[1] = 16;
-        heap.set(&buffer[2], 0x30, 16);
-    }
-    
-    return(STRUCT_SIZE(struct __dlms_configs, ekey));
-}
-
-/**	
-  * @brief 
-  */
-uint8_t dlms_util_write_ekey(uint8_t *buffer)
-{
-    if((buffer[1] != 16) && (buffer[1] != 32))
-    {
-        return(0);
-    }
-    
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, ekey), \
-              2+buffer[1], \
-              buffer);
-    
-    return(2+buffer[1]);
-}
-
-/**	
-  * @brief 
-  */
 uint8_t dlms_util_load_passwd(uint8_t *buffer)
 {
+    struct __dlms_sym_key key;
+    
     file.read("dlms", \
               STRUCT_OFFSET(struct __dlms_configs, passwd), \
               STRUCT_SIZE(struct __dlms_configs, passwd), \
-              buffer);
+              (void *)&key);
     
-    if((buffer[1] != 16) && (buffer[1] != 32))
+    if((key.length < 8) || (key.length > 32))
     {
         buffer[1] = 16;
         heap.set(&buffer[2], 0x30, 16);
+        return(18);
     }
-    
-    return(STRUCT_SIZE(struct __dlms_configs, passwd));
+    else
+    {
+        buffer[1] = key.length;
+        heap.copy(&buffer[2], key.val, key.length);
+        return(key.length + 2);
+    }
 }
 
 /**	
@@ -124,17 +70,169 @@ uint8_t dlms_util_load_passwd(uint8_t *buffer)
   */
 uint8_t dlms_util_write_passwd(uint8_t *buffer)
 {
+    struct __dlms_sym_key key;
+    
+    if((buffer[1] < 8) || (buffer[1] > 32))
+    {
+        return(0);
+    }
+    
+    key.length = buffer[1];
+    heap.copy(key.val, &buffer[2], key.length);
+    
+    file.write("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, passwd), \
+              sizeof(key), \
+              (void *)&key);
+    
+    return(key.length + 2);
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_load_akey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
+    file.read("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, akey), \
+              STRUCT_SIZE(struct __dlms_configs, akey), \
+              (void *)&key);
+    
+    if((key.length != 16) && (key.length != 32))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
+    else
+    {
+        buffer[1] = key.length;
+        heap.copy(&buffer[2], key.val, key.length);
+        return(key.length + 2);
+    }
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_write_akey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
     if((buffer[1] != 16) && (buffer[1] != 32))
     {
         return(0);
     }
     
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, passwd), \
-              2+buffer[1], \
-              buffer);
+    key.length = buffer[1];
+    heap.copy(key.val, &buffer[2], key.length);
     
-    return(2+buffer[1]);
+    file.write("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, akey), \
+              sizeof(key), \
+              (void *)&key);
+    
+    return(key.length + 2);
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_load_bekey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
+    file.read("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, bekey), \
+              STRUCT_SIZE(struct __dlms_configs, bekey), \
+              (void *)&key);
+    
+    if((key.length != 16) && (key.length != 32))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
+    else
+    {
+        buffer[1] = key.length;
+        heap.copy(&buffer[2], key.val, key.length);
+        return(key.length + 2);
+    }
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_write_bekey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
+    if((buffer[1] != 16) && (buffer[1] != 32))
+    {
+        return(0);
+    }
+    
+    key.length = buffer[1];
+    heap.copy(key.val, &buffer[2], key.length);
+    
+    file.write("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, bekey), \
+              sizeof(key), \
+              (void *)&key);
+    
+    return(key.length + 2);
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_load_uekey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
+    file.read("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, uekey), \
+              STRUCT_SIZE(struct __dlms_configs, uekey), \
+              (void *)&key);
+    
+    if((key.length != 16) && (key.length != 32))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
+    else
+    {
+        buffer[1] = key.length;
+        heap.copy(&buffer[2], key.val, key.length);
+        return(key.length + 2);
+    }
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_write_uekey(uint8_t *buffer)
+{
+    struct __dlms_sym_key key;
+    
+    if((buffer[1] != 16) && (buffer[1] != 32))
+    {
+        return(0);
+    }
+    
+    key.length = buffer[1];
+    heap.copy(key.val, &buffer[2], key.length);
+    
+    file.write("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, uekey), \
+              sizeof(key), \
+              (void *)&key);
+    
+    return(key.length + 2);
 }
 
 /**	

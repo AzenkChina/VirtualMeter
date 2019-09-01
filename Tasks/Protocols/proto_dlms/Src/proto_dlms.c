@@ -48,14 +48,17 @@ static void dlms_reset(void)
     heap.set(buff, 0x30, sizeof(buff));
     buff[1] = 16;
     
+    buff[0] = 'P';
+    dlms_util_write_passwd(buff);//√‹¬Î
+    
     buff[0] = 'A';
     dlms_util_write_akey(buff);//»œ÷§√‹‘ø
     
-    buff[0] = 'E';
-    dlms_util_write_ekey(buff);//º”√‹√‹‘ø
+    buff[0] = 'B';
+    dlms_util_write_bekey(buff);//º”√‹√‹‘ø
     
-    buff[0] = 'P';
-    dlms_util_write_passwd(buff);//√‹¬Î
+    buff[0] = 'U';
+    dlms_util_write_uekey(buff);//º”√‹√‹‘ø
     
     buff[1] = 8;
     buff[0] = 'S';
@@ -99,7 +102,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
-	Func = CosemLoadAttrGet(cosem_descriptor.classid, cosem_descriptor.index);
+	Func = CosemLoadAttribute(cosem_descriptor.classid, cosem_descriptor.index, MOTIV_GET);
     
     if(Func)
     {
@@ -141,7 +144,7 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
-	Func = CosemLoadAttrGet(cosem_descriptor.classid, cosem_descriptor.index);
+	Func = CosemLoadAttribute(cosem_descriptor.classid, cosem_descriptor.index, MOTIV_SET);
     
     if(Func)
     {
