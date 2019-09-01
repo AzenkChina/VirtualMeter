@@ -34,7 +34,7 @@ struct __cosem_entry_low
     uint64_t key;//8 {classID groupA groupB groupC groupD groupE groupF suit}
     uint32_t oid;//4
     uint32_t mid[3];//3*4
-    uint8_t right[15][3];//3*15
+    uint8_t right[16][3];//3*16
 };
 
 /**
@@ -55,7 +55,7 @@ struct __cosem_entry_high
 {
     uint64_t key;//8 {classID groupA groupB groupC groupD groupE groupF suit}
     uint32_t oid;//4
-    uint8_t right[22][3];//3*22
+    uint8_t right[24][3];//3*24
 };
 
 /**
@@ -87,6 +87,7 @@ struct __cosem_param_header
 {
     uint16_t amount; //数据项条数
 	uint16_t spread[8]; //分类后数据项条数（suit 1~8）
+	uint16_t reserve;
     uint32_t check; //crc32校验
 };
 
@@ -108,7 +109,8 @@ struct __cosem_param
 {
     struct __cosem_param_header header;
     struct __cosem_param_info info;
-    union __cosem_entry_file entry[(63*1024+512)/sizeof(union __cosem_entry_file)];
+	uint8_t reserve[sizeof(union __cosem_entry_file) - sizeof(struct __cosem_param_header) - sizeof(struct __cosem_param_info)];
+    union __cosem_entry_file entry[(64*1024)/sizeof(union __cosem_entry_file) - 1];
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -401,7 +403,7 @@ static void prase_cosem_entry_low(const struct __cosem_request_desc *desc,
     
     get_class_map(desc->descriptor.classid, &attr, &method);
     
-    if((attr + method) > 15)
+    if((attr + method) > 16)
     {
         return;
     }
@@ -495,7 +497,7 @@ static void prase_cosem_entry_high(const struct __cosem_request_desc *desc,
     
     get_class_map(desc->descriptor.classid, &attr, &method);
     
-    if((attr + method) > 22)
+    if((attr + method) > 24)
     {
         return;
     }
