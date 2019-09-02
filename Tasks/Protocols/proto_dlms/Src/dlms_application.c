@@ -59,6 +59,14 @@ struct __appl_request
     } info[DLMS_REQ_LIST_MAX];
 };
 
+struct __cosem_instance
+{
+    TypeObject Object; //数据对象
+    ObjectPara Para; //对象参数
+    ObjectErrs Errs; //调用结果
+    uint8_t Right; //对象访问权限
+};
+
 /**	
   * @brief 数据对象
   */
@@ -66,15 +74,7 @@ struct __cosem_request
 {
     uint8_t Actived; //激活的条目数量
     uint32_t Block; //块计数
-    
-    struct
-    {
-        TypeObject Object; //数据对象
-        ObjectPara Para; //对象参数
-        ObjectErrs Errs; //调用结果
-        uint8_t Right; //对象访问权限
-        
-    } Entry[DLMS_REQ_LIST_MAX]; //总条目
+    struct __cosem_instance Entry[DLMS_REQ_LIST_MAX]; //总条目
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -1151,6 +1151,126 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
     return(APPL_SUCCESS);
 }
 
+/**
+  * @brief 判断是否有访问权限
+  * 
+  */
+static uint8_t check_accessibility(struct __appl_request *request, struct __cosem_instance *instence)
+{
+    if(!instence)
+    {
+        return(0);
+    }
+    
+    switch(request->service)
+    {
+        case GET_REQUEST:
+        {
+            if(instence->Right & 0xfc)
+            {
+                return(0);
+            }
+            
+            if(!(instence->Right & ATTR_READ))
+            {
+                return(0);
+            }
+            
+            break;
+        }
+        case SET_REQUEST:
+        {
+            if(instence->Right & 0xfc)
+            {
+                return(0);
+            }
+            
+            if(!(instence->Right & ATTR_WRITE))
+            {
+                return(0);
+            }
+            
+            break;
+        }
+        case GLO_GET_REQUEST:
+        case DED_GET_REQUEST:
+        case GLO_SET_REQUEST:
+        case DED_SET_REQUEST:
+        {
+            if((instence->Right & ATTR_AUTHREQ) || (instence->Right & ATTR_AUTHRSP))
+            {
+                if(!(request->sc & 0x10))
+                {
+                    return(0);
+                }
+            }
+            
+            if((instence->Right & ATTR_ENCREQ) || (instence->Right & ATTR_ENCRSP))
+            {
+                if(!(request->sc & 0x20))
+                {
+                    return(0);
+                }
+            }
+            
+            if((instence->Right & ATTR_DIGITREQ) || (instence->Right & ATTR_DIGITRSP))
+            {
+                if((request->sc & 0x30) != 0x30)
+                {
+                    return(0);
+                }
+            }
+            
+            break;
+        }
+        case ACTION_REQUEST:
+        {
+            if(instence->Right & 0xfe)
+            {
+                return(0);
+            }
+            
+            if(!(instence->Right & METHOD_ACCESS))
+            {
+                return(0);
+            }
+            
+            break;
+        }
+        case GLO_ACTION_REQUEST:
+        case DED_ACTION_REQUEST:
+        {
+            if((instence->Right & METHOD_AUTHREQ) || (instence->Right & METHOD_AUTHRSP))
+            {
+                if(!(request->sc & 0x10))
+                {
+                    return(0);
+                }
+            }
+            
+            if((instence->Right & METHOD_ENCREQ) || (instence->Right & METHOD_ENCRSP))
+            {
+                if(!(request->sc & 0x20))
+                {
+                    return(0);
+                }
+            }
+            
+            if((instence->Right & METHOD_DIGITREQ) || (instence->Right & METHOD_DIGITRSP))
+            {
+                if((request->sc & 0x30) != 0x30)
+                {
+                    return(0);
+                }
+            }
+            
+            break;
+        }
+    }
+    
+    return(0xff);
+}
+
 /**	
   * @brief 生成回复报文
   */
@@ -1979,10 +2099,16 @@ void dlms_appl_entrance(const uint8_t *info,
                 logicalname = request.info[cnt].obis;
             }
             
-            //...判断是否有访问权限
-#warning 判断是否有访问权限
+            //判断是否有访问权限
+            if(check_accessibility(&request, &Current->Entry[cnt]))
+            {
+                Current->Entry[cnt].Errs = Current->Entry[cnt].Object(&Current->Entry[cnt].Para);
+            }
+            else
+            {
+                Current->Entry[cnt].Errs = (ObjectErrs)3;
+            }
             
-            Current->Entry[cnt].Errs = Current->Entry[cnt].Object(&Current->Entry[cnt].Para);
             logicalname = (uint8_t *)0;
         }
     }
