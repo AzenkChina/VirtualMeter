@@ -885,7 +885,7 @@ uint64_t dlms_lex_date(void)
 /**
   * @brief  验证条目信息文件是否有效
   */
-bool dlms_lex_is_valid(void)
+bool dlms_lex_check(void)
 {
     uint16_t cnt;
     uint16_t amount = 0;
@@ -932,8 +932,8 @@ bool dlms_lex_is_valid(void)
         return(false);
     }
     
-    mbedtls_md5_init( &ctx );
-    if(mbedtls_md5_starts_ret( &ctx ) != 0 )
+    mbedtls_md5_init(&ctx);
+    if(mbedtls_md5_starts_ret(&ctx) != 0 )
     {
         goto exit;
     }
@@ -949,7 +949,7 @@ bool dlms_lex_is_valid(void)
             goto exit;
         }
         
-        if(mbedtls_md5_update_ret( &ctx, (const unsigned char *)&entry, sizeof(entry) ) != 0)
+        if(mbedtls_md5_update_ret(&ctx, (const unsigned char *)&entry, sizeof(entry) ) != 0)
         {
             goto exit;
         }
@@ -979,7 +979,7 @@ bool dlms_lex_is_valid(void)
         }
 	}
 
-    if(mbedtls_md5_finish_ret( &ctx, md5_output ) != 0)
+    if(mbedtls_md5_finish_ret(&ctx, md5_output) != 0)
     {
         goto exit;
     }
@@ -990,10 +990,10 @@ bool dlms_lex_is_valid(void)
     }
     
     
-    mbedtls_md5_free( &ctx );
+    mbedtls_md5_free(&ctx);
     return(true);
     
 exit:
-    mbedtls_md5_free( &ctx );
+    mbedtls_md5_free(&ctx);
     return( false );
 }

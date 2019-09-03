@@ -33,7 +33,158 @@
   */
 TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
 {
+    TypeObject *Obj = (TypeObject *)0;
     
+    if(!Index)
+    {
+        return((TypeObject)0);
+    }
+    
+    if((Motive != MOTIV_GET) && (Motive != MOTIV_SET))
+    {
+        return((TypeObject)0);
+    }
+    
+    switch(ClassID)
+    {
+        case CLASS_DATA:
+        {
+            if(Index > 2)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&Data;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_REGISTER:
+        {
+            if(Index > 3)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&Data;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_EXTREGISTER:
+        {
+            if(Index > 5)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&ExtRegister;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_CLOCK:
+        {
+            if(Index > 9)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&Clock;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_ASSOCIATION_LN:
+        {
+            if(Index > 11)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&AssociationLN;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_IMAGE_TRANSFER:
+        {
+            if(Index > 7)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&ImageTransfer;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        case CLASS_HDLC_SETUP:
+        {
+            if(Index > 9)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&ImageTransfer;
+                Index -= 1;
+                Index *= 2;
+                Obj += Index;
+                if(Motive == MOTIV_SET)
+                {
+                    Obj += 1;
+                }
+                return(*Obj);
+            }
+        }
+        default:
+        {
+            return((TypeObject)0);
+        }
+    }
 }
 
 /**
@@ -42,5 +193,93 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
   */
 TypeObject CosemLoadMethod(uint16_t ClassID, uint8_t Index)
 {
+    TypeObject *Obj = (TypeObject *)0;
     
+    if(!Index)
+    {
+        return((TypeObject)0);
+    }
+    
+    switch(ClassID)
+    {
+        case CLASS_REGISTER:
+        {
+            if(Index > 1)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&Register;
+                Obj += 3 * 2;
+                Index -= 1;
+                Obj += Index;
+                return(*Obj);
+            }
+        }
+        case CLASS_EXTREGISTER:
+        {
+            if(Index > 1)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&ExtRegister;
+                Obj += 5 * 2;
+                Index -= 1;
+                Obj += Index;
+                return(*Obj);
+            }
+        }
+        case CLASS_CLOCK:
+        {
+            if(Index > 6)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&Clock;
+                Obj += 9 * 2;
+                Index -= 1;
+                Obj += Index;
+                return(*Obj);
+            }
+        }
+        case CLASS_ASSOCIATION_LN:
+        {
+            if(Index > 6)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&AssociationLN;
+                Obj += 11 * 2;
+                Index -= 1;
+                Obj += Index;
+                return(*Obj);
+            }
+        }
+        case CLASS_IMAGE_TRANSFER:
+        {
+            if(Index > 4)
+            {
+                return((TypeObject)0);
+            }
+            else
+            {
+                Obj = (TypeObject *)&ImageTransfer;
+                Obj += 7 * 2;
+                Index -= 1;
+                Obj += Index;
+                return(*Obj);
+            }
+        }
+        default:
+        {
+            return((TypeObject)0);
+        }
+    }
 }

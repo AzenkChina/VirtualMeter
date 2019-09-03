@@ -5,6 +5,7 @@
  **/
 
 /* Includes ------------------------------------------------------------------*/
+#include "stdbool.h"
 #include "system.h"
 #include "dlms_types.h"
 #include "dlms_application.h"
@@ -1155,11 +1156,11 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
   * @brief 判断是否有访问权限
   * 
   */
-static uint8_t check_accessibility(struct __appl_request *request, struct __cosem_instance *instence)
+static bool check_accessibility(struct __appl_request *request, struct __cosem_instance *instence)
 {
     if(!instence)
     {
-        return(0);
+        return(false);
     }
     
     switch(request->service)
@@ -1168,12 +1169,12 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
         {
             if(instence->Right & 0xfc)
             {
-                return(0);
+                return(false);
             }
             
             if(!(instence->Right & ATTR_READ))
             {
-                return(0);
+                return(false);
             }
             
             break;
@@ -1182,12 +1183,12 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
         {
             if(instence->Right & 0xfc)
             {
-                return(0);
+                return(false);
             }
             
             if(!(instence->Right & ATTR_WRITE))
             {
-                return(0);
+                return(false);
             }
             
             break;
@@ -1201,7 +1202,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if(!(request->sc & 0x10))
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1209,7 +1210,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if(!(request->sc & 0x20))
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1217,7 +1218,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if((request->sc & 0x30) != 0x30)
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1227,12 +1228,12 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
         {
             if(instence->Right & 0xfe)
             {
-                return(0);
+                return(false);
             }
             
             if(!(instence->Right & METHOD_ACCESS))
             {
-                return(0);
+                return(false);
             }
             
             break;
@@ -1244,7 +1245,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if(!(request->sc & 0x10))
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1252,7 +1253,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if(!(request->sc & 0x20))
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1260,7 +1261,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
             {
                 if((request->sc & 0x30) != 0x30)
                 {
-                    return(0);
+                    return(false);
                 }
             }
             
@@ -1268,7 +1269,7 @@ static uint8_t check_accessibility(struct __appl_request *request, struct __cose
         }
     }
     
-    return(0xff);
+    return(true);
 }
 
 /**	
@@ -2106,7 +2107,16 @@ void dlms_appl_entrance(const uint8_t *info,
             }
             else
             {
-                Current->Entry[cnt].Errs = (ObjectErrs)3;
+				if((request.service == ACTION_REQUEST) || \
+				(request.service == GLO_ACTION_REQUEST) || \
+				(request.service == DED_ACTION_REQUEST))
+				{
+					Current->Entry[cnt].Errs = (ObjectErrs)ACTION_REAS_WRITE_DENIED;
+				}
+				else
+				{
+					Current->Entry[cnt].Errs = (ObjectErrs)DATA_REAS_WRITE_DENIED;
+				}
             }
             
             logicalname = (uint8_t *)0;

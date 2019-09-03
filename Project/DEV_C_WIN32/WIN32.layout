@@ -302,9 +302,9 @@ CursorRow=50
 TopLine=40
 LeftChar=1
 [Editor_44]
-CursorCol=10
-CursorRow=341
-TopLine=192
+CursorCol=5
+CursorRow=887
+TopLine=911
 LeftChar=1
 [Editor_45]
 CursorCol=2
@@ -442,9 +442,9 @@ CursorRow=627
 TopLine=617
 LeftChar=1
 [Editor_87]
-CursorCol=1
-CursorRow=78
-TopLine=49
+CursorCol=33
+CursorRow=330
+TopLine=317
 LeftChar=1
 [Editor_74]
 CursorCol=29
@@ -479,7 +479,7 @@ LeftChar=1
 [Editor_99]
 CursorCol=1
 CursorRow=21
-TopLine=11
+TopLine=1
 LeftChar=1
 [Editor_68]
 CursorCol=2

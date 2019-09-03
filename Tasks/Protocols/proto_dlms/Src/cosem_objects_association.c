@@ -22,7 +22,7 @@
 /**	
   * @brief 读取逻辑名
   */
-static ObjectErrs AssociationLNGetLogicalName(ObjectPara *P)
+static ObjectErrs GetLogicalName(ObjectPara *P)
 {
     uint16_t Length;
     uint8_t Name[6] = {0};
@@ -40,9 +40,17 @@ static ObjectErrs AssociationLNGetLogicalName(ObjectPara *P)
 }
 
 /**	
+  * @brief 设置逻辑名
+  */
+static ObjectErrs SetLogicalName(ObjectPara *P)
+{
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
+static ObjectErrs GetObjectList(ObjectPara *P)
 {
     /** 读取多条数据编程范例 */
     
@@ -71,7 +79,15 @@ static ObjectErrs AssociationLNGetObjectList(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetAssociatedPartnersID(ObjectPara *P)
+static ObjectErrs SetObjectList(ObjectPara *P)
+{
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs GetAssociatedPartnersID(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -79,7 +95,7 @@ static ObjectErrs AssociationLNGetAssociatedPartnersID(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetApplicationContextName(ObjectPara *P)
+static ObjectErrs SetAssociatedPartnersID(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -87,7 +103,7 @@ static ObjectErrs AssociationLNGetApplicationContextName(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetxDLMSContextInfo(ObjectPara *P)
+static ObjectErrs GetApplicationContextName(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -95,7 +111,7 @@ static ObjectErrs AssociationLNGetxDLMSContextInfo(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetAuthenticationMechanismName(ObjectPara *P)
+static ObjectErrs SetApplicationContextName(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -103,7 +119,7 @@ static ObjectErrs AssociationLNGetAuthenticationMechanismName(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNSetSecret(ObjectPara *P)
+static ObjectErrs GetxDLMSContextInfo(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -111,17 +127,7 @@ static ObjectErrs AssociationLNSetSecret(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNGetAssociationStatus(ObjectPara *P)
-{
-    return(OBJECT_ERR_NODEF);
-}
-
-
-
-/**	
-  * @brief 
-  */
-static ObjectErrs AssociationLNSecuritySetupReference(ObjectPara *P)
+static ObjectErrs SetxDLMSContextInfo(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -129,7 +135,7 @@ static ObjectErrs AssociationLNSecuritySetupReference(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNUserList(ObjectPara *P)
+static ObjectErrs GetAuthenticationMechanismName(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -137,7 +143,7 @@ static ObjectErrs AssociationLNUserList(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNCurrentUser(ObjectPara *P)
+static ObjectErrs SetAuthenticationMechanismName(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -145,7 +151,88 @@ static ObjectErrs AssociationLNCurrentUser(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
+static ObjectErrs GetSecret(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs SetSecret(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs GetAssociationStatus(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs SetAssociationStatus(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+
+/**	
+  * @brief 
+  */
+static ObjectErrs GetSecuritySetupReference(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs SetSecuritySetupReference(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs GetUserList(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs SetUserList(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs GetCurrentUser(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs SetCurrentUser(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
 {
     uint8_t add[128];
     uint8_t len_add;
@@ -261,7 +348,39 @@ static ObjectErrs AssociationLNActionreplyToHLSAuthentication(ObjectPara *P)
 /**	
   * @brief 
   */
-static ObjectErrs AssociationLNChangeHLSSecret(ObjectPara *P)
+static ObjectErrs ChangeHLSSecret(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AddObject(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs RemoveObject(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs AddUser(ObjectPara *P)
+{
+    return(OBJECT_ERR_NODEF);
+}
+
+/**	
+  * @brief 
+  */
+static ObjectErrs RemoveUser(ObjectPara *P)
 {
     return(OBJECT_ERR_NODEF);
 }
@@ -269,32 +388,33 @@ static ObjectErrs AssociationLNChangeHLSSecret(ObjectPara *P)
 
 const ClassAssociationLN AssociationLN = 
 {
-    .GetLogicalName                     = AssociationLNGetLogicalName,
-    .SetLogicalName                     = (TypeObject)0,
-    .GetObjectList                      = AssociationLNGetObjectList,
-    .SetObjectList                      = (TypeObject)0,
-    .GetAssociatedPartnersID            = AssociationLNGetAssociatedPartnersID,
-    .SetAssociatedPartnersID            = (TypeObject)0,
-    .GetApplicationContextName          = AssociationLNGetApplicationContextName,
-    .SetApplicationContextName          = (TypeObject)0,
-    .GetXDLMSContextInfo                = AssociationLNGetxDLMSContextInfo,
-    .SetXDLMSContextInfo                = (TypeObject)0,
-    .GetAuthenticationMechanismName     = AssociationLNGetAuthenticationMechanismName,
-    .SetAuthenticationMechanismName     = (TypeObject)0,
-    .GetSecret                          = (TypeObject)0,
-    .SetSecret                          = AssociationLNSetSecret,
-    .GetAssociationStatus               = AssociationLNGetAssociationStatus,
-    .SetAssociationStatus               = (TypeObject)0,
-    .GetSecuritySetupReference          = AssociationLNSecuritySetupReference,
-    .SetSecuritySetupReference          = (TypeObject)0,
-    .GetUserList                        = AssociationLNUserList,
-    .SetUserList                        = (TypeObject)0,
-    .GetCurrentUser                     = AssociationLNCurrentUser,
-    .SetCurrentUser                     = (TypeObject)0,
-    .ReplytoHLSAuthentication           = AssociationLNActionreplyToHLSAuthentication,
-    .ChangeHLSSecret                    = AssociationLNChangeHLSSecret,
-    .AddObject                          = (TypeObject)0,
-    .RemoveObject                       = (TypeObject)0,
-    .AddUser                            = (TypeObject)0,
-    .RemoveUser                         = (TypeObject)0,
+    .GetLogicalName                     = GetLogicalName,
+    .SetLogicalName                     = SetLogicalName,
+    .GetObjectList                      = GetObjectList,
+    .SetObjectList                      = SetObjectList,
+    .GetAssociatedPartnersID            = GetAssociatedPartnersID,
+    .SetAssociatedPartnersID            = SetAssociatedPartnersID,
+    .GetApplicationContextName          = GetApplicationContextName,
+    .SetApplicationContextName          = SetApplicationContextName,
+    .GetXDLMSContextInfo                = GetxDLMSContextInfo,
+    .SetXDLMSContextInfo                = SetxDLMSContextInfo,
+    .GetAuthenticationMechanismName     = GetAuthenticationMechanismName,
+    .SetAuthenticationMechanismName     = SetAuthenticationMechanismName,
+    .GetSecret                          = GetSecret,
+    .SetSecret                          = SetSecret,
+    .GetAssociationStatus               = GetAssociationStatus,
+    .SetAssociationStatus               = SetAssociationStatus,
+    .GetSecuritySetupReference          = GetSecuritySetupReference,
+    .SetSecuritySetupReference          = SetSecuritySetupReference,
+    .GetUserList                        = GetUserList,
+    .SetUserList                        = SetUserList,
+    .GetCurrentUser                     = GetCurrentUser,
+    .SetCurrentUser                     = SetCurrentUser,
+    
+    .ReplytoHLSAuthentication           = ReplytoHLSAuthentication,
+    .ChangeHLSSecret                    = ChangeHLSSecret,
+    .AddObject                          = AddObject,
+    .RemoveObject                       = RemoveObject,
+    .AddUser                            = AddUser,
+    .RemoveUser                         = RemoveUser,
 };

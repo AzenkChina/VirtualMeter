@@ -14,6 +14,6 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const ClassRegister Imagetransfer;
+extern const ClassImageTransfer ImageTransfer;
 
 #endif /* __COSEM_OBJECTS_IMAGETRANSFER_H__ */

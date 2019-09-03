@@ -36,6 +36,6 @@ extern uint16_t dlms_lex_amount(uint8_t suit);
 extern uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry);
 extern uint64_t dlms_lex_version(void);
 extern uint64_t dlms_lex_date(void);
-extern bool dlms_lex_is_valid(void);
+extern bool dlms_lex_check(void);
 
 #endif /* __DLSM_LEXICON_H__ */

@@ -20,7 +20,7 @@
 /**	
   * @brief 读取逻辑名
   */
-static ObjectErrs RegisterGetLogicalName(ObjectPara *P)
+static ObjectErrs GetLogicalName(ObjectPara *P)
 {
     uint16_t Length;
     uint8_t Name[6] = {0};
@@ -38,9 +38,17 @@ static ObjectErrs RegisterGetLogicalName(ObjectPara *P)
 }
 
 /**	
+  * @brief 设置逻辑名
+  */
+static ObjectErrs SetLogicalName(ObjectPara *P)
+{
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
   * @brief 读取数值
   */
-static ObjectErrs RegisterGetValue(ObjectPara *P)
+static ObjectErrs GetValue(ObjectPara *P)
 {
     struct __meta_identifier id;
     struct __metering *api_metering;
@@ -76,7 +84,7 @@ static ObjectErrs RegisterGetValue(ObjectPara *P)
 /**	
   * @brief 设置数值
   */
-static ObjectErrs RegisterSetValue(ObjectPara *P)
+static ObjectErrs SetValue(ObjectPara *P)
 {
     return(OBJECT_ERR_LOWLEVEL);
 }
@@ -84,7 +92,15 @@ static ObjectErrs RegisterSetValue(ObjectPara *P)
 /**	
   * @brief 读取单位和缩放
   */
-static ObjectErrs RegisterGetScalerUnit(ObjectPara *P)
+static ObjectErrs GetScalerUnit(ObjectPara *P)
+{
+    return(OBJECT_ERR_LOWLEVEL);
+}
+
+/**	
+  * @brief 读取单位和缩放
+  */
+static ObjectErrs SetScalerUnit(ObjectPara *P)
 {
     return(OBJECT_ERR_LOWLEVEL);
 }
@@ -92,7 +108,7 @@ static ObjectErrs RegisterGetScalerUnit(ObjectPara *P)
 /**	
   * @brief 复位
   */
-static ObjectErrs RegisterReset(ObjectPara *P)
+static ObjectErrs Reset(ObjectPara *P)
 {
     return(OBJECT_ERR_LOWLEVEL);
 }
@@ -102,11 +118,12 @@ static ObjectErrs RegisterReset(ObjectPara *P)
   */
 const ClassRegister Register = 
 {
-    .GetLogicalName     = RegisterGetLogicalName,
-    .SetLogicalName     = (TypeObject)0,
-    .GetValue           = RegisterGetValue,
-    .SetValue           = RegisterSetValue,
-    .GetScalerUnit      = RegisterGetScalerUnit,
-    .SetScalerUnit      = (TypeObject)0,
-    .Reset              = RegisterReset,
+    .GetLogicalName     = GetLogicalName,
+    .SetLogicalName     = SetLogicalName,
+    .GetValue           = GetValue,
+    .SetValue           = SetValue,
+    .GetScalerUnit      = GetScalerUnit,
+    .SetScalerUnit      = SetScalerUnit,
+    
+    .Reset              = Reset,
 };
