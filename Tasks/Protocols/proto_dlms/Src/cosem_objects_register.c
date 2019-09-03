@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "system.h"
 #include "axdr.h"
+#include "dlms_application.h"
 #include "cosem_objects_register.h"
 #include "types_metering.h"
 
@@ -24,6 +25,8 @@ static ObjectErrs GetLogicalName(ObjectPara *P)
 {
     uint16_t Length;
     uint8_t Name[6] = {0};
+    
+    dlms_appl_logicalname(Name);
     
     Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
     

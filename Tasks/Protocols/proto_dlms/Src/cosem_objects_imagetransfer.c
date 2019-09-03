@@ -7,11 +7,29 @@
 /* Includes ------------------------------------------------------------------*/
 #include "system.h"
 #include "axdr.h"
+#include "dlms_application.h"
 #include "cosem_objects_imagetransfer.h"
 
 /* Private typedef -----------------------------------------------------------*/
+/**
+  * @brief   
+  */
+enum __transfer_status
+{
+    TRANS_NOT_INIT = 0,
+    TRANS_INITED = 1,
+    VERI_INITED = 2,
+    VERI_SUCCESS = 3,
+    VERI_FAILED = 4,
+    ACTIV_INITED = 5,
+    ACTIV_SUCCESS = 6,
+    ACTIV_FAILED = 7,
+};
+
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+static enum __transfer_status TransferStatus = TRANS_NOT_INIT;
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -22,7 +40,21 @@
   */
 static ObjectErrs GetLogicalName(ObjectPara *P)
 {
-    return(OBJECT_ERR_LOWLEVEL);
+    uint16_t Length;
+    uint8_t Name[6] = {0};
+    
+    dlms_appl_logicalname(Name);
+    
+    Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
+    
+    if(!Length)
+	{
+		return(OBJECT_ERR_ENCODE);
+	}
+    
+    OBJ_PUSH_LENGTH(P, Length);
+    
+    return(OBJECT_NOERR);
 }
 
 /**
@@ -40,6 +72,24 @@ static ObjectErrs SetLogicalName(ObjectPara *P)
   */
 static ObjectErrs GetBlockSize(ObjectPara *P)
 {
+    uint16_t Length;
+    uint32_t BlockSize;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        BlockSize = 96;
+        Length = axdr.encode(&BlockSize, sizeof(BlockSize), AXDR_DOUBLE_LONG_UNSIGNED, OBJ_OUT_ADDR(P));
+        
+        if(!Length)
+        {
+            return(OBJECT_ERR_ENCODE);
+        }
+        
+        OBJ_PUSH_LENGTH(P, Length);
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -58,6 +108,15 @@ static ObjectErrs SetBlockSize(ObjectPara *P)
   */
 static ObjectErrs GetTransferredBlocksStatus(ObjectPara *P)
 {
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        OBJ_OUT_ADDR(P)[0] = AXDR_BIT_STRING;
+        OBJ_OUT_ADDR(P)[1] = 0;
+        OBJ_PUSH_LENGTH(P, 2);
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -76,6 +135,24 @@ static ObjectErrs SetTransferredBlocksStatus(ObjectPara *P)
   */
 static ObjectErrs GetFirstNotTransferredBlockNumber(ObjectPara *P)
 {
+    uint16_t Length;
+    uint32_t BlockSize;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        BlockSize = 0;
+        Length = axdr.encode(&BlockSize, sizeof(BlockSize), AXDR_DOUBLE_LONG_UNSIGNED, OBJ_OUT_ADDR(P));
+        
+        if(!Length)
+        {
+            return(OBJECT_ERR_ENCODE);
+        }
+        
+        OBJ_PUSH_LENGTH(P, Length);
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -94,6 +171,24 @@ static ObjectErrs SetFirstNotTransferredBlockNumber(ObjectPara *P)
   */
 static ObjectErrs GetTransferEnabled(ObjectPara *P)
 {
+    uint16_t Length;
+    uint8_t EnableStatus;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        EnableStatus = 1;
+        Length = axdr.encode(&EnableStatus, sizeof(EnableStatus), AXDR_ENUM, OBJ_OUT_ADDR(P));
+        
+        if(!Length)
+        {
+            return(OBJECT_ERR_ENCODE);
+        }
+        
+        OBJ_PUSH_LENGTH(P, Length);
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -112,7 +207,21 @@ static ObjectErrs SetTransferEnabled(ObjectPara *P)
   */
 static ObjectErrs GetTransferStatus(ObjectPara *P)
 {
-    return(OBJECT_ERR_LOWLEVEL);
+    uint16_t Length;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        Length = axdr.encode(&TransferStatus, sizeof(TransferStatus), AXDR_ENUM, OBJ_OUT_ADDR(P));
+        
+        if(!Length)
+        {
+            return(OBJECT_ERR_ENCODE);
+        }
+        
+        OBJ_PUSH_LENGTH(P, Length);
+        
+        return(OBJECT_NOERR);
+    }
 }
 
 /**

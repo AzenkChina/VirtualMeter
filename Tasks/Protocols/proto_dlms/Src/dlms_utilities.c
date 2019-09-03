@@ -31,7 +31,7 @@ struct __dlms_configs
     struct __dlms_sym_key bekey; //Broadcast encryption key
     struct __dlms_sym_key uekey; //Unicast encryption key
     struct __dlms_sym_key mkey; //Master key (KEK)
-    uint8_t title[10]; //System title
+    uint8_t title[16]; //System title Ê¹ÓÃbase64±àÂë
 };
 
 /* Private define ------------------------------------------------------------*/

@@ -124,7 +124,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x0F0000280000FF80,/** suit 8 only */
 
-        0x80000000, //oid
+        0xffffff00, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
@@ -153,7 +153,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x1200002C0080FF80,/** suit 8 only */
 
-        0x80000000, //oid
+        0xffffff00, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
@@ -175,7 +175,7 @@ static const struct __cosem_entry_high communal[] =
     {
         0x4000002B0000FF80,/** suit 8 only */
 
-        0x80000000, //oid
+        0xffffff00, //oid
 
         {
             {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 1

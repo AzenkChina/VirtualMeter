@@ -10,6 +10,7 @@
 #include "axdr.h"
 #include "mbedtls/gcm.h"
 #include "dlms_association.h"
+#include "dlms_application.h"
 #include "cosem_objects_association.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -26,6 +27,8 @@ static ObjectErrs GetLogicalName(ObjectPara *P)
 {
     uint16_t Length;
     uint8_t Name[6] = {0};
+    
+    dlms_appl_logicalname(Name);
     
     Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
     
