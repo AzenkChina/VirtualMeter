@@ -13,16 +13,25 @@
 #include "dlms_types.h"
 
 /* Exported types ------------------------------------------------------------*/
+/**
+  * @brief  dlms 连接识别符
+  */
+struct __dlms_session
+{
+    uint16_t session;
+    uint16_t sap;
+};
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern void dlms_asso_gateway(uint8_t ap,
+extern void dlms_asso_gateway(struct __dlms_session session,
                               const uint8_t *info,
                               uint16_t length,
                               uint8_t *buffer,
                               uint16_t buffer_length,
                               uint16_t *filled_length);
-extern void dlms_asso_cleanup(uint8_t ap);
-extern uint8_t dlms_asso_ap(void);
+extern void dlms_asso_cleanup(struct __dlms_session session);
+extern uint16_t dlms_asso_session(void);
 extern enum __asso_status dlms_asso_status(void);
 extern uint16_t dlms_asso_mtu(void);
 extern uint8_t dlms_asso_callingtitle(uint8_t *buffer);
@@ -43,7 +52,7 @@ extern uint8_t dlms_asso_contextinfo(uint8_t *buffer);
 extern enum __dlms_access_level dlms_asso_level(void);
 extern uint8_t dlms_asso_suit(void);
 extern void * dlms_asso_storage(void);
-extern uint32_t dlms_asso_storage_size(void);
+extern uint16_t dlms_asso_storage_size(void);
 extern void * dlms_asso_attach_storage(uint16_t size);
 extern void dlms_asso_random(uint8_t length, uint8_t *buffer);
 

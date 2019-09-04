@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "string.h"
+#include "stdbool.h"
 
 #include "system.h"
 #include "config_protocol.h"
@@ -27,7 +28,7 @@
 #define HDLC_CONFIG_MAX_CHANNEL         ((uint8_t)(4))
 
 //定义外部接口
-//应用层请求（s, info, length, buffer, max buffer length, filled buffer length）
+//应用层请求（session, info, length, buffer, max buffer length, filled buffer length）
 #define HDLC_CONFIG_APPL_REQUEST(s,i,l,b,m,f)   dlms_asso_gateway(s,i,l,b,m,f)
 //应用层断开
 #define HDLC_CONFIG_APPL_RELEASE(s)             dlms_asso_cleanup(s)
@@ -129,7 +130,8 @@ struct __hdlc_link
     uint32_t link_inactive_timer; //链路层超时断开时间计数器（毫秒）
     enum __hdlc_link_status link_status; //连接状态
     uint8_t client_address; //客户端地址
-    uint8_t server_address[4]; //设备地址
+    uint16_t device_address; //设备地址
+    uint16_t logic_address; //逻辑地址
     struct __hdlc_info_send send; //information帧发送数据结构
     struct __hdlc_info_recv recv; //information帧接收数据结构（多包需要在链路层组包）
 };
@@ -205,7 +207,7 @@ static uint16_t hdlc_check(const uint8_t *cp, uint16_t length)
   * @param  
   * @retval 输出长度
   */
-static uint8_t add_chk(uint8_t *in, uint16_t length, uint8_t *out)
+static uint8_t add_check(uint8_t *in, uint16_t length, uint8_t *out)
 {
     uint16_t crc;
     
@@ -222,50 +224,117 @@ static uint8_t add_chk(uint8_t *in, uint16_t length, uint8_t *out)
 }
 
 /**
-  * @brief 添加本机地址
+  * @brief 组包客户端地址域
   * @param  
   * @param  
   * @param  
-  * @retval 输出长度
+  * @retval 
   */
-static uint8_t add_address(uint8_t *out)
+static uint16_t makeup_client_address(const uint8_t *s)
 {
-	uint16_t address = hdlc_get_address();
-#ifndef HDLC_CONFIG_ADDR_LENGTH
-#error hdld server address length is not defined.
-#endif
-
-#if (HDLC_CONFIG_ADDR_LENGTH == 1)
-    if(out)
+    if(!s)
     {
-        out[0] = address & 0xff;
-		out[0] <<= 1;
-		out[0] |= 0x01;
+        return(0);
     }
-#elif (HDLC_CONFIG_ADDR_LENGTH == 2)
-    if(out)
-    {
-		out[0] = 0x02;
-        out[1] = address & 0xff;
-		out[1] <<= 1;
-		out[1] |= 0x01;
-    }
-#elif (HDLC_CONFIG_ADDR_LENGTH == 4)
-    if(out)
-    {
-        out[0] = 0x00;
-        out[1] = 0x02;
-        out[2] = (address >> 7) & 0xff;
-		out[2] <<= 1;
-        out[3] = address & 0xff;
-		out[3] <<= 1;
-		out[3] |= 0x01;
-    }
-#else
-#error hdld server address length is not fits.
-#endif
     
-    return(HDLC_CONFIG_ADDR_LENGTH);
+    return(s[0] >> 1);
+}
+
+/**
+  * @brief 组包物理地址域
+  * @param  
+  * @param  
+  * @param  
+  * @retval 
+  */
+static uint16_t makeup_device_address(const uint8_t *s)
+{
+    uint16_t address = 0;
+    uint8_t length = 0;
+    
+    if(!s)
+    {
+        return(0);
+    }
+    
+    for(uint8_t cnt=0; cnt<4; cnt++)
+    {
+        if(s[cnt] & 0x01)
+        {
+            length = cnt + 1;
+            break;
+        }
+    }
+    
+    if(length == 1)
+    {
+        return(0xffff);
+    }
+    else if(length == 2)
+    {
+        address = s[1] >> 1;
+        return(address);
+    }
+    else if(length == 4)
+    {
+        address = s[2] >> 1;
+        address <<= 7;
+        address += s[3] >> 1;
+        return(address);
+    }
+    else
+    {
+        return(0);
+    }
+}
+
+/**
+  * @brief 组包逻辑地址域
+  * @param  
+  * @param  
+  * @param  
+  * @retval 
+  */
+static uint16_t makeup_logic_address(const uint8_t *s)
+{
+    uint16_t address = 0;
+    uint8_t length = 0;
+    
+    if(!s)
+    {
+        return(0);
+    }
+    
+    for(uint8_t cnt=0; cnt<4; cnt++)
+    {
+        if(s[cnt] & 0x01)
+        {
+            length = cnt + 1;
+            break;
+        }
+    }
+    
+    if(length == 1)
+    {
+        address = s[0] >> 1;
+        return(address);
+    }
+    else if(length == 2)
+    {
+        address = s[0] >> 1;
+        return(address);
+    }
+    else if(length == 4)
+    {
+        address = s[0] >> 1;
+        address <<= 7;
+        address += s[1] >> 1;
+        return(address);
+    }
+    else
+    {
+        return(0);
+    }
 }
 
 /**
@@ -399,20 +468,20 @@ static enum __hdlc_errors decode_hdlc_frame(const uint8_t *frame, \
   * @param  
   * @retval 
   */
-static uint8_t broadcast_matched(const struct __hdlc_frame_desc *hdlc_desc)
+static bool broadcast_matched(const struct __hdlc_frame_desc *hdlc_desc)
 {
     if(hdlc_desc->length_dst == 1)
     {
         if(hdlc_desc->dst[0] == 0xFF)
         {
-            return(0xff);
+            return(true);
         }
     }
     else if(hdlc_desc->length_dst == 2)
     {
         if(hdlc_desc->dst[1] == 0xFF && hdlc_desc->dst[0] == 0xFE)
         {
-            return(0xff);
+            return(true);
         }
     }
     else if(hdlc_desc->length_dst == 4)
@@ -420,11 +489,11 @@ static uint8_t broadcast_matched(const struct __hdlc_frame_desc *hdlc_desc)
         if((hdlc_desc->dst[3] == 0xFF && hdlc_desc->dst[2] == 0xFE) \
             && hdlc_desc->dst[1] == 0xFE && hdlc_desc->dst[0] == 0xFE)
         {
-            return(0xff);
+            return(true);
         }
     }
     
-    return(0);
+    return(false);
 }
 
 /**
@@ -432,74 +501,85 @@ static uint8_t broadcast_matched(const struct __hdlc_frame_desc *hdlc_desc)
   * @param  
   * @retval 
   */
-static uint8_t address_matched(uint8_t channel, const struct __hdlc_frame_desc *hdlc_desc)
+static bool address_matched(uint8_t channel, const struct __hdlc_frame_desc *hdlc_desc)
 {
-    uint8_t server_address[4];
-    
     if(channel > HDLC_CONFIG_MAX_CHANNEL)
     {
-        return(0);
+        return(false);
     }
     
     if(hdlc_links[channel].link_status == LINK_CONNECTED)
     {
         //匹配连接对象存储的地址和报文中的地址是否一致
-        if(memcmp(hdlc_links[channel].server_address, hdlc_desc->dst, hdlc_desc->length_dst) != 0)
+        if(hdlc_links[channel].device_address != makeup_device_address(hdlc_desc->dst))
         {
-            return(0);
+            return(false);
         }
     }
     else
     {
         //先获取本机地址，然后和报文中的地址是否一致
-        add_address(server_address);
-        if(memcmp(server_address, hdlc_desc->dst, add_address((void *)0)) != 0)
+        if(hdlc_get_address() != makeup_device_address(hdlc_desc->dst))
         {
-            return(0);
+            return(false);
         }
     }
 	
-    return(0xff);
+    return(true);
 }
 
 /**
-  * @brief 拷贝源地址
+  * @brief 填充客户端地址
   * @param  
   * @retval 
   */
-static uint8_t copy_client_address(const struct __hdlc_frame_desc *hdlc_desc, uint8_t *out)
+static uint8_t fill_client_address(uint16_t address, uint8_t *out)
 {
-    if(hdlc_desc->length_src != 1)
+    if(!out)
     {
         return(0);
     }
     
-    if(out)
-    {
-        out[0] = hdlc_desc->src[0];
-    }
+    out[0] = address;
+    out[0] <<= 1;
+    out[0] |= 0x01;
     
     return(1);
 }
 
 /**
-  * @brief 拷贝目的地址
+  * @brief 填充服务端地址
   * @param  
   * @retval 
   */
-static uint8_t copy_server_address(const struct __hdlc_frame_desc *hdlc_desc, uint8_t *out)
+static uint8_t fill_server_address(uint16_t device, uint16_t logic, uint8_t length, uint8_t *out)
 {
-    if((!hdlc_desc->length_dst) || (hdlc_desc->length_dst > 4))
+    if(length == 1)
+    {
+        out[0] = (logic << 1) & 0xfe;
+        out[0] |= 0x01;
+        return(1);
+    }
+    else if(length == 2)
+    {
+        out[0] = (logic << 1) & 0xfe;
+        out[1] = (device << 1) & 0xfe;
+        out[1] |= 0x01;
+        return(2);
+    }
+    else if(length == 4)
+    {
+        out[0] = (logic >> 6) & 0xfe;
+        out[1] = (logic << 1) & 0xfe;
+        out[2] = (device >> 6) & 0xfe;
+        out[3] = (device << 1) & 0xfe;
+        out[3] |= 0x01;
+        return(4);
+    }
+    else
     {
         return(0);
     }
-    
-    if(out)
-    {
-        memcpy(out, hdlc_desc->dst, hdlc_desc->length_dst);
-    }
-    
-    return(hdlc_desc->length_dst);
 }
 
 /**
@@ -561,7 +641,7 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     link->csss = 0xff;
     
     //初始化通信地址
-    add_address(link->server_address);
+    link->device_address = hdlc_get_address();
     
     return(HDLC_NO_ERR);
 }
@@ -573,6 +653,8 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
   */
 static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
 {
+    struct __dlms_session id;
+    
     if(!link)
     {
         return(HDLC_ERR_NOMEM);
@@ -590,8 +672,10 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
     
     if(link->link_status != LINK_DISCONNECTED)
     {
+        id.session = link->client_address;
+        id.sap = link->logic_address;
         //取消应用层连接
-        HDLC_CONFIG_APPL_RELEASE(link->client_address);
+        HDLC_CONFIG_APPL_RELEASE(id);
     }
     
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
@@ -619,19 +703,31 @@ static enum __hdlc_errors encode_frmr(const struct __hdlc_frame_desc *hdlc_desc,
     //保留帧长度域
     frame_encode += 1;
     
-    //添加目的地址
-    if(!copy_client_address(hdlc_desc, (void *)0))
+    //控制域
+    if(link->link_status == LINK_CONNECTED)
     {
-        return(HDLC_ERR_ADDRESS);
+        //添加目的地址
+        frame_encode += fill_client_address(link->client_address, \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(link->device_address, \
+                                            link->logic_address, \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
     }
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data + frame_encode));
-    
-    //添加源地址
-    if(!copy_server_address(hdlc_desc, (void *)0))
+    else
     {
-        return(HDLC_ERR_ADDRESS);
+        //添加目的地址
+        frame_encode += fill_client_address(makeup_client_address(hdlc_desc->src), \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(makeup_device_address(hdlc_desc->dst), \
+                                            makeup_logic_address(hdlc_desc->dst), \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
     }
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data + frame_encode));
     
     //控制域
     *(link->send.segment.data + frame_encode) = 0x97;
@@ -641,7 +737,7 @@ static enum __hdlc_errors encode_frmr(const struct __hdlc_frame_desc *hdlc_desc,
     *(link->send.segment.data + 2) = (frame_encode + 5);
     
     //帧头校验 HCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
     
     //错误代码信息  ref IEC_13239  5.5.3.4.2
     *(link->send.segment.data + frame_encode) = *(uint8_t*)(hdlc_desc->ctrl);
@@ -657,7 +753,7 @@ static enum __hdlc_errors encode_frmr(const struct __hdlc_frame_desc *hdlc_desc,
     frame_encode += 2;
     
     //帧头校验 FCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
     
     //组包返回的数据
     *(link->send.segment.data + frame_encode) = 0x7e;
@@ -690,19 +786,31 @@ static enum __hdlc_errors encode_rr(const struct __hdlc_frame_desc *hdlc_desc, s
     //保留帧长度域
     frame_encode += 1;
     
-    //添加目的地址
-    if(!copy_client_address(hdlc_desc, (void *)0))
+    //控制域
+    if(link->link_status == LINK_CONNECTED)
     {
-        return(HDLC_ERR_ADDRESS);
+        //添加目的地址
+        frame_encode += fill_client_address(link->client_address, \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(link->device_address, \
+                                            link->logic_address, \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
     }
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data + frame_encode));
-    
-    //添加源地址
-    if(!copy_server_address(hdlc_desc, (void *)0))
+    else
     {
-        return(HDLC_ERR_ADDRESS);
+        //添加目的地址
+        frame_encode += fill_client_address(makeup_client_address(hdlc_desc->src), \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(makeup_device_address(hdlc_desc->dst), \
+                                            makeup_logic_address(hdlc_desc->dst), \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
     }
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data + frame_encode));
     
     //控制域
     *(link->send.segment.data + frame_encode) = (((link->rrr << 5) + 0x01) | 0x10);
@@ -712,7 +820,7 @@ static enum __hdlc_errors encode_rr(const struct __hdlc_frame_desc *hdlc_desc, s
     *(link->send.segment.data + 2) = (frame_encode + 1);
     
     //帧头校验 HCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
     
     //组包返回的数据
     *(link->send.segment.data + frame_encode) = 0x7e;
@@ -758,23 +866,26 @@ static enum __hdlc_errors request_snrm(struct __hdlc_link *link, \
     frame_encode += 1;
     
     //保存客户端地址
-    if(!copy_client_address(hdlc_desc, &link->client_address))
+    link->client_address = makeup_client_address(hdlc_desc->src);
+    if(!link->client_address)
     {
         link_cleanup(link);
         return (HDLC_ERR_ADDRESS);
     }
     
     //添加目的地址
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data+frame_encode));
+    frame_encode += fill_client_address(link->client_address, (link->send.segment.data+frame_encode));
     
-    //添加源地址
-    if(!copy_server_address(hdlc_desc, (void*)0))
+    
+    //保存逻辑地址
+    link->logic_address = makeup_logic_address(hdlc_desc->dst);
+    if(link->logic_address)
     {
         link_cleanup(link);
         return (HDLC_ERR_ADDRESS);
     }
     
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data+frame_encode));
+    frame_encode += fill_server_address(link->device_address, link->logic_address, hdlc_desc->length_dst, (link->send.segment.data+frame_encode));
     
     //控制域
     *(link->send.segment.data+frame_encode) = 0x73;
@@ -903,10 +1014,10 @@ static enum __hdlc_errors request_snrm(struct __hdlc_link *link, \
     *(link->send.segment.data+2) = ((frame_encode-1+2) & 0x00ff);
     
     //帧头校验 HCS
-    add_chk((link->send.segment.data+1), (index_fcs-1), (link->send.segment.data+index_fcs+0));
+    add_check((link->send.segment.data+1), (index_fcs-1), (link->send.segment.data+index_fcs+0));
     
     //帧校验 FCS
-    frame_encode += add_chk((link->send.segment.data+1), (frame_encode-1), (link->send.segment.data+frame_encode+0));
+    frame_encode += add_check((link->send.segment.data+1), (frame_encode-1), (link->send.segment.data+frame_encode+0));
     
     //组包返回的数据
     *(link->send.segment.data+frame_encode) = 0x7e;
@@ -933,6 +1044,7 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     uint16_t frame_encode = 0;
     uint16_t info_length;
     uint16_t index_hcs;
+    struct __dlms_session id;
     
     //判断 information 长度是否超过协商最大长度
     if(hdlc_desc->llc)
@@ -1004,7 +1116,9 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     }
     
     //使用 HDLC 报文中的 info 来访问 application 层
-    HDLC_CONFIG_APPL_REQUEST(link->client_address,
+    id.session = link->client_address;
+    id.sap = link->logic_address;
+    HDLC_CONFIG_APPL_REQUEST(id,
                              link->recv.data,
                              link->recv.filled,
                              link->send.data,
@@ -1044,18 +1158,10 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     frame_encode += 1;
     
     //添加目的地址
-    if(!copy_client_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data + frame_encode));
+    frame_encode += fill_client_address(link->client_address, (link->send.segment.data+frame_encode));
     
     //添加源地址
-    if(!copy_server_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data + frame_encode));
+    frame_encode += fill_server_address(link->device_address, link->logic_address, hdlc_desc->length_dst, (link->send.segment.data+frame_encode));
     
     //控制域
     link->rrr += 1;
@@ -1085,9 +1191,9 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     *(link->send.segment.data + 2) = ((frame_encode - 1 + 2) & 0x00ff);
     
     //帧头校验 HCS
-    add_chk((link->send.segment.data + 1), (index_hcs - 1), (link->send.segment.data + index_hcs + 0));
+    add_check((link->send.segment.data + 1), (index_hcs - 1), (link->send.segment.data + index_hcs + 0));
     //帧校验 FCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
     
     //组包返回的数据
     *(link->send.segment.data + frame_encode) = 0x7e;
@@ -1163,18 +1269,10 @@ static enum __hdlc_errors request_rr(struct __hdlc_link *link, \
     frame_encode += 1;
 
     //添加目的地址
-    if(!copy_client_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data + frame_encode));
+    frame_encode += fill_client_address(link->client_address, (link->send.segment.data+frame_encode));
     
     //添加源地址
-    if(!copy_server_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data + frame_encode));
+    frame_encode += fill_server_address(link->device_address, link->logic_address, hdlc_desc->length_dst, (link->send.segment.data+frame_encode));
 
     //控制域
     *(link->send.segment.data + frame_encode) = (((link->rrr << 5) + (link->sss << 1)) | 0x10);
@@ -1196,9 +1294,9 @@ static enum __hdlc_errors request_rr(struct __hdlc_link *link, \
     *(link->send.segment.data + 2) = ((frame_encode - 1 + 2) & 0x00ff);
 
     //帧头校验 HCS
-    add_chk((link->send.segment.data + 1), (index_hcs - 1), (link->send.segment.data + index_hcs + 0));
+    add_check((link->send.segment.data + 1), (index_hcs - 1), (link->send.segment.data + index_hcs + 0));
     //帧校验 FCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
 
     //组包返回的数据
     *(link->send.segment.data + frame_encode) = 0x7e;
@@ -1230,28 +1328,34 @@ static enum __hdlc_errors request_disc(struct __hdlc_link *link, \
     //保留帧长度域
     frame_encode += 1;
     
-    //添加目的地址
-    if(!copy_client_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_client_address(hdlc_desc, (link->send.segment.data + frame_encode));
-    
-    //添加源地址
-    if(!copy_server_address(hdlc_desc, (void *)0))
-    {
-        return(HDLC_ERR_ADDRESS);
-    }
-    frame_encode += copy_server_address(hdlc_desc, (link->send.segment.data + frame_encode));
-    
     //控制域
     if(link->link_status == LINK_CONNECTED)
     {
+        //添加目的地址
+        frame_encode += fill_client_address(link->client_address, \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(link->device_address, \
+                                            link->logic_address, \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
+        
         *(link->send.segment.data+frame_encode) = 0x73;
         link->link_status = LINK_MARK;
     }
     else
     {
+        //添加目的地址
+        frame_encode += fill_client_address(makeup_client_address(hdlc_desc->src), \
+                                            (link->send.segment.data+frame_encode));
+        
+        //添加源地址
+        frame_encode += fill_server_address(makeup_device_address(hdlc_desc->dst), \
+                                            makeup_logic_address(hdlc_desc->dst), \
+                                            hdlc_desc->length_dst, \
+                                            (link->send.segment.data+frame_encode));
+    
         *(link->send.segment.data+frame_encode) = 0x1F;
     }
     frame_encode += 1;
@@ -1260,7 +1364,7 @@ static enum __hdlc_errors request_disc(struct __hdlc_link *link, \
     *(link->send.segment.data + 2) = (frame_encode + 1);
     
     //帧头校验 HCS
-    frame_encode += add_chk((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
+    frame_encode += add_check((link->send.segment.data + 1), (frame_encode - 1), (link->send.segment.data + frame_encode + 0));
     
     //组包返回的数据
     *(link->send.segment.data+frame_encode) = 0x7e;

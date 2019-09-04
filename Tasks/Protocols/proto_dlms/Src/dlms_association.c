@@ -21,10 +21,9 @@
   */
 struct __ap
 {
-    uint8_t id;//client id
-    uint8_t conformance[3];//conformance block
-    uint8_t suit;//选择哪个object list
-    enum __dlms_access_level level;//access level
+    uint16_t ld;//logic device
+    uint8_t conformance[3];//支持的 conformance block
+    uint8_t suit;//支持的 object list
 };
 
 /**	
@@ -71,8 +70,10 @@ struct __user_info
 struct __dlms_association
 {
     enum __asso_status status;
+    enum __dlms_access_level level;
     enum __asso_diagnose diagnose;
     struct __ap ap;
+    uint16_t session;
     struct __object_identifier appl_name;
     struct __object_identifier mech_name;
     uint8_t callingtitle[8+2];
@@ -148,14 +149,13 @@ struct __aarq_request
 static const struct __ap ap_support_list[] = 
 {
     //内容依次为：
-    //客户端地址
+    //SAP
     //支持的 conformance
     //使用的 suit
-    //认证等级
-    {0x10,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOWEST},
-    {0x20,{0x00, 0x10, 0x11},(1<<0),DLMS_ACCESS_LOW},
-    {0x40,{0x00, 0x30, 0x1D},(1<<0),DLMS_ACCESS_HIGH},
-	{0x4c,{0x00, 0x30, 0x1D},(1<<7),DLMS_ACCESS_HIGH},//suit 8 管理维护专用
+    {0x0001,{0x00, 0x10, 0x11},(1<<0)},
+    {0x0002,{0x00, 0x10, 0x11},(1<<0)},
+    {0x0004,{0x00, 0x30, 0x1D},(1<<0)},
+	{0x0040,{0x00, 0x30, 0x1D},(1<<7)},//suit 8 管理维护专用
 };
 
 /**	
@@ -758,6 +758,7 @@ static void asso_aarq_none(struct __dlms_association *asso,
 	if(asso->diagnose == SUCCESS_NOSEC_LLS)
 	{
 		asso->status = ASSOCIATED;
+        asso->level = DLMS_ACCESS_LOWEST;
 	}
     
     //association-result
@@ -1016,6 +1017,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
 	if(asso->diagnose == SUCCESS_NOSEC_LLS)
 	{
 		asso->status = ASSOCIATED;
+        asso->level = DLMS_ACCESS_LOW;
 	}
     
     //association-result
@@ -1124,7 +1126,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
         input_length = 14;
     }
     
-    if((asso->info.sc & 0xf0) == 0x20)
+    if((asso->info.sc & 0x30) == 0x20)
     {
         //加密 user-information
         dlms_asso_localtitle(iv);
@@ -1169,7 +1171,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
         *filled_length += input_length;
         *(buffer + 1) = *filled_length - 2;
     }
-    else
+    else if((asso->info.sc & 0x30) == 0)
     {
         *(buffer + *filled_length + 0) = 0xBE;
         *(buffer + *filled_length + 1) = input_length + 2;
@@ -1180,6 +1182,10 @@ static void asso_aarq_low(struct __dlms_association *asso,
         *filled_length += input_length;
         //添加length
         *(buffer + 1) = *filled_length - 2;
+    }
+    else
+    {
+        goto enc_faild;
     }
     
     heap.free(input);
@@ -1334,6 +1340,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
 	{
 		asso->diagnose = SUCCESS_HLS;
 		asso->status = ASSOCIATION_PENDING;
+        asso->level = DLMS_ACCESS_LOW;
 	}
     
     //association-result
@@ -1732,21 +1739,27 @@ static void asso_aarq(struct __dlms_association *asso,
         encode_object_identifier((request.mechanism_name + 2), &asso->mech_name);
     }
     
-    //通过 ap 来判别要建立什么级别的连接
-    if(asso->ap.level == DLMS_ACCESS_LOWEST)
+    //通过 mech_name id 来判别要建立什么级别的连接
+    switch(asso->mech_name.id)
     {
-        //无认证
-        asso_aarq_none(asso, &request, buffer, buffer_length, filled_length);
-    }
-    else if(asso->ap.level == DLMS_ACCESS_LOW)
-    {
-        //低级别认证
-        asso_aarq_low(asso, &request, buffer, buffer_length, filled_length);
-    }
-    else if(asso->ap.level == DLMS_ACCESS_HIGH)
-    {
-        //高级别认证
-        asso_aarq_high(asso, &request, buffer, buffer_length, filled_length);
+        case 0:
+        {
+            //无认证
+            asso_aarq_none(asso, &request, buffer, buffer_length, filled_length);
+            break;
+        }
+        case 1:
+        {
+            //低级别认证
+            asso_aarq_low(asso, &request, buffer, buffer_length, filled_length);
+            break;
+        }
+        default:
+        {
+            //高级别认证
+            asso_aarq_high(asso, &request, buffer, buffer_length, filled_length);
+            break;
+        }
     }
 }
 
@@ -1814,7 +1827,7 @@ static void asso_request(const uint8_t *info,
 /**	
   * @brief 
   */
-void dlms_asso_gateway(uint8_t ap,
+void dlms_asso_gateway(struct __dlms_session session,
                        const uint8_t *info,
                        uint16_t length,
                        uint8_t *buffer,
@@ -1822,8 +1835,7 @@ void dlms_asso_gateway(uint8_t ap,
                        uint16_t *filled_length)
 {
     uint8_t cnt;
-    const struct __ap *ap_support = (void *)0;
-    uint8_t id = (ap >> 1);
+    const struct __ap *ap_support = (const struct __ap *)0;
     
     //有效性判断
     if((!info) || (!length) || (!buffer) || (!buffer_length) || (!filled_length))
@@ -1844,7 +1856,7 @@ void dlms_asso_gateway(uint8_t ap,
             continue;
         }
         
-        if(asso_list[cnt]->ap.id == id)
+        if((asso_list[cnt]->ap.ld == session.sap) && (asso_list[cnt]->session == session.session))
         {
             asso_current = asso_list[cnt];
         }
@@ -1855,10 +1867,10 @@ void dlms_asso_gateway(uint8_t ap,
     {
         case AARQ:
         {
-		    //查询AP是否在支持的AP列表中
+		    //查询SAP是否在支持的SAP列表中
 		    for(cnt=0; cnt<DLMS_AP_AMOUNT; cnt++)
 		    {
-		        if(ap_support_list[cnt].id == id)
+		        if(ap_support_list[cnt].ld == session.sap)
 		        {
 		            ap_support = &ap_support_list[cnt];
 		            break;
@@ -1948,15 +1960,9 @@ void dlms_asso_gateway(uint8_t ap,
 /**
   * @brief 清理 Association
   */
-void dlms_asso_cleanup(uint8_t ap)
+void dlms_asso_cleanup(struct __dlms_session session)
 {
     uint8_t cnt;
-    uint8_t id = (ap >> 1);
-    
-    if(!ap)
-    {
-        return;
-    }
     
     //查询AP是否已经在协商列表中
     for(cnt=0; cnt<DLMS_CONFIG_MAX_ASSO; cnt++)
@@ -1966,7 +1972,7 @@ void dlms_asso_cleanup(uint8_t ap)
             continue;
         }
         
-        if(asso_list[cnt]->ap.id == id)
+        if((asso_list[cnt]->ap.ld == session.sap) && (asso_list[cnt]->session == session.session))
         {
             if(asso_list[cnt]->appl)
             {
@@ -1981,14 +1987,14 @@ void dlms_asso_cleanup(uint8_t ap)
 /**
   * @brief 获取 client AP
   */
-uint8_t dlms_asso_ap(void)
+uint16_t dlms_asso_session(void)
 {
     if(!asso_current)
     {
         return(0);
     }
 	
-	return(asso_current->ap.id);
+	return(asso_current->session);
 }
 
 /**
@@ -2130,7 +2136,7 @@ uint8_t dlms_asso_accept_fctos(void)
     if(asso_current->status == ASSOCIATION_PENDING)
     {
         asso_current->status = ASSOCIATED;
-        asso_current->ap.level = DLMS_ACCESS_HIGH;
+        asso_current->level = DLMS_ACCESS_HIGH;
         return(0xff);
     }
     
@@ -2230,6 +2236,9 @@ uint8_t dlms_asso_dedkey(uint8_t *buffer)
     return(asso_current->info.dedkey[1]);
 }
 
+/**
+  * @brief 密钥需要更新
+  */
 void dlms_asso_key_eliminate(void)
 {
     key_is_eliminate = 0xff;
@@ -2290,7 +2299,7 @@ enum __dlms_access_level dlms_asso_level(void)
         return(DLMS_ACCESS_NO);
     }
     
-    return(asso_current->ap.level);
+    return(asso_current->level);
 }
 
 /**
@@ -2319,7 +2328,7 @@ void * dlms_asso_storage(void)
     return(asso_current->appl);
 }
 
-uint32_t dlms_asso_storage_size(void)
+uint16_t dlms_asso_storage_size(void)
 {
     if(!asso_current)
     {

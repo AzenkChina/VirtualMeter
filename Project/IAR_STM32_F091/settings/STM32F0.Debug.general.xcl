@@ -1,12 +1,12 @@
-"D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\bin\armproc.dll" 
+"D:\Program Files\IAR Systems\arm\bin\armproc.dll" 
 
-"D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\bin\armsim2.dll" 
+"D:\Program Files\IAR Systems\arm\bin\armsim2.dll" 
 
-"F:\Works\Codes\GitHub\VirtualMeter\Project\IAR_STM32_F091\Debug\Exe\c.out" 
+"F:\WorkSpace\Codes\VirtualMeter\Project\IAR_STM32_F091\Debug\Exe\c.out" 
 
---plugin "D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\bin\armbat.dll" 
+--plugin "D:\Program Files\IAR Systems\arm\bin\armbat.dll" 
 
---device_macro "D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\config\debugger\ST\STM32F05xxx_06xxx.dmac" 
+--device_macro "D:\Program Files\IAR Systems\arm\config\debugger\ST\STM32F05xxx_06xxx.dmac" 
 
 
 

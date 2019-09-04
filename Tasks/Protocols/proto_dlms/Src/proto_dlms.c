@@ -48,20 +48,12 @@ static void dlms_reset(void)
     heap.set(buff, 0x30, sizeof(buff));
     buff[1] = 16;
     
-    buff[0] = 'P';
     dlms_util_write_passwd(buff);//√‹¬Î
-    
-    buff[0] = 'A';
     dlms_util_write_akey(buff);//»œ÷§√‹‘ø
-    
-    buff[0] = 'B';
     dlms_util_write_bekey(buff);//º”√‹√‹‘ø
-    
-    buff[0] = 'U';
     dlms_util_write_uekey(buff);//º”√‹√‹‘ø
     
     buff[1] = 8;
-    buff[0] = 'S';
     dlms_util_write_title(buff);//system title
 }
 
