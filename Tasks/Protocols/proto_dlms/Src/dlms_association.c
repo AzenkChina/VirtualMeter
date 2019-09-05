@@ -140,7 +140,7 @@ struct __aarq_request
 #define DLMS_CONFIG_LOAD_TITLE(i)               dlms_util_load_title(i)
 //加载管理维护密码（info）
 #define DLMS_CONFIG_LOAD_PASSWD_MANAGE(i)       memcpy(i, "\x00\x10", 2); \
-                                                memcpy(&i[2], "meter-management", 16);
+                                                memcpy(&i[2], "meter@management", 16);
 
 /* Private macro -------------------------------------------------------------*/
 #define DLMS_AP_AMOUNT                          ((uint8_t)(sizeof(ap_support_list) / sizeof(struct __ap)))
@@ -155,10 +155,10 @@ static const struct __ap ap_support_list[] =
     //SAP
     //支持的 conformance
     //使用的 suit
-    {0x3ffc,{0x00, 0x30, 0x1D},(1<<7)},//suit 8 管理维护专用，不可随意屏蔽
+    {0x3ffc,{0x00, 0x30, 0x1D},(1<<7)},//suit 8 管理维护专用，不可屏蔽
     {0x0001,{0x00, 0x10, 0x11},(1<<0)},
-    {0x0002,{0x00, 0x10, 0x11},(1<<0)},
-    {0x0004,{0x00, 0x30, 0x1D},(1<<0)},
+    {0x0002,{0x00, 0x10, 0x11},(1<<1)},
+    {0x0003,{0x00, 0x30, 0x1D},(1<<2)},
 };
 
 /**	
