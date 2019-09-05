@@ -121,34 +121,6 @@ struct __cosem_param
   */
 static const struct __cosem_entry_high communal[] = 
 {
-    /** association ln */
-    {
-        0x0F0000280000FF80,/** suit 8 only */
-
-        0xffffff00, //oid
-
-        {
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 2
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 3
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 4
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 5
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 6
-            {ATTR_NONE, ATTR_NONE, (ATTR_READ | ATTR_WRITE)}, //attribute 7
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 8
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 9
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 10
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 11
-            
-            {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ}, //method 1
-            {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ}, //method 2
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 3
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 4
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 5
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 6
-        },
-    },
-
     /** image transfer */
     /** 用于下载lexicon参数文件到系统 */
     {
@@ -157,43 +129,18 @@ static const struct __cosem_entry_high communal[] =
         0xffffff00, //oid
 
         {
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 1
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 2
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 3
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 4
-            {ATTR_NONE, ATTR_NONE, (ATTR_READ | ATTR_WRITE)}, //attribute 5
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 6
-            {ATTR_NONE, ATTR_NONE, ATTR_READ}, //attribute 7
-            
-            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 1
-            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 2
-            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 3
-            {METHOD_NONE, METHOD_NONE, METHOD_ACCESS}, //method 4
-        },
-    },
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 1
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 2
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 3
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 4
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 5
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 6
+            {ATTR_NONE, ATTR_READ, ATTR_READ}, //attribute 7
 
-    /** security setup */
-    {
-        0x4000002B0000FF80,/** suit 8 only */
-
-        0xffffff00, //oid
-
-        {
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 1
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 2
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 3
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 4
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 5
-            {ATTR_NONE, ATTR_NONE, METHOD_AUTHREQ}, //attribute 6
-            
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 1
-            {METHOD_NONE, METHOD_NONE, METHOD_AUTHREQ}, //method 2
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 3
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 4
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 5
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 6
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 7
-            {METHOD_NONE, METHOD_NONE, METHOD_NONE}, //method 8
+            {METHOD_NONE, METHOD_ACCESS, METHOD_ACCESS}, //method 1
+            {METHOD_NONE, METHOD_ACCESS, METHOD_ACCESS}, //method 2
+            {METHOD_NONE, METHOD_ACCESS, METHOD_ACCESS}, //method 3
+            {METHOD_NONE, METHOD_ACCESS, METHOD_ACCESS}, //method 4
         },
     },
 };
