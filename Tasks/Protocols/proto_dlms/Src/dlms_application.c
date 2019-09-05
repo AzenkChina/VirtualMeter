@@ -88,7 +88,7 @@ static struct __cosem_request *Current = (struct __cosem_request *)0;
 /**	
   * @brief 指向当前正在访问的数据标识
   */
-static uint8_t *logicalname = (uint8_t *)0;
+static uint8_t *instance_name = (uint8_t *)0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -2097,7 +2097,7 @@ void dlms_appl_entrance(const uint8_t *info,
         {
             if(request.info[cnt].active)
             {
-                logicalname = request.info[cnt].obis;
+                instance_name = request.info[cnt].obis;
             }
             
             //判断是否有访问权限
@@ -2119,7 +2119,7 @@ void dlms_appl_entrance(const uint8_t *info,
 				}
             }
             
-            logicalname = (uint8_t *)0;
+            instance_name = (uint8_t *)0;
         }
     }
     
@@ -2166,13 +2166,13 @@ void dlms_appl_entrance(const uint8_t *info,
 }
 
 /**	
-  * @brief dlms获取当前正在访问的数据项的逻辑名
+  * @brief dlms获取当前正在访问的数据项的实例名
   */
-uint8_t dlms_appl_logicalname(uint8_t *name)
+uint8_t dlms_appl_instance(uint8_t *name)
 {
-    if(name && logicalname)
+    if(name && instance_name)
     {
-        heap.copy(name, logicalname, 6);
+        heap.copy(name, instance_name, 6);
         
         return(6);
     }

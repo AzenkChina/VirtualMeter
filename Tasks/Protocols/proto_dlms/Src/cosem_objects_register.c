@@ -26,7 +26,10 @@ static ObjectErrs GetLogicalName(ObjectPara *P)
     uint16_t Length;
     uint8_t Name[6] = {0};
     
-    dlms_appl_logicalname(Name);
+    if(!dlms_appl_instance(Name))
+    {
+        return(OBJECT_ERR_DATA);
+    }
     
     Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
     

@@ -10,6 +10,7 @@
 #include "dlms_types.h"
 #include "mids.h"
 #include "string.h"
+#include "cpu.h"
 #include "crc.h"
 #include "mbedtls/md5.h"
 
@@ -642,6 +643,8 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     
     for(cnt=0; cnt<clog2(header.amount); cnt++)
     {
+        cpu.watchdog.feed();
+        
         //读取
         if(file.read("lexicon", \
                      STRUCT_OFFSET(struct __cosem_param, entry[position]), \
@@ -883,6 +886,101 @@ uint64_t dlms_lex_date(void)
 }
 
 /**
+  * @brief  获取条目信息文件的md5签名
+  */
+uint8_t dlms_lex_signature(uint8_t *signature)
+{
+    struct __cosem_param_info info;
+    
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+        sizeof(struct __cosem_param_info))
+    {
+        return(0);
+    }
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+            info.check)
+    {
+        return(0);
+    }
+    
+    heap.copy(signature, info.md5, 16);
+    
+    return(16);
+}
+
+/**
+  * @brief  激活当前信息文件
+  */
+bool dlms_lex_active(void)
+{
+    struct __cosem_param_header header;
+    
+    //读取参数文件中的信息头，并检查是否正确
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+        sizeof(struct __cosem_param_header))
+    {
+        return(false);
+    }
+    
+    
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) == \
+            header.check)
+    {
+        return(true);
+    }
+    
+    header.reserve ^= 0xffff;
+    
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+            header.check)
+    {
+        return(false);
+    }
+    
+    if(file.write("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+        sizeof(struct __cosem_param_header))
+    {
+        return(false);
+    }
+    
+    return(true);
+}
+
+/**
+  * @brief  失活当前信息文件
+  */
+bool dlms_lex_deactive(void)
+{
+    struct __cosem_param_header header;
+    
+    //读取参数文件中的信息头，并检查是否正确
+    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+        sizeof(struct __cosem_param_header))
+    {
+        return(true);
+    }
+    
+    
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+            header.check)
+    {
+        return(true);
+    }
+    
+    header.reserve ^= 0xffff;
+    
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) == \
+            header.check)
+    {
+        return(false);
+    }
+    
+    file.write("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header);
+    
+    return(true);
+}
+
+/**
   * @brief  验证条目信息文件是否有效
   */
 bool dlms_lex_check(void)
@@ -940,6 +1038,8 @@ bool dlms_lex_check(void)
     
 	for(cnt=0; cnt<header.amount; cnt++)
 	{
+        cpu.watchdog.feed();
+        
         //读取
         if(file.read("lexicon", \
                      STRUCT_OFFSET(struct __cosem_param, entry[cnt]), \

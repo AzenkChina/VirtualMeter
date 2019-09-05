@@ -6,30 +6,15 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "system.h"
+#include "string.h"
 #include "axdr.h"
 #include "dlms_application.h"
 #include "cosem_objects_imagetransfer.h"
+#include "dlms_lexicon.h"
 
 /* Private typedef -----------------------------------------------------------*/
-/**
-  * @brief   
-  */
-enum __transfer_status
-{
-    TRANS_NOT_INIT = 0,
-    TRANS_INITED = 1,
-    VERI_INITED = 2,
-    VERI_SUCCESS = 3,
-    VERI_FAILED = 4,
-    ACTIV_INITED = 5,
-    ACTIV_SUCCESS = 6,
-    ACTIV_FAILED = 7,
-};
-
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __transfer_status TransferStatus = TRANS_NOT_INIT;
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -43,7 +28,10 @@ static ObjectErrs GetLogicalName(ObjectPara *P)
     uint16_t Length;
     uint8_t Name[6] = {0};
     
-    dlms_appl_logicalname(Name);
+    if(!dlms_appl_instance(Name))
+    {
+        return(OBJECT_ERR_DATA);
+    }
     
     Length = axdr.encode(Name, sizeof(Name), AXDR_OCTET_STRING, OBJ_OUT_ADDR(P));
     
@@ -172,12 +160,12 @@ static ObjectErrs SetFirstNotTransferredBlockNumber(ObjectPara *P)
 static ObjectErrs GetTransferEnabled(ObjectPara *P)
 {
     uint16_t Length;
-    uint8_t EnableStatus;
+    uint8_t Value;
     
     if(OBJ_IN_OID(P) == 0xffffff00)
     {
-        EnableStatus = 1;
-        Length = axdr.encode(&EnableStatus, sizeof(EnableStatus), AXDR_ENUM, OBJ_OUT_ADDR(P));
+        Value = 1;
+        Length = axdr.encode(&Value, sizeof(Value), AXDR_ENUM, OBJ_OUT_ADDR(P));
         
         if(!Length)
         {
@@ -208,10 +196,12 @@ static ObjectErrs SetTransferEnabled(ObjectPara *P)
 static ObjectErrs GetTransferStatus(ObjectPara *P)
 {
     uint16_t Length;
+    uint8_t Value;
     
     if(OBJ_IN_OID(P) == 0xffffff00)
     {
-        Length = axdr.encode(&TransferStatus, sizeof(TransferStatus), AXDR_ENUM, OBJ_OUT_ADDR(P));
+        Value = 1;
+        Length = axdr.encode(&Value, sizeof(Value), AXDR_ENUM, OBJ_OUT_ADDR(P));
         
         if(!Length)
         {
@@ -222,6 +212,8 @@ static ObjectErrs GetTransferStatus(ObjectPara *P)
         
         return(OBJECT_NOERR);
     }
+    
+    return(OBJECT_ERR_LOWLEVEL);
 }
 
 /**
@@ -239,6 +231,49 @@ static ObjectErrs SetTransferStatus(ObjectPara *P)
   */
 static ObjectErrs GetActivateInfo(ObjectPara *P)
 {
+    uint8_t *Buffer = OBJ_OUT_ADDR(P);
+    uint8_t Signature[16] = {0};
+    uint16_t MetaLength;
+    uint16_t Length;
+    uint32_t Value;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        Value = dlms_lex_amount(0xff);
+        Value += 1;
+        Value *= 96;
+        
+        if(OBJ_OUT_SIZE(P) < 36)
+        {
+            return(OBJECT_ERR_MEM);
+        }
+        
+        if(!dlms_lex_signature(Signature))
+        {
+            return(OBJECT_ERR_LOWLEVEL);
+        }
+        
+        HEAP_FORWARD(Buffer, AXDR_ARRAY);
+        HEAP_FORWARD(Buffer, 1);
+        HEAP_FORWARD(Buffer, AXDR_STRUCTURE);
+        HEAP_FORWARD(Buffer, 3);
+        Length = 4;
+        
+        MetaLength = axdr.encode(&Value, sizeof(Value), AXDR_DOUBLE_LONG_UNSIGNED, Buffer);
+        Length += MetaLength;
+        Buffer += MetaLength;
+        MetaLength += axdr.encode("lexicon", 7, AXDR_OCTET_STRING, Buffer);
+        Length += MetaLength;
+        Buffer += MetaLength;
+        MetaLength += axdr.encode(&Signature, sizeof(Signature), AXDR_OCTET_STRING, Buffer);
+        Length += MetaLength;
+        Buffer += MetaLength;
+        
+        OBJ_PUSH_LENGTH(P, Length);
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -257,6 +292,52 @@ static ObjectErrs SetActivateInfo(ObjectPara *P)
   */
 static ObjectErrs Initiate(ObjectPara *P)
 {
+    uint16_t Length;
+    enum __axdr_type Type;
+    union __axdr_container Value;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        if(axdr.type.decode(OBJ_IN_ADDR(P)) != AXDR_STRUCTURE)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(OBJ_IN_ADDR(P)[1] != 2)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(axdr.type.decode(&OBJ_IN_ADDR(P)[2]) != AXDR_OCTET_STRING)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        axdr.length.decode(&OBJ_IN_ADDR(P)[3], &Length);
+        if((Length != 7) && (memcmp("lexicon", &OBJ_IN_ADDR(P)[4], 7) != 0))
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        axdr.decode(&OBJ_IN_ADDR(P)[11], &Type, &Value);
+        if(Type != AXDR_DOUBLE_LONG_UNSIGNED)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if((Value.u32_t < 96) || (Value.u32_t > (file.size("lexicon"))))
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(Value.u32_t % 96)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -266,6 +347,62 @@ static ObjectErrs Initiate(ObjectPara *P)
   */
 static ObjectErrs BlockTransfer(ObjectPara *P)
 {
+    uint16_t Length;
+    enum __axdr_type Type;
+    union __axdr_container Value;
+    
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        if(OBJ_IN_SIZE(P) != 105)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(axdr.type.decode(OBJ_IN_ADDR(P)) != AXDR_STRUCTURE)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(OBJ_IN_ADDR(P)[1] != 2)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        axdr.decode(&OBJ_IN_ADDR(P)[2], &Type, &Value);
+        if(Type != AXDR_DOUBLE_LONG_UNSIGNED)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(Value.u32_t >= (file.size("lexicon") / 96))
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(axdr.type.decode(&OBJ_IN_ADDR(P)[7]) != AXDR_OCTET_STRING)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        axdr.length.decode(&OBJ_IN_ADDR(P)[8], &Length);
+        if(Length != 96)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(file.write("lexicon", (Value.u32_t * 96), 96, &OBJ_IN_ADDR(P)[9]) != 96)
+        {
+            return(OBJECT_ERR_NODEF);
+        }
+        
+        if(Value.u32_t == 0)
+        {
+            dlms_lex_deactive();
+        }
+        
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -275,6 +412,18 @@ static ObjectErrs BlockTransfer(ObjectPara *P)
   */
 static ObjectErrs Verify(ObjectPara *P)
 {
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        dlms_lex_active();
+        
+        if(dlms_lex_check())
+        {
+            return(OBJECT_NOERR);
+        }
+        
+        return(OBJECT_ERR_NODEF);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
@@ -284,6 +433,11 @@ static ObjectErrs Verify(ObjectPara *P)
   */
 static ObjectErrs Activate(ObjectPara *P)
 {
+    if(OBJ_IN_OID(P) == 0xffffff00)
+    {
+        return(OBJECT_NOERR);
+    }
+    
     return(OBJECT_ERR_LOWLEVEL);
 }
 
