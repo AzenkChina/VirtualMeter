@@ -17,7 +17,7 @@
 struct __dlms_sym_key
 {
     uint8_t length;//√‹‘ø≥§∂» <= 48
-    uint8_t val[63];//√‹‘ø
+    uint8_t val[59];//√‹‘ø
     uint32_t check;
 };
 
@@ -40,6 +40,9 @@ struct __dlms_configs
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/**	
+  * @brief 
+  */
 void confuse(uint8_t *buffer, uint8_t size)
 {
     uint8_t cnt;
@@ -50,7 +53,6 @@ void confuse(uint8_t *buffer, uint8_t size)
     }
 }
 
-
 /**	
   * @brief 
   */
@@ -60,12 +62,15 @@ uint8_t dlms_util_load_passwd(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, passwd), \
-              sizeof(key), \
-              (void *)&key);
-    
-    
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_configs, passwd), \
+                 sizeof(key), \
+                 (void *)&key) != sizeof(key))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
     
     if((crc32(key.val, sizeof(key.val)) != key.check) || \
         (key.length < 8) || (key.length > 48))
@@ -102,10 +107,13 @@ uint8_t dlms_util_write_passwd(uint8_t *buffer)
     confuse(key.val, sizeof(key.val));
     key.check = crc32(key.val, sizeof(key.val));
     
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, passwd), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_configs, passwd), \
+                  sizeof(key), \
+                  (void *)&key) != sizeof(key))
+    {
+        return(0);
+    }
     
     return(key.length + 2);
 }
@@ -119,10 +127,15 @@ uint8_t dlms_util_load_akey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, akey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_configs, akey), \
+                 sizeof(key), \
+                 (void *)&key) != sizeof(key))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
     
     if((crc32(key.val, sizeof(key.val)) != key.check) || \
         (key.length != 16) && (key.length != 32))
@@ -159,10 +172,13 @@ uint8_t dlms_util_write_akey(uint8_t *buffer)
     confuse(key.val, sizeof(key.val));
     key.check = crc32(key.val, sizeof(key.val));
     
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, akey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_configs, akey), \
+                  sizeof(key), \
+                  (void *)&key) != sizeof(key))
+    {
+        return(0);
+    }
     
     return(key.length + 2);
 }
@@ -176,10 +192,15 @@ uint8_t dlms_util_load_bekey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, bekey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_configs, bekey), \
+                 sizeof(key), \
+                 (void *)&key) != sizeof(key))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
     
     if((crc32(key.val, sizeof(key.val)) != key.check) || \
         (key.length != 16) && (key.length != 32))
@@ -216,10 +237,13 @@ uint8_t dlms_util_write_bekey(uint8_t *buffer)
     confuse(key.val, sizeof(key.val));
     key.check = crc32(key.val, sizeof(key.val));
     
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, bekey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_configs, bekey), \
+                  sizeof(key), \
+                  (void *)&key) != sizeof(key))
+    {
+        return(0);
+    }
     
     return(key.length + 2);
 }
@@ -233,10 +257,15 @@ uint8_t dlms_util_load_uekey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, uekey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_configs, uekey), \
+                 sizeof(key), \
+                 (void *)&key) != sizeof(key))
+    {
+        buffer[1] = 16;
+        heap.set(&buffer[2], 0x30, 16);
+        return(18);
+    }
     
     if((crc32(key.val, sizeof(key.val)) != key.check) || \
         (key.length != 16) && (key.length != 32))
@@ -273,10 +302,13 @@ uint8_t dlms_util_write_uekey(uint8_t *buffer)
     confuse(key.val, sizeof(key.val));
     key.check = crc32(key.val, sizeof(key.val));
     
-    file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, uekey), \
-              sizeof(key), \
-              (void *)&key);
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_configs, uekey), \
+                  sizeof(key), \
+                  (void *)&key) != sizeof(key))
+    {
+        return(0);
+    }
     
     return(key.length + 2);
 }
@@ -286,19 +318,26 @@ uint8_t dlms_util_write_uekey(uint8_t *buffer)
   */
 uint8_t dlms_util_load_title(uint8_t *buffer)
 {
-    file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, title), \
-              STRUCT_SIZE(struct __dlms_configs, title), \
-              buffer);
+    uint8_t title[16];
     
-    if(buffer[1] != 8)
+    if(file.read("dlms", \
+              STRUCT_OFFSET(struct __dlms_configs, title), \
+              sizeof(title), \
+              title) != sizeof(title))
+    {
+        buffer[1] = 8;
+        heap.set(&buffer[2], 0x30, 8);
+    }
+    
+    if(title[1] != 8)
     {
         buffer[1] = 8;
         heap.set(&buffer[2], 0x30, 8);
     }
     else
     {
-        confuse(&buffer[2], 8);
+        confuse(&title[2], 8);
+        heap.copy(&buffer[2], &title[2], 8);
     }
     
     return(10);

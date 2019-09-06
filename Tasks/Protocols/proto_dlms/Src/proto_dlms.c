@@ -42,6 +42,7 @@ static void dlms_reset(void)
     
 	hdlc_init();
     
+//...just for test
     hdlc_set_address(1);//本机地址
     hdlc_set_timeout(30);//链路超时时间
     
@@ -55,6 +56,7 @@ static void dlms_reset(void)
     
     buff[1] = 8;
     dlms_util_write_title(buff);//system title
+//...
 }
 
 static enum __task_status dlms_status(void)

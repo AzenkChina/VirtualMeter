@@ -470,24 +470,17 @@ static enum __hdlc_errors decode_hdlc_frame(const uint8_t *frame, \
   */
 static bool broadcast_matched(const struct __hdlc_frame_desc *hdlc_desc)
 {
-    if(hdlc_desc->length_dst == 1)
+    if(hdlc_desc->length_dst == 2)
     {
-        if(hdlc_desc->dst[0] == 0xFF)
-        {
-            return(true);
-        }
-    }
-    else if(hdlc_desc->length_dst == 2)
-    {
-        if(hdlc_desc->dst[1] == 0xFF && hdlc_desc->dst[0] == 0xFE)
+        if(hdlc_desc->dst && (hdlc_desc->dst[1] == 0xFF))
         {
             return(true);
         }
     }
     else if(hdlc_desc->length_dst == 4)
     {
-        if((hdlc_desc->dst[3] == 0xFF && hdlc_desc->dst[2] == 0xFE) \
-            && hdlc_desc->dst[1] == 0xFE && hdlc_desc->dst[0] == 0xFE)
+        if(hdlc_desc->dst && \
+           ((hdlc_desc->dst[3] == 0xFF && hdlc_desc->dst[2] == 0xFE)))
         {
             return(true);
         }

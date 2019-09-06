@@ -21,11 +21,8 @@
   */
 enum __attr
 {
-    FILE_SAFE = 0x03,//带冗余备份的安全区域(可单字节擦写存储介质)
-    FILE_FREQ = 0x06,//可频繁修改区域(单字节擦写存储介质)
-    FILE_RARE = 0x0c,//不频繁修改区域(块擦除介质 占用双倍存储空间并且写入时阻塞时间较长)
-    FILE_LOOP = 0x18,//文件循环写入(块擦除介质)
-    FILE_ONCE = 0x30,//文件一次性写入(块擦除介质)
+    FILE_EEPROM = 0x0f,//EEPROM(单字节擦写存储介质)
+    FILE_FLASH = 0xf0,//EEPROM(块擦除介质)
 };
 
 /**
@@ -39,10 +36,6 @@ struct __file_entry
 };
 
 /* Private define ------------------------------------------------------------*/
-#define EEP_PAGES_DIV_RATIO     ((uint8_t)2)//取值0~8，代表冗余备份区占用的页的比例
-#define EEP_PAGES_SAFE(n)       ((uint32_t)((n)*EEP_PAGES_DIV_RATIO/8))//冗余备份区占用页数
-#define EEP_PAGES_FREQ(n)       ((uint32_t)((n)*(8-EEP_PAGES_DIV_RATIO)/8))//频繁修改区占用页数
-
 /* Private macro -------------------------------------------------------------*/
 #define AMOUNT_FILE			    ((uint16_t)(sizeof(file_entry)/sizeof(struct __file_entry)))
 
@@ -52,13 +45,14 @@ struct __file_entry
   */
 static const struct __file_entry file_entry[] = 
 {
+    /* 注意对齐问题 */
     /* 文件名  文件大小  文件所在分区 */
-    {"hdlc",        64,         FILE_FREQ}, //HDLC协议参数
-    {"dlms",        4*1024,     FILE_FREQ}, //DLMS协议参数
-    {"lexicon",     64*1024,    FILE_ONCE}, //电表数据项词典
-    {"disconnect",  512,        FILE_FREQ}, //继电器参数
-    {"display",     4*1024,     FILE_FREQ}, //显示参数
-    {"firmware",    512*1024,   FILE_ONCE}, //固件升级
+    {"hdlc",        64,         FILE_EEPROM}, //HDLC协议参数
+    {"dlms",        4*1024,     FILE_EEPROM}, //DLMS协议参数
+    {"lexicon",     64*1024,    FILE_FLASH}, //电表数据项词典
+    {"disconnect",  512,        FILE_EEPROM}, //继电器参数
+    {"display",     4*1024,     FILE_EEPROM}, //显示参数
+    {"firmware",    512*1024,   FILE_FLASH}, //固件升级
 };
 
 
@@ -174,12 +168,7 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
 		return(0);
 	}
     
-    if(file_entry[index].attr == FILE_SAFE)
-    {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_FREQ)
+    if(file_entry[index].attr == FILE_EEPROM)
     {
         pagesize = eeprom.info.pagesize();
         
@@ -190,7 +179,7 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
         
         for(loop=0; loop<index; loop++)
         {
-            if(file_entry[loop].attr == FILE_FREQ)
+            if(file_entry[loop].attr == FILE_EEPROM)
             {
                 address += file_entry[loop].size;
             }
@@ -252,20 +241,85 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
             return(count);
         }
     }
-    else if(file_entry[index].attr == FILE_RARE)
+    else if(file_entry[index].attr == FILE_FLASH)
     {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_LOOP)
-    {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_ONCE)
-    {
-        //...
-        return(0);
+        pagesize = flash.info.blocksize();
+        
+        if(!pagesize)
+        {
+            return(0);
+        }
+        
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == FILE_FLASH)
+            {
+                if(file_entry[loop].size % pagesize)
+                {
+                    address += ((file_entry[loop].size / pagesize) + 1) * pagesize;
+                }
+                else
+                {
+                    address += file_entry[loop].size;
+                }
+            }
+        }
+        
+        address += offset;//计算起始地址
+        page = address / pagesize;//计算起始页
+        header = address % pagesize;//计算起始页内起始地址
+        
+        if(page == ((address + count - 1) / pagesize))
+        {
+            //不分页
+            if(flash.block.read(page, header, count, buffer) != count)
+            {
+                return(0);
+            }
+            
+            return(count);
+        }
+        else
+        {
+            //分页
+            middle = (count - ((pagesize - header) % pagesize)) / pagesize;//计算整页页数
+            tail = (address + count) % pagesize;//计算最后一页写入字节数
+            
+            if(header)
+            {
+                if(flash.block.read(page, header, (pagesize - header), buffer) != (pagesize - header))
+                {
+                    return(0);
+                }
+                
+                buffer += (pagesize - header);
+                page += 1;
+            }
+            
+            if(middle)
+            {
+                for(loop=0; loop<middle; loop++)
+                {
+                    if(flash.block.read(page, 0, pagesize, buffer) != pagesize)
+                    {
+                        return(0);
+                    }
+                    
+                    buffer += pagesize;
+                    page += 1;
+                }
+            }
+            
+            if(tail)
+            {
+                if(flash.block.read(page, 0, tail, buffer) != tail)
+                {
+                    return(0);
+                }
+            }
+            
+            return(count);
+        }
     }
     else
     {
@@ -313,12 +367,7 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
 		return(0);
 	}
 	
-    if(file_entry[index].attr == FILE_SAFE)
-    {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_FREQ)
+    if(file_entry[index].attr == FILE_EEPROM)
     {
         pagesize = eeprom.info.pagesize();
         
@@ -329,7 +378,7 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
         
         for(loop=0; loop<index; loop++)
         {
-            if(file_entry[loop].attr == FILE_FREQ)
+            if(file_entry[loop].attr == FILE_EEPROM)
             {
                 address += file_entry[loop].size;
             }
@@ -391,20 +440,100 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
             return(count);
         }
     }
-    else if(file_entry[index].attr == FILE_RARE)
+    else if(file_entry[index].attr == FILE_FLASH)
     {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_LOOP)
-    {
-        //...
-        return(0);
-    }
-    else if(file_entry[index].attr == FILE_ONCE)
-    {
-        //...
-        return(0);
+        pagesize = flash.info.blocksize();
+        
+        if(!pagesize)
+        {
+            return(0);
+        }
+        
+        for(loop=0; loop<index; loop++)
+        {
+            if(file_entry[loop].attr == FILE_FLASH)
+            {
+                if(file_entry[loop].size % pagesize)
+                {
+                    address += ((file_entry[loop].size / pagesize) + 1) * pagesize;
+                }
+                else
+                {
+                    address += file_entry[loop].size;
+                }
+            }
+        }
+        
+        address += offset;//计算起始地址
+        page = address / pagesize;//计算起始页
+        header = address % pagesize;//计算起始页内起始地址
+        
+        if(page == ((address + count - 1) / pagesize))
+        {
+            //不分页
+            if(!header)
+            {
+                if(flash.block.erase(page) != pagesize)
+                {
+                    return(0);
+                }
+            }
+            if(flash.block.write(page, header, count, buffer) != count)
+            {
+                return(0);
+            }
+            
+            return(count);
+        }
+        else
+        {
+            //分页
+            middle = (count - ((pagesize - header) % pagesize)) / pagesize;//计算整页页数
+            tail = (address + count) % pagesize;//计算最后一页写入字节数
+            
+            if(header)
+            {
+                if(flash.block.write(page, header, (pagesize - header), buffer) != (pagesize - header))
+                {
+                    return(0);
+                }
+                
+                buffer += (pagesize - header);
+                page += 1;
+            }
+            
+            if(middle)
+            {
+                for(loop=0; loop<middle; loop++)
+                {
+                    if(flash.block.erase(page) != pagesize)
+                    {
+                        return(0);
+                    }
+                    if(flash.block.write(page, 0, pagesize, buffer) != pagesize)
+                    {
+                        return(0);
+                    }
+                    
+                    buffer += pagesize;
+                    page += 1;
+                }
+            }
+            
+            if(tail)
+            {
+                if(flash.block.erase(page) != pagesize)
+                {
+                    return(0);
+                }
+                if(flash.block.write(page, 0, tail, buffer) != tail)
+                {
+                    return(0);
+                }
+            }
+            
+            return(count);
+        }
     }
     else
     {
