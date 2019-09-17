@@ -251,13 +251,14 @@ static uint16_t makeup_device_address(const uint8_t *s)
 {
     uint16_t address = 0;
     uint8_t length = 0;
+    uint8_t cnt = 0;
     
     if(!s)
     {
         return(0);
     }
     
-    for(uint8_t cnt=0; cnt<4; cnt++)
+    for(cnt=0; cnt<4; cnt++)
     {
         if(s[cnt] & 0x01)
         {
@@ -299,13 +300,14 @@ static uint16_t makeup_logic_address(const uint8_t *s)
 {
     uint16_t address = 0;
     uint8_t length = 0;
+    uint8_t cnt = 0;
     
     if(!s)
     {
         return(0);
     }
     
-    for(uint8_t cnt=0; cnt<4; cnt++)
+    for(cnt=0; cnt<4; cnt++)
     {
         if(s[cnt] & 0x01)
         {
