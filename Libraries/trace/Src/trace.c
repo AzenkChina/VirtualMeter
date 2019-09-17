@@ -24,6 +24,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define MAX_LOG_SIZE        (64*1024) //日志文件大小上限
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
@@ -64,6 +66,14 @@ void TRACE(enum __trace_level level, const char *str, ...)
     if(!fp)
     {
         return;
+    }
+    
+    if(ftell(fp) > MAX_LOG_SIZE)
+    {
+        if(fseek(fp, 0, SEEK_SET) != 0)
+        {
+            return;
+        }
     }
     
     time(&stamp);

@@ -10,6 +10,7 @@
 #include "allocator_ctrl.h"
 #include "tasks.h"
 #include "string.h"
+#include "trace.h"
 
 #include "cpu.h"
 #include "eeprom.h"
@@ -62,6 +63,10 @@ static uint8_t lock = 0;
 /* Private functions ---------------------------------------------------------*/
 static void disk_ctrl_start(void)
 {
+	uint16_t loop;
+    uint32_t eeprom_size = 0;
+	uint32_t flash_size = 0;
+    
     if(system_status() == SYSTEM_RUN)
     {
         cpu.watchdog.feed();
@@ -78,6 +83,21 @@ static void disk_ctrl_start(void)
         cpu.watchdog.feed();
         flash.control.init(DEVICE_LOWPOWER);
     }
+    
+    for(loop=0; loop<AMOUNT_FILE; loop++)
+    {
+        if(file_entry[loop].attr == FILE_EEPROM)
+        {
+            eeprom_size += file_entry[loop].size;
+        }
+        else if(file_entry[loop].attr == FILE_FLASH)
+        {
+            flash_size += file_entry[loop].size;
+        }
+    }
+    
+    ASSERT(eeprom_size > eeprom.info.chipsize());
+    ASSERT(flash_size > flash.info.chipsize());
 }
 
 /**
@@ -567,9 +587,42 @@ static uint32_t disk_size(const char *name)
 /**
   * @brief  
   */
+static uint32_t disk_cluster(const char *name)
+{
+	uint16_t loop;
+	
+	if(!name)
+	{
+		return(0);
+	}
+	
+	for(loop=0; loop<AMOUNT_FILE; loop++)
+	{
+		if(strcmp(file_entry[loop].name, name) == 0)
+		{
+            if(file_entry[loop].attr == FILE_EEPROM)
+            {
+                return(eeprom.info.pagesize());
+            }
+            else if(file_entry[loop].attr == FILE_FLASH)
+            {
+                return(flash.info.blocksize());
+            }
+            
+            break;
+		}
+	}
+    
+    return(0);
+}
+
+/**
+  * @brief  
+  */
 struct __file file = 
 {
 	.read				= disk_read,
 	.write				= disk_write,
     .size               = disk_size,
+    .cluster            = disk_cluster,
 };
