@@ -23,7 +23,7 @@
 enum __attr
 {
     FILE_EEPROM = 0x0f,//EEPROM(µ¥×Ö½Ú²ÁÐ´´æ´¢½éÖÊ)
-    FILE_FLASH = 0xf0,//EEPROM(¿é²Á³ý½éÖÊ)
+    FILE_FLASH = 0xf0,//FLASH(¿é²Á³ý½éÖÊ)
 };
 
 /**
@@ -187,6 +187,13 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
 	{
 		return(0);
 	}
+    
+    if((offset >= file_entry[index].size) || \
+        (count > file_entry[index].size) || \
+        ((offset + count) > file_entry[index].size))
+    {
+        return(0);
+    }
     
     if(file_entry[index].attr == FILE_EEPROM)
     {
@@ -386,6 +393,13 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
 	{
 		return(0);
 	}
+    
+    if((offset >= file_entry[index].size) || \
+        (count > file_entry[index].size) || \
+        ((offset + count) > file_entry[index].size))
+    {
+        return(0);
+    }
 	
     if(file_entry[index].attr == FILE_EEPROM)
     {

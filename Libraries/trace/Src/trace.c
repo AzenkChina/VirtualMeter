@@ -68,14 +68,6 @@ void TRACE(enum __trace_level level, const char *str, ...)
         return;
     }
     
-    if(ftell(fp) > MAX_LOG_SIZE)
-    {
-        if(fseek(fp, 0, SEEK_SET) != 0)
-        {
-            return;
-        }
-    }
-    
     time(&stamp);
     ptm = localtime(&stamp);
     fprintf(fp, \
