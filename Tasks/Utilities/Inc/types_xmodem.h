@@ -10,26 +10,17 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 
 /* Exported types ------------------------------------------------------------*/
-/**
-  * @brief  当前状态
-  */
-enum  __xmodem_status
-{
-    XMODEM_IDLE = 0, //当前空闲
-    XMODEM_BUSY, //当前忙
-    XMODEM_ERROR, //发生错误
-};
 
 /**
   * @brief  xmodem task 的对外接口
   */
 struct __xmodem
 {
-    enum  __xmodem_status           (*status)(void); //当前状态
-    uint32_t                        (*receive)(const char *name); //接收文件
-    uint32_t                        (*send)(const char *name); //发送文件
+    bool                            (*init)(const char *name); //初始化
+    uint8_t                         (*transfer)(const uint8_t *frame, uint16_t length); //接收报文文件
 };
 
 

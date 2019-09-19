@@ -346,8 +346,8 @@
           <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlms\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlt645\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_dlt698\Inc</state>
-          <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_hdlc\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_modbus\Inc</state>
+          <state>$PROJ_DIR$\..\..\Tasks\Protocols\proto_xmodem\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Timed\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Calendar\Inc</state>
           <state>$PROJ_DIR$\..\..\Tasks\Disconnect\Inc</state>
@@ -2658,10 +2658,13 @@
         <name>proto_dlt698</name>
       </group>
       <group>
-        <name>proto_hdlc</name>
+        <name>proto_modbus</name>
       </group>
       <group>
-        <name>proto_modbus</name>
+        <name>proto_xmodem</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_xmodem\Src\proto_xmodem.c</name>
+        </file>
       </group>
     </group>
     <group>

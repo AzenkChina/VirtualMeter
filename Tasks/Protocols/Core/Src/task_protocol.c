@@ -12,6 +12,7 @@
 
 /** 在这里添加协议栈头文件 */
 #include "proto_dlms.h"
+#include "proto_xmodem.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -24,6 +25,7 @@ static enum __task_status status = TASK_NOTINIT;
 static const struct __protocol_registrable *proto_table[] = 
 {
 	&proto_dlms,
+    &proto_xmodem,
 };
 
 /* Private macro -------------------------------------------------------------*/

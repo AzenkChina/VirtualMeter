@@ -17,9 +17,8 @@ enum  __protocol_family
     PF_DLMS,
     PF_DLT645,
     PF_DLT698,
-    PF_HDLC,
     PF_MODBUS,
-    
+    PF_XMODEM,
     
     PF_ALL = 0xff,
 };

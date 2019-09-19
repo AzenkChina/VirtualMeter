@@ -2798,10 +2798,13 @@
         <name>proto_dlt698</name>
       </group>
       <group>
-        <name>proto_hdlc</name>
+        <name>proto_modbus</name>
       </group>
       <group>
-        <name>proto_modbus</name>
+        <name>proto_xmodem</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_xmodem\Src\proto_xmodem.c</name>
+        </file>
       </group>
     </group>
     <group>
