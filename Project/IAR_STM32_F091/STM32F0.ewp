@@ -2681,9 +2681,6 @@
     </group>
     <group>
       <name>Utilities</name>
-      <file>
-        <name>$PROJ_DIR$\..\..\Tasks\Utilities\Src\task_xmodem.c</name>
-      </file>
     </group>
   </group>
 </project>

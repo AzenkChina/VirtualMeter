@@ -139,8 +139,7 @@ struct __aarq_request
 //加载本机system title（info）
 #define DLMS_CONFIG_LOAD_TITLE(i)               dlms_util_load_title(i)
 //加载管理维护密码（info）
-#define DLMS_CONFIG_LOAD_PASSWD_MANAGE(i)       memcpy(i, "\x00\x10", 2); \
-                                                memcpy(&i[2], "meter@management", 16);
+#define DLMS_CONFIG_LOAD_PASSWD_MANAGE(i)       dlms_util_load_management_passwd(i)
 
 /* Private macro -------------------------------------------------------------*/
 #define DLMS_AP_AMOUNT                          ((uint8_t)(sizeof(ap_support_list) / sizeof(struct __ap)))

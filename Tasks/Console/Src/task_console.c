@@ -41,7 +41,6 @@
 #include "vm_metering.h"
 #include "vm_protocol.h"
 #include "vm_timed.h"
-#include "vm_xmodem.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -61,7 +60,6 @@ static const luaL_Reg *const tree_list[] =
 	&vm_metering,
 	&vm_protocol, 
 	&vm_timed,
-	&vm_xmodem,
 };
 
 

@@ -9,6 +9,7 @@
 #include "system.h"
 #include "dlms_utilities.h"
 #include "crc.h"
+#include "info.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**	
@@ -116,6 +117,16 @@ uint8_t dlms_util_write_passwd(uint8_t *buffer)
     }
     
     return(key.length + 2);
+}
+
+/**	
+  * @brief 
+  */
+uint8_t dlms_util_load_management_passwd(uint8_t *buffer)
+{
+    heap.copy(buffer, "\x00\x10", 2);
+    get_management_passwd(16, &buffer[2]);
+    return(18);
 }
 
 /**	

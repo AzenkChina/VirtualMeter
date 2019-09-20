@@ -28,7 +28,6 @@
 #include "task_metering.h"
 #include "task_display.h"
 #include "task_keyboard.h"
-#include "task_xmodem.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -78,7 +77,6 @@ static const struct __task_table task_tables[] =
     { {0x06, 0x04, 0x02, 0xfe}, &task_keyboard },
     { {0x10, 0x10, 0x02, 0xfe}, &task_protocol },
     { {0x11, 0x11, 0x02, 0xfe}, &task_comm },
-    { {0x12, 0x12, 0x02, 0xfe}, &task_xmodem },
 };
 
 static uint16_t task_id = 0xffff;

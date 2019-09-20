@@ -25,5 +25,5 @@ extern uint8_t get_software_version(enum  __ver_field field, uint8_t buff_length
 extern uint8_t get_hardware_version(enum  __ver_field field, uint8_t buff_length, uint8_t *buff);
 extern uint8_t get_tasks_version(enum  __ver_field field, uint8_t buff_length, uint8_t *buff);
 extern uint8_t get_compile_time(uint8_t buff_length, uint8_t *buff);
-
+extern uint8_t get_management_passwd(uint8_t buff_length, uint8_t *buff);
 #endif /* __INFO_H__ */

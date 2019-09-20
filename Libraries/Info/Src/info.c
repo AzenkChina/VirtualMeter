@@ -214,3 +214,20 @@ uint8_t get_compile_time(uint8_t buff_length, uint8_t *buff)
     
     return(len);
 }
+
+/**
+  * @brief  ªÒ»°‘§÷√√‹¬Î
+  */
+uint8_t get_management_passwd(uint8_t buff_length, uint8_t *buff)
+{
+    if(buff_length < 16)
+    {
+        return(0);
+    }
+    
+    buff[5] = '>';
+    memcpy(&buff[6], "management", 16);
+    memcpy(&buff[0], "meter", 5);
+    
+    return(16);
+}
