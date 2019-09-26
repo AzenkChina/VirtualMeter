@@ -15,8 +15,10 @@
 #include "mbedtls/md5.h"
 
 /* Private define ------------------------------------------------------------*/
-/* Private typedef -----------------------------------------------------------*/
+#pragma pack(push)
+#pragma pack(4)
 
+/* Private typedef -----------------------------------------------------------*/
 /**
   * @brief  cosem 数据项简版
   * 用于描述 类 1 3 4 5 6 7 8
@@ -525,6 +527,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     uint64_t key;
     uint16_t cnt;
     uint16_t position;
+    uint16_t step;
     struct __cosem_param_header header;
     union __cosem_entry_file entry;
     
@@ -587,6 +590,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     
     //从中间开始查找
     position = header.amount / 2;
+    step = position;
     
     for(cnt=0; cnt<clog2(header.amount); cnt++)
     {
@@ -601,15 +605,22 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
             break;
         }
         
+        step = step / 2;
+        
+        if(step == 0)
+        {
+        	step = 1;
+		}
+        
         //键值比对
         if(key < (entry.key & 0xffffffffffffff00))
         {
-            position -= (position / 2);
+            position -= step;
             continue;
         }
         else if(key > (entry.key & 0xffffffffffffff00))
         {
-            position += (position / 2);
+            position += step;
             continue;
         }
         
@@ -678,11 +689,19 @@ uint16_t dlms_lex_amount(uint8_t suit)
         return(amount);
     }
 	
-	for(cnt=0; cnt<8; cnt++)
+	if(suit == 0xff)
 	{
-		if((suit >> cnt) & 0x01)
+		amount = header.amount;
+	}
+	else
+	{
+		for(cnt=0; cnt<8; cnt++)
 		{
-			amount += header.spread[cnt];
+			if((suit >> cnt) & 0x01)
+			{
+				amount = header.spread[cnt];
+				break;
+			}
 		}
 	}
 	
@@ -856,84 +875,11 @@ uint8_t dlms_lex_signature(uint8_t *signature)
 }
 
 /**
-  * @brief  激活当前信息文件
-  */
-bool dlms_lex_active(void)
-{
-    struct __cosem_param_header header;
-    
-    //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
-        sizeof(struct __cosem_param_header))
-    {
-        return(false);
-    }
-    
-    
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) == \
-            header.check)
-    {
-        return(true);
-    }
-    
-    header.reserve ^= 0xffff;
-    
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
-            header.check)
-    {
-        return(false);
-    }
-    
-    if(file.write("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
-        sizeof(struct __cosem_param_header))
-    {
-        return(false);
-    }
-    
-    return(true);
-}
-
-/**
-  * @brief  失活当前信息文件
-  */
-bool dlms_lex_deactive(void)
-{
-    struct __cosem_param_header header;
-    
-    //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
-        sizeof(struct __cosem_param_header))
-    {
-        return(true);
-    }
-    
-    
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
-            header.check)
-    {
-        return(true);
-    }
-    
-    header.reserve ^= 0xffff;
-    
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) == \
-            header.check)
-    {
-        return(false);
-    }
-    
-    file.write("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header);
-    
-    return(true);
-}
-
-/**
   * @brief  验证条目信息文件是否有效
   */
 bool dlms_lex_check(void)
 {
     uint16_t cnt;
-    uint16_t amount = 0;
     uint64_t accumulate = 0;
     struct __cosem_param_info info;
     struct __cosem_param_header header;
@@ -956,13 +902,11 @@ bool dlms_lex_check(void)
     
 	for(cnt=0; cnt<8; cnt++)
 	{
-        amount += header.spread[cnt];
+		if(header.spread[cnt] > header.amount)
+		{
+			return(false);
+		}
 	}
-    
-    if(amount != header.amount)
-    {
-        return(false);
-    }
     
     //读取参数文件中的信息，并检查是否正确
     if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
@@ -1044,3 +988,5 @@ exit:
     mbedtls_md5_free(&ctx);
     return( false );
 }
+
+#pragma pack(pop)

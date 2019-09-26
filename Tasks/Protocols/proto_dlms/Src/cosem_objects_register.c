@@ -56,6 +56,7 @@ static ObjectErrs SetLogicalName(ObjectPara *P)
   */
 static ObjectErrs GetValue(ObjectPara *P)
 {
+//...just for test
     struct __meta_identifier id;
     struct __metering *api_metering;
     int64_t val = 0;
@@ -85,6 +86,7 @@ static ObjectErrs GetValue(ObjectPara *P)
     OBJ_PUSH_LENGTH(P, Length);
     
     return(OBJECT_NOERR);
+//...
 }
 
 /**	

@@ -976,7 +976,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
                 DLMS_CONFIG_LOAD_PASSWD(asso->akey);
             }
             
-            if(!memcmp(&asso->akey[2], &request->calling_authentication_value[4], asso->akey[1]))
+            if(memcmp(&asso->akey[2], &request->calling_authentication_value[4], asso->akey[1]) != 0)
             {
                 //拒绝建立链接
                 asso->diagnose = FAILURE_CONTEXT_NAME;
@@ -1926,7 +1926,8 @@ void dlms_asso_gateway(struct __dlms_session session,
 		        heap.free(asso_current->appl);
 		    }
     		heap.set(asso_current, 0, sizeof(struct __dlms_association));
-    		asso_current->ap = *ap_support;
+    		heap.copy(&asso_current->ap, ap_support, sizeof(struct __ap));
+    		asso_current->session = session.session;
     		
 	        //初始化FC
 	        srand((unsigned int)jiffy.value());

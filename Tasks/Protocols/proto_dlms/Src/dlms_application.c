@@ -226,14 +226,14 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
         case AXDR_INTEGER:
         case AXDR_UNSIGNED:
         {
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (val >> 0) & 0xff;
             return(2);
         }
         case AXDR_LONG:
         case AXDR_LONG_UNSIGNED:
         {
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (val >> 8) & 0xff;
             out[2] = (val >> 0) & 0xff;
             return(3);
@@ -241,7 +241,7 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
         case AXDR_DOUBLE_LONG:
         case AXDR_DOUBLE_LONG_UNSIGNED:
         {
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (val >> 24) & 0xff;
             out[2] = (val >> 16) & 0xff;
             out[3] = (val >> 8) & 0xff;
@@ -254,7 +254,7 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
             uint32_t *pconv = (uint32_t *)&conv;
             conv = val;
             
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (*pconv >> 24) & 0xff;
             out[2] = (*pconv >> 16) & 0xff;
             out[3] = (*pconv >> 8) & 0xff;
@@ -267,7 +267,7 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
             uint64_t *pconv = (uint64_t *)&conv;
             conv = val;
             
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (*pconv >> 56) & 0xff;
             out[2] = (*pconv >> 48) & 0xff;
             out[3] = (*pconv >> 40) & 0xff;
@@ -281,7 +281,7 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
         case AXDR_LONG64:
         case AXDR_LONG64_UNSIGNED:
         {
-            out[0] = id.scale;
+            out[0] = id.type;
             out[1] = (val >> 56) & 0xff;
             out[2] = (val >> 48) & 0xff;
             out[3] = (val >> 40) & 0xff;

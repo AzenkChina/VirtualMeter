@@ -43,7 +43,7 @@ static void dlms_reset(void)
 	hdlc_init();
     
 //...just for test
-    hdlc_set_address(1);//本机地址
+    hdlc_set_address(0x40);//本机地址
     hdlc_set_timeout(30);//链路超时时间
     
     heap.set(buff, 0x30, sizeof(buff));

@@ -105,7 +105,7 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
     if(!xfr_info)
     {
         //长度判断
-        if(length != 132)
+        if(length != (132 + 9))
         {
             return(0);
         }
@@ -128,7 +128,7 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
         }
         
         //包计数
-        if(frame[1] != ~frame[2])
+        if(frame[1] != (uint8_t)(~frame[2]))
         {
             return(0);
         }
@@ -139,7 +139,7 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
         }
         
         //密码验证
-        get_management_passwd(sizeof(passwd), passwd);
+        info_get_management_passwd(sizeof(passwd), passwd);
         if(memcmp(passwd, &frame[3], 16) != 0)
         {
             return(0);
@@ -163,7 +163,7 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
     }
     
     //长度判断
-    if(length != 132)
+    if(length != (132 + 9))
     {
         return(0);
     }
@@ -186,17 +186,17 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
     }
     
     //包计数
-    if(frame[1] != ~frame[2])
+    if(frame[1] != (uint8_t)(~frame[2]))
     {
         return(NAK);
     }
     
     //包计数
-    if(frame[1] == (xfr_info->counter & 0xff))
+    if(frame[1] == (uint8_t)(xfr_info->counter & 0xff))
     {
         return(ACK);
     }
-    else if(((xfr_info->counter & 0xff) + 1) != frame[1])
+    else if((uint8_t)((xfr_info->counter & 0xff) + 1) != frame[1])
     {
         heap.free(xfr_info);
         xfr_info = (struct __xfr_info *)0;
@@ -277,6 +277,10 @@ static void xmodem_reset(void)
         heap.free(xfr_info);
         xfr_info = (struct __xfr_info *)0;
     }
+    
+//...just for test
+	info_set_address(1);
+//...
 }
 
 /**
@@ -309,6 +313,32 @@ static uint16_t xmodem_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
   */
 static uint16_t xmodem_stream_in(uint8_t channel, const uint8_t *frame, uint16_t frame_length)
 {
+	uint8_t sum;
+	uint64_t address;
+	
+	address = frame[frame_length - 9]; sum = frame[frame_length - 9];
+	address <<= 8;
+	address += frame[frame_length - 8]; sum += frame[frame_length - 8];
+	address <<= 8;
+	address += frame[frame_length - 7]; sum += frame[frame_length - 7];
+	address <<= 8;
+	address += frame[frame_length - 6]; sum += frame[frame_length - 6];
+	address <<= 8;
+	address += frame[frame_length - 5]; sum += frame[frame_length - 5];
+	address <<= 8;
+	address += frame[frame_length - 4]; sum += frame[frame_length - 4];
+	address <<= 8;
+	address += frame[frame_length - 3]; sum += frame[frame_length - 3];
+	address <<= 8;
+	address += frame[frame_length - 2]; sum += frame[frame_length - 2];
+	
+	if((sum != frame[frame_length - 1]) || (address != info_get_address()))
+	{
+        result = 0;
+        result_channel = 0xff;
+		return(0);
+	}
+	
     result = xfr_receive(frame, frame_length);
     
     if(result)
@@ -324,14 +354,34 @@ static uint16_t xmodem_stream_in(uint8_t channel, const uint8_t *frame, uint16_t
   */
 static uint16_t xmodem_stream_out(uint8_t channel, uint8_t *frame, uint16_t buff_length)
 {
+	uint8_t cnt;
+	uint64_t address;
+	
     if(result)
     {
         if(result_channel == channel)
         {
+        	address = info_get_address();
+        	
             frame[0] = result;
+            frame[1] = address >> 56;
+            frame[2] = address >> 48;
+            frame[3] = address >> 40;
+            frame[4] = address >> 32;
+            frame[5] = address >> 24;
+            frame[6] = address >> 16;
+            frame[7] = address >> 8;
+            frame[8] = address >> 0;
+            
+            frame[9] = 0;
+            for(cnt=0; cnt<8; cnt++)
+            {
+            	frame[9] += frame[cnt + 1]; 
+			}
+            
             result = 0;
             result_channel = 0xff;
-            return(1);
+            return(10);
         }
     }
     

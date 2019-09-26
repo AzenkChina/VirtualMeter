@@ -74,7 +74,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
             }
             else
             {
-                Obj = (TypeObject *)&Data;
+                Obj = (TypeObject *)&Register;
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;

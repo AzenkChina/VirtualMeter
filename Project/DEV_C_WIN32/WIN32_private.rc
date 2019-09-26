@@ -4,6 +4,8 @@
 #include <windows.h> // include for version info constants
 
 
+A ICON "WIN32.ico"
+
 //
 // TO CHANGE VERSION INFORMATION, EDIT PROJECT OPTIONS...
 //

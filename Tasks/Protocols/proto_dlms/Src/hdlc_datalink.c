@@ -874,7 +874,7 @@ static enum __hdlc_errors request_snrm(struct __hdlc_link *link, \
     
     //±£´æÂß¼­µØÖ·
     link->logic_address = makeup_logic_address(hdlc_desc->dst);
-    if(link->logic_address)
+    if(!link->logic_address)
     {
         link_cleanup(link);
         return (HDLC_ERR_ADDRESS);

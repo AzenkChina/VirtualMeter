@@ -345,16 +345,16 @@ static void command_received(const char *str)
 	    	strcat(trace_info, "info.");
 	    	TRACE(TRACE_INFO, trace_info);
 	    	
-	    	get_software_version(VERSION_FULL, 128, (uint8_t *)buff);
+	    	info_get_software_version(VERSION_FULL, 128, (uint8_t *)buff);
 	    	printf("Software version:  %s\n", buff);
 	    	
-	    	get_hardware_version(VERSION_FULL, 128, (uint8_t *)buff);
+	    	info_get_hardware_version(VERSION_FULL, 128, (uint8_t *)buff);
 	    	printf("Hardware version:  %s\n", buff);
 	    	
-	    	get_tasks_version(VERSION_FULL, 128, (uint8_t *)buff);
+	    	info_get_tasks_version(VERSION_FULL, 128, (uint8_t *)buff);
 	    	printf("Tasks version:     %s\n", buff);
 	    	
-	    	get_compile_time(128, (uint8_t *)buff);
+	    	info_get_compile_time(128, (uint8_t *)buff);
 	    	printf("Compile time:      %s\n", (uint8_t *)buff);
 	    }
 		else if(memcmp(p, "help", 4) == 0)

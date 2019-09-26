@@ -125,7 +125,7 @@ uint8_t dlms_util_write_passwd(uint8_t *buffer)
 uint8_t dlms_util_load_management_passwd(uint8_t *buffer)
 {
     heap.copy(buffer, "\x00\x10", 2);
-    get_management_passwd(16, &buffer[2]);
+    info_get_management_passwd(16, &buffer[2]);
     return(18);
 }
 

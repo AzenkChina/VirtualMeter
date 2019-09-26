@@ -48,7 +48,8 @@ static const struct __file_entry file_entry[] =
 {
     /* 注意对齐问题 */
     /* 文件名  文件大小  文件所在分区 */
-    {"hdlc",        64,         FILE_EEPROM}, //HDLC协议参数
+    {"hdlc",        128,		FILE_EEPROM}, //HDLC协议参数
+    {"information",	512,		FILE_EEPROM}, //电表基本信息
     {"dlms",        4*1024,     FILE_EEPROM}, //DLMS协议参数
     {"lexicon",     64*1024,    FILE_FLASH}, //电表数据项词典
     {"disconnect",  512,        FILE_EEPROM}, //继电器参数
