@@ -152,7 +152,7 @@ static const struct __cosem_entry_high communal[] =
 /**
   * @brief  计算 log2(n)
   */
-static uint16_t clog2(uint16_t x)
+static uint16_t fastlog2(uint16_t x)
 {
     static const uint8_t log_2[256] = 
     {
@@ -592,7 +592,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     position = header.amount / 2;
     step = position;
     
-    for(cnt=0; cnt<clog2(header.amount); cnt++)
+    for(cnt=0; cnt<fastlog2(header.amount); cnt++)
     {
         cpu.watchdog.feed();
         
@@ -609,18 +609,34 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         
         if(step == 0)
         {
-        	step = 1;
-		}
+            step = 1;
+        }
         
         //键值比对
         if(key < (entry.key & 0xffffffffffffff00))
         {
-            position -= step;
+            if(position > step)
+            {
+                position -= step;
+            }
+            else
+            {
+                position = 0;
+            }
+            
             continue;
         }
         else if(key > (entry.key & 0xffffffffffffff00))
         {
-            position += step;
+            if((position + step) < header.amount)
+            {
+                position += step;
+            }
+            else
+            {
+                position = header.amount - 1;
+            }
+            
             continue;
         }
         
