@@ -282,11 +282,13 @@ static void command_received(const char *str)
 			    strcat(trace_info, p);
 			    strcat(trace_info, ".");
 			    TRACE(TRACE_INFO, trace_info);
-				
+
+			    strcpy(script_path, p);
+
 #if defined ( __linux )
-			    sleep(1);
+			    sleep(3);
 #else
-			    Sleep(1000);
+			    Sleep(3000);
 #endif
 			}
 			else
