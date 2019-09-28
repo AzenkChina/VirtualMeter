@@ -11,6 +11,7 @@
 #include "system.h"
 #include "config_protocol.h"
 #include "hdlc_datalink.h"
+#include "dlms_utilities.h"
 #include "dlms_association.h"
 
 /* Private define ------------------------------------------------------------*/
@@ -36,12 +37,9 @@
 #define HDLC_CONFIG_APPL_MTU()                  dlms_asso_mtu()
 
 /* Private typedef -----------------------------------------------------------*/
-struct __hdlc_configs
-{
-    uint16_t local_addr;//本地地址
-    uint16_t inact_time;//链路超时时间
-};
-
+/**	
+  * @brief 
+  */
 enum __hdlc_link_status
 {
     LINK_DISCONNECTED = 0,
@@ -49,6 +47,9 @@ enum __hdlc_link_status
     LINK_MARK,
 };
 
+/**	
+  * @brief 
+  */
 enum __hdlc_errors
 {
     HDLC_NO_ERR = 0,
@@ -62,6 +63,9 @@ enum __hdlc_errors
     HDLC_ERR_NODEF,
 };
 
+/**	
+  * @brief 
+  */
 enum __hdlc_frmr_state
 {
     FRMR_OPCODE = 0,    //0--控制字不支持
@@ -70,6 +74,9 @@ enum __hdlc_frmr_state
     FRMR_NR,            //3--接收的N(R)无效
 };
 
+/**	
+  * @brief 
+  */
 struct __hdlc_frame_desc
 {
     uint8_t format; //帧类型
@@ -90,6 +97,9 @@ struct __hdlc_frame_desc
     uint8_t * fck; //帧校验
 };
 
+/**	
+  * @brief 
+  */
 struct __hdlc_info_recv
 {
     uint16_t length; //动态分配的内存大小
@@ -97,6 +107,9 @@ struct __hdlc_info_recv
     uint8_t *data; //将动态分配的内存首地址记录到这里
 };
 
+/**	
+  * @brief 
+  */
 struct __hdlc_info_send
 {
     uint16_t length; //动态分配的内存大小
@@ -113,6 +126,9 @@ struct __hdlc_info_send
     } segment;
 };
 
+/**	
+  * @brief 
+  */
 struct __hdlc_link
 {
     uint8_t sss; //发送帧计数
@@ -138,7 +154,9 @@ struct __hdlc_link
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-//CRC16表
+/**	
+  * @brief CRC16表
+  */
 static const uint16_t fcstab[256] =
 {
     0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
@@ -1497,19 +1515,7 @@ void hdlc_tick(uint16_t tick)
   */
 uint16_t hdlc_get_address(void)
 {
-    uint16_t address = 0;
-    
-    file.read("hdlc", \
-              STRUCT_OFFSET(struct __hdlc_configs, local_addr), \
-              STRUCT_SIZE(struct __hdlc_configs, local_addr), \
-              &address);
-    
-    if((address < 0x10) || (address > 0x3FFD))
-    {
-        address = 0x10;
-    }
-    
-    return(address);
+    return(dlms_util_load_hdlc_address());
 }
 
 /**
@@ -1519,21 +1525,7 @@ uint16_t hdlc_get_address(void)
   */
 uint16_t hdlc_set_address(uint16_t addr)
 {
-    if(addr < 0x10)
-    {
-        addr = 0x10;
-    }
-    else if(addr > 0x3FFD)
-    {
-        addr = 0x3FFD;
-    }
-    
-    file.write("hdlc", \
-              STRUCT_OFFSET(struct __hdlc_configs, local_addr), \
-              STRUCT_SIZE(struct __hdlc_configs, local_addr), \
-              &addr);
-    
-    return(addr);
+    return(dlms_util_write_hdlc_address(addr));
 }
 
 /**
@@ -1543,19 +1535,7 @@ uint16_t hdlc_set_address(uint16_t addr)
   */
 uint16_t hdlc_get_timeout(void)
 {
-    uint16_t timeout = 0;
-    
-    file.read("hdlc", \
-              STRUCT_OFFSET(struct __hdlc_configs, inact_time), \
-              STRUCT_SIZE(struct __hdlc_configs, inact_time), \
-              &timeout);
-    
-    if(timeout < 10)
-    {
-        timeout = 10;
-    }
-    
-    return(timeout);
+    return(dlms_util_load_hdlc_interval());
 }
 
 /**
@@ -1565,17 +1545,7 @@ uint16_t hdlc_get_timeout(void)
   */
 uint16_t hdlc_set_timeout(uint16_t sec)
 {
-    if(sec < 10)
-    {
-        sec = 10;
-    }
-    
-    file.write("hdlc", \
-              STRUCT_OFFSET(struct __hdlc_configs, inact_time), \
-              STRUCT_SIZE(struct __hdlc_configs, inact_time), \
-              &sec);
-    
-    return(sec);
+    return(dlms_util_write_hdlc_interval(sec));
 }
 
 /**

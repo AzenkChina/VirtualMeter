@@ -278,9 +278,9 @@ static void xmodem_reset(void)
         xfr_info = (struct __xfr_info *)0;
     }
     
-//...just for test
+#if defined ( MAKE_RUN_FOR_DEBUG )
 	info_set_address(1);
-//...
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 }
 
 /**

@@ -38,25 +38,27 @@ static void dlms_exit(void)
 
 static void dlms_reset(void)
 {
-    uint8_t buff[34];
-    
 	hdlc_init();
     
-//...just for test
-    hdlc_set_address(0x40);//本机地址
-    hdlc_set_timeout(30);//链路超时时间
-    
-    heap.set(buff, 0x30, sizeof(buff));
-    buff[1] = 16;
-    
-    dlms_util_write_passwd(buff);//密码
-    dlms_util_write_akey(buff);//认证密钥
-    dlms_util_write_bekey(buff);//加密密钥
-    dlms_util_write_uekey(buff);//加密密钥
-    
-    buff[1] = 8;
-    dlms_util_write_title(buff);//system title
-//...
+#if defined ( MAKE_RUN_FOR_DEBUG )
+    {
+        uint8_t buff[34];
+        
+        hdlc_set_address(0x40);//本机地址
+        hdlc_set_timeout(30);//链路超时时间
+        
+        heap.set(buff, 0x30, sizeof(buff));
+        buff[1] = 16;
+        
+        dlms_util_write_passwd(buff);//密码
+        dlms_util_write_akey(buff);//认证密钥
+        dlms_util_write_bekey(buff);//加密密钥
+        dlms_util_write_uekey(buff);//加密密钥
+        
+        buff[1] = 8;
+        dlms_util_write_title(buff);//system title
+    }
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 }
 
 static enum __task_status dlms_status(void)

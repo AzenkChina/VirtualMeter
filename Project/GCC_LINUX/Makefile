@@ -13,7 +13,7 @@ INCS     = -I"../../Libraries/Check/Inc" -I"../../Libraries/Info/Inc" -I"../../L
 
 BIN      = exe/VirtualMeter
 LIBS     = -lpthread -lm -lrt
-CFLAGS   = $(INCS) -O3 -std=gnu99
+CFLAGS   = $(INCS) -O3 -std=gnu99 -DMAKE_RUN_FOR_DEBUG
 
 .PHONY: all all-before all-after clean clean-custom
 

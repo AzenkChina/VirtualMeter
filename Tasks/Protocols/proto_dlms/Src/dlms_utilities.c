@@ -15,6 +15,16 @@
 /**	
   * @brief 
   */
+struct __hdlc_params
+{
+    uint16_t address;//本地地址
+    uint16_t interval;//链路超时时间
+    uint32_t check;
+};
+
+/**	
+  * @brief 
+  */
 struct __dlms_sym_key
 {
     uint8_t length;//密钥长度 <= 48
@@ -26,8 +36,9 @@ struct __dlms_sym_key
 /**	
   * @brief 
   */
-struct __dlms_configs
+struct __dlms_params
 {
+    struct __hdlc_params hdlc; //HDLC参数
     struct __dlms_sym_key passwd; //Password for LLS
     struct __dlms_sym_key akey; //Authentication key
     struct __dlms_sym_key bekey; //Broadcast encryption key
@@ -57,6 +68,133 @@ void confuse(uint8_t *buffer, uint8_t size)
 /**	
   * @brief 
   */
+uint16_t dlms_util_load_hdlc_address(void)
+{
+    struct __hdlc_params hdlc;
+    
+    heap.set(&hdlc, 0, sizeof(hdlc));
+    
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                 sizeof(hdlc), \
+                 (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(0x10);
+    }
+    
+    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check))) != hdlc.check)
+    {
+        return(0x10);
+    }
+    else
+    {
+        return(hdlc.address);
+    }
+}
+
+/**	
+  * @brief 
+  */
+uint16_t dlms_util_write_hdlc_address(uint16_t val)
+{
+    struct __hdlc_params hdlc;
+    
+    if((val < 0x10) || (val > 0x3FFD))
+    {
+        return(~val);
+    }
+    
+    heap.set(&hdlc, 0, sizeof(hdlc));
+    
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                 sizeof(hdlc), \
+                 (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(0x10);
+    }
+    
+    hdlc.address = val;
+    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)));
+    
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                  sizeof(hdlc), \
+                  (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(0x10);
+    }
+    
+    return(hdlc.address);
+}
+
+/**	
+  * @brief 
+  */
+uint16_t dlms_util_load_hdlc_interval(void)
+{
+    struct __hdlc_params hdlc;
+    
+    heap.set(&hdlc, 0, sizeof(hdlc));
+    
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                 sizeof(hdlc), \
+                 (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(10);
+    }
+    
+    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check))) != hdlc.check)
+    {
+        return(10);
+    }
+    else
+    {
+        return(hdlc.interval);
+    }
+}
+
+/**	
+  * @brief 
+  */
+uint16_t dlms_util_write_hdlc_interval(uint16_t val)
+{
+    struct __hdlc_params hdlc;
+    
+    if(val < 10)
+    {
+        val = 10;
+    }
+    
+    heap.set(&hdlc, 0, sizeof(hdlc));
+    
+    if(file.read("dlms", \
+                 STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                 sizeof(hdlc), \
+                 (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(10);
+    }
+    
+    hdlc.interval = val;
+    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)));
+    
+    if(file.write("dlms", \
+                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
+                  sizeof(hdlc), \
+                  (void *)&hdlc) != sizeof(hdlc))
+    {
+        return(10);
+    }
+    
+    return(hdlc.interval);
+}
+
+
+/**	
+  * @brief 
+  */
 uint8_t dlms_util_load_passwd(uint8_t *buffer)
 {
     struct __dlms_sym_key key;
@@ -64,7 +202,7 @@ uint8_t dlms_util_load_passwd(uint8_t *buffer)
     heap.set(&key, 0, sizeof(key));
     
     if(file.read("dlms", \
-                 STRUCT_OFFSET(struct __dlms_configs, passwd), \
+                 STRUCT_OFFSET(struct __dlms_params, passwd), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
     {
@@ -109,7 +247,7 @@ uint8_t dlms_util_write_passwd(uint8_t *buffer)
     key.check = crc32(key.val, sizeof(key.val));
     
     if(file.write("dlms", \
-                  STRUCT_OFFSET(struct __dlms_configs, passwd), \
+                  STRUCT_OFFSET(struct __dlms_params, passwd), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
     {
@@ -139,7 +277,7 @@ uint8_t dlms_util_load_akey(uint8_t *buffer)
     heap.set(&key, 0, sizeof(key));
     
     if(file.read("dlms", \
-                 STRUCT_OFFSET(struct __dlms_configs, akey), \
+                 STRUCT_OFFSET(struct __dlms_params, akey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
     {
@@ -184,7 +322,7 @@ uint8_t dlms_util_write_akey(uint8_t *buffer)
     key.check = crc32(key.val, sizeof(key.val));
     
     if(file.write("dlms", \
-                  STRUCT_OFFSET(struct __dlms_configs, akey), \
+                  STRUCT_OFFSET(struct __dlms_params, akey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
     {
@@ -204,7 +342,7 @@ uint8_t dlms_util_load_bekey(uint8_t *buffer)
     heap.set(&key, 0, sizeof(key));
     
     if(file.read("dlms", \
-                 STRUCT_OFFSET(struct __dlms_configs, bekey), \
+                 STRUCT_OFFSET(struct __dlms_params, bekey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
     {
@@ -249,7 +387,7 @@ uint8_t dlms_util_write_bekey(uint8_t *buffer)
     key.check = crc32(key.val, sizeof(key.val));
     
     if(file.write("dlms", \
-                  STRUCT_OFFSET(struct __dlms_configs, bekey), \
+                  STRUCT_OFFSET(struct __dlms_params, bekey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
     {
@@ -269,7 +407,7 @@ uint8_t dlms_util_load_uekey(uint8_t *buffer)
     heap.set(&key, 0, sizeof(key));
     
     if(file.read("dlms", \
-                 STRUCT_OFFSET(struct __dlms_configs, uekey), \
+                 STRUCT_OFFSET(struct __dlms_params, uekey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
     {
@@ -314,7 +452,7 @@ uint8_t dlms_util_write_uekey(uint8_t *buffer)
     key.check = crc32(key.val, sizeof(key.val));
     
     if(file.write("dlms", \
-                  STRUCT_OFFSET(struct __dlms_configs, uekey), \
+                  STRUCT_OFFSET(struct __dlms_params, uekey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
     {
@@ -332,7 +470,7 @@ uint8_t dlms_util_load_title(uint8_t *buffer)
     uint8_t title[16];
     
     if(file.read("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, title), \
+              STRUCT_OFFSET(struct __dlms_params, title), \
               sizeof(title), \
               title) != sizeof(title))
     {
@@ -367,7 +505,7 @@ uint8_t dlms_util_write_title(uint8_t *buffer)
     confuse(&buffer[2], 8);
     
     file.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_configs, passwd), \
+              STRUCT_OFFSET(struct __dlms_params, passwd), \
               2+buffer[1], \
               buffer);
     

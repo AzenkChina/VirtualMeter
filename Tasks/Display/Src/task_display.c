@@ -1138,98 +1138,98 @@ static void display_reset(void)
     lcd.control.suspend();
     status = TASK_NOTINIT;
     
-//...Just for test
-//初始化EEPROM参数
-	uint32_t offset;
-	uint8_t val;
-    uint8_t descriptor[16];
-    struct __disp_dot dots;
-    
-    descriptor[0] = 0;
-    descriptor[1] = 3;
-    
-    descriptor[2] = 1;
-    descriptor[3] = 0;
-    descriptor[4] = 0;
-    descriptor[5] = 7;
-    descriptor[6] = 0;
-    descriptor[7] = 255;
-    
-    descriptor[8] = 2;
-    
-    descriptor[9] = 0;
-    descriptor[10] = 0;
-	
-    
-    heap.set((void *)&dots, 0, sizeof(dots));
-    
-	dots.power = 3;
-    dots.voltage = 1;
-    dots.current = 3;
-    dots.energy = 3;
-    dots.demand = 4;
-    dots.angle = 3;
-    dots.freq = 2;
-    dots.pf = 3;
-    
-	offset = STRUCT_OFFSET(struct __disp_param, dots);
-	file.write("display", offset, sizeof(dots), &dots);
-    
-	val = 6;
-	offset = STRUCT_OFFSET(struct __disp_param, time.scroll);
-	file.write("display", offset, sizeof(val), &val);
-    
-	val = 8;
-	offset = STRUCT_OFFSET(struct __disp_param, time.backlight);
-	file.write("display", offset, sizeof(val), &val);
-    
-    val = 3;
-	offset = STRUCT_OFFSET(struct __disp_param, time.start);
-	file.write("display", offset, sizeof(val), &val);
-	
-	val = 6;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].amount);
-	file.write("display", offset, sizeof(val), &val);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].amount);
-	file.write("display", offset, sizeof(val), &val);
-	
-    descriptor[4] = 32;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[0]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[0]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-	
-    descriptor[4] = 52;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[1]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[1]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-	
-    descriptor[4] = 72;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[2]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[2]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-	
-    descriptor[4] = 31;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[3]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[3]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-	
-    descriptor[4] = 51;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[4]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[4]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-	
-    descriptor[4] = 71;
-	offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[5]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-    offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[5]);
-	file.write("display", offset, sizeof(descriptor), &descriptor);
-
-//...仅供调试使用
+#if defined ( MAKE_RUN_FOR_DEBUG )
+    {
+        uint32_t offset;
+        uint8_t val;
+        uint8_t descriptor[16];
+        struct __disp_dot dots;
+        
+        descriptor[0] = 0;
+        descriptor[1] = 3;
+        
+        descriptor[2] = 1;
+        descriptor[3] = 0;
+        descriptor[4] = 0;
+        descriptor[5] = 7;
+        descriptor[6] = 0;
+        descriptor[7] = 255;
+        
+        descriptor[8] = 2;
+        
+        descriptor[9] = 0;
+        descriptor[10] = 0;
+        
+        
+        heap.set((void *)&dots, 0, sizeof(dots));
+        
+        dots.power = 3;
+        dots.voltage = 1;
+        dots.current = 3;
+        dots.energy = 3;
+        dots.demand = 4;
+        dots.angle = 3;
+        dots.freq = 2;
+        dots.pf = 3;
+        
+        offset = STRUCT_OFFSET(struct __disp_param, dots);
+        file.write("display", offset, sizeof(dots), &dots);
+        
+        val = 6;
+        offset = STRUCT_OFFSET(struct __disp_param, time.scroll);
+        file.write("display", offset, sizeof(val), &val);
+        
+        val = 8;
+        offset = STRUCT_OFFSET(struct __disp_param, time.backlight);
+        file.write("display", offset, sizeof(val), &val);
+        
+        val = 3;
+        offset = STRUCT_OFFSET(struct __disp_param, time.start);
+        file.write("display", offset, sizeof(val), &val);
+        
+        val = 6;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].amount);
+        file.write("display", offset, sizeof(val), &val);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].amount);
+        file.write("display", offset, sizeof(val), &val);
+        
+        descriptor[4] = 32;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[0]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[0]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        
+        descriptor[4] = 52;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[1]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[1]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        
+        descriptor[4] = 72;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[2]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[2]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        
+        descriptor[4] = 31;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[3]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[3]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        
+        descriptor[4] = 51;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[4]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[4]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        
+        descriptor[4] = 71;
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[5]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[5]);
+        file.write("display", offset, sizeof(descriptor), &descriptor);
+    }
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 }
 
 /**

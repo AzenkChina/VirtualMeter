@@ -421,9 +421,8 @@ static void disc_reset(void)
     relay.control.suspend();
     task_status = TASK_NOTINIT;
     
+#if defined ( MAKE_RUN_FOR_DEBUG )
     {
-//...Just for test
-//初始化EEPROM参数
         struct __relay_param param;
         uint8_t content, cnt;
         
@@ -445,6 +444,7 @@ static void disc_reset(void)
         
         file.write("disconnect", 0, sizeof(param), &param);
     }
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 }
 
 /**

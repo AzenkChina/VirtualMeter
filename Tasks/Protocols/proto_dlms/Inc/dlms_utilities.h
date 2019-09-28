@@ -9,6 +9,10 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
+extern uint16_t dlms_util_load_hdlc_address(void);
+extern uint16_t dlms_util_write_hdlc_address(uint16_t val);
+extern uint16_t dlms_util_load_hdlc_interval(void);
+extern uint16_t dlms_util_write_hdlc_interval(uint16_t val);
 extern uint8_t dlms_util_load_passwd(uint8_t *buffer);
 extern uint8_t dlms_util_write_passwd(uint8_t *buffer);
 extern uint8_t dlms_util_load_management_passwd(uint8_t *buffer);

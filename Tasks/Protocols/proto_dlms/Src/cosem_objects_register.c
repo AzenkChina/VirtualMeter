@@ -56,7 +56,7 @@ static ObjectErrs SetLogicalName(ObjectPara *P)
   */
 static ObjectErrs GetValue(ObjectPara *P)
 {
-//...just for test
+#if defined ( MAKE_RUN_FOR_DEBUG )
     struct __meta_identifier id;
     struct __metering *api_metering;
     int64_t val = 0;
@@ -86,7 +86,9 @@ static ObjectErrs GetValue(ObjectPara *P)
     OBJ_PUSH_LENGTH(P, Length);
     
     return(OBJECT_NOERR);
-//...
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
+    
+    return(OBJECT_ERR_LOWLEVEL);
 }
 
 /**	

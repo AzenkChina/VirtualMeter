@@ -48,9 +48,8 @@ static const struct __file_entry file_entry[] =
 {
     /* 注意对齐问题 */
     /* 文件名  文件大小  文件所在分区 */
-    {"hdlc",        128,		FILE_EEPROM}, //HDLC协议参数
     {"information",	512,		FILE_EEPROM}, //电表基本信息
-    {"dlms",        4*1024,     FILE_EEPROM}, //DLMS协议参数
+    {"dlms",        2*1024,     FILE_EEPROM}, //DLMS协议参数
     {"lexicon",     64*1024,    FILE_FLASH}, //电表数据项词典
     {"disconnect",  512,        FILE_EEPROM}, //继电器参数
     {"display",     4*1024,     FILE_EEPROM}, //显示参数
@@ -188,12 +187,15 @@ static uint32_t disk_read(const char *name, uint32_t offset, uint32_t count, voi
 	{
 		return(0);
 	}
-    
-    if((offset >= file_entry[index].size) || \
-        (count > file_entry[index].size) || \
-        ((offset + count) > file_entry[index].size))
+	
+    if((offset >= file_entry[index].size) || (count > file_entry[index].size))
     {
         return(0);
+    }
+	
+    if(((offset + count) > file_entry[index].size))
+    {
+		count = file_entry[index].size - offset;
     }
     
     if(file_entry[index].attr == FILE_EEPROM)
@@ -395,11 +397,14 @@ static uint32_t disk_write(const char *name, uint32_t offset, uint32_t count, co
 		return(0);
 	}
     
-    if((offset >= file_entry[index].size) || \
-        (count > file_entry[index].size) || \
-        ((offset + count) > file_entry[index].size))
+    if((offset >= file_entry[index].size) || (count > file_entry[index].size))
     {
         return(0);
+    }
+	
+    if(((offset + count) > file_entry[index].size))
+    {
+		count = file_entry[index].size - offset;
     }
 	
     if(file_entry[index].attr == FILE_EEPROM)
