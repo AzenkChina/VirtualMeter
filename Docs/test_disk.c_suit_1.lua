@@ -4,20 +4,20 @@ print("tested file name: information")
 
 --测试 information 文件
 function test_file_information_case_1()
-	print("test case : 1")
-	print("file size is", basis.file.size("information"))
-	print("file cluster is", basis.file.cluster("information"))
+	print("test case 1")
+	print(string.format("file size is %d", basis.file.size("information")))
+	print(string.format("file cluster is %d", basis.file.cluster("information")))
 end
 
 --测试 information 文件
 function test_file_information_case_2()
-	print("test case : 2")
-	
+	print("test case 2")
+
 	local strtest = "test string 01234567890 abcdefgh"
 	local offset = 7
 	local count = string.len(strtest)
 
-	print("read write address", offset, "count", count)
+	print(string.format("read write at %d count %d", offset, count))
 	local strorig = basis.file.read("information", offset, count)
 
 	if(basis.file.write("information", offset, count, strtest) ~= count)
@@ -52,13 +52,13 @@ end
 
 --测试 information 文件
 function test_file_information_case_3()
-	print("test case : 3")
+	print("test case 3")
 
 	local strtest = "test string 01234567890 abcdefgh"
 	local offset = 62
 	local count = string.len(strtest)
 
-	print("read write address", offset, "count", count)
+	print(string.format("read write at %d count %d", offset, count))
 	local strorig = basis.file.read("information", offset, count)
 
 	if(basis.file.write("information", offset, count, strtest) ~= count)
@@ -93,16 +93,13 @@ end
 
 --测试 information 文件
 function test_file_information_case_4()
-	print("test case : 4")
-
-	print("file size is", basis.file.size("information"))
-	print("file cluster is", basis.file.cluster("information"))
+	print("test case 4")
 
 	local strtest = "test string 01234567890 abcdefgh"
 	local offset = basis.file.size("information") - 9
 	local count = string.len(strtest)
 
-	print("read write address", offset, "count", count)
+	print(string.format("read write at %d count %d", offset, count))
 	local strorig = basis.file.read("information", offset, count)
 
 	if(basis.file.write("information", offset, count, strtest) ~= 9)
