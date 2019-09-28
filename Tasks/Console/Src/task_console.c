@@ -16,7 +16,6 @@
 #include <conio.h>
 #elif defined ( __linux )
 #include <unistd.h>
-#include <pthread.h>
 #include "string.h"
 #endif
 
@@ -32,6 +31,7 @@
 
 
 /** 在这里添加所有vm的头文件 */
+#include "vm_basis.h"
 #include "vm_calendar.h"
 #include "vm_comm.h"
 #include "vm_disconnect.h"
@@ -51,6 +51,7 @@
 /** 在这里添加所有vm的luaL_Reg实例 */
 static const luaL_Reg *const tree_list[] = 
 {
+	&vm_basis,
 	&vm_calendar,
 	&vm_comm,
 	&vm_disconnect,
@@ -82,56 +83,21 @@ static void luaL_opentrees(lua_State *L)
 	}
 }
 
-#if defined ( __linux )
-static void *ThreadLuaVM(void *arg)
-#else
-static DWORD CALLBACK ThreadLuaVM(PVOID pvoid)
-#endif
+static void luaL_execute(char *file)
 {
-	static int Err;
 	lua_State *L;
-
-	Err = -1;
-
-	if(strlen(script_path) == 0)
-	{
-#if defined ( __linux )
-		return((void *)&Err);
-#else
-		return(Err);
-#endif
-	}
 	
 	L = luaL_newstate(); /* 建立Lua运行环境 */
     
 	if(!L)
 	{
-		memset(script_path, 0, sizeof(script_path));
-#if defined ( __linux )
-		return((void *)&Err);
-#else
-		return(Err);
-#endif
+		return;
 	}
     
 	luaL_openlibs(L);
 	luaL_opentrees(L);
-	Err = luaL_dofile(L, script_path); /* 运行Lua脚本 */
+	luaL_dofile(L, script_path); /* 运行Lua脚本 */
 	lua_close(L);
-    
-#if defined ( __linux )
-	sleep(1);
-#else
-	Sleep(1000);
-#endif
-    
-	memset(script_path, 0, sizeof(script_path));
-    
-#if defined ( __linux )
-	return((void *)&Err);
-#else
-	return(Err);
-#endif
 }
 
 
@@ -318,20 +284,9 @@ static void command_received(const char *str)
 			    TRACE(TRACE_INFO, trace_info);
 				
 #if defined ( __linux )
-			    pthread_t thread;
-			    pthread_attr_t thread_attr;
 			    sleep(1);
-			    strcpy(script_path, p);
-			    pthread_attr_init(&thread_attr);
-			    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
-			    pthread_create(&thread, &thread_attr, ThreadLuaVM, NULL);
-			    pthread_attr_destroy(&thread_attr);
 #else
-			    HANDLE hThread;
 			    Sleep(1000);
-			    strcpy(script_path, p);
-			    hThread = CreateThread(NULL, 0, ThreadLuaVM, 0, 0, NULL);
-			    CloseHandle(hThread);
 #endif
 			}
 			else
@@ -401,6 +356,16 @@ static void console_loop(void)
 #else
         Sleep(1000);
 #endif
+	}
+	
+	if(strlen(script_path) == 0)
+	{
+		return;
+	}
+	else
+	{
+		luaL_execute(script_path);
+		memset(script_path, 0, sizeof(script_path));
 	}
 }
 

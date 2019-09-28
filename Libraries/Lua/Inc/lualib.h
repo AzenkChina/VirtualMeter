@@ -40,14 +40,6 @@ LUALIB_API int (luaopen_debug) (lua_State *L);
 LUALIB_API int (luaopen_package) (lua_State *L);
 
 
-/* User-defined libraries */
-#define LUA_INPUTLIBNAME "input"
-LUALIB_API int luaopen_input (lua_State *L);
-
-#define LUA_PWRLIBNAME "power"
-LUALIB_API int luaopen_power (lua_State *L);
-
-
 /* open all previous libraries */
 LUALIB_API void (luaL_openlibs) (lua_State *L); 
 

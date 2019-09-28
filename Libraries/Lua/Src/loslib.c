@@ -19,31 +19,6 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-
-#if defined ( __linux )
-#include <unistd.h>
-#else
-#include <windows.h>
-#endif
-
-static int os_sleep (lua_State *L) {
-  int second = 0;
-  if (lua_isnumber(L, -1))
-    second = (int)lua_tointeger(L, -1);
-  if(second < 0)
-    second = -second;
-#if defined ( __linux )
-	sleep(second);
-#else
-	Sleep(second * 1000);
-#endif
-    lua_pushinteger(L, second);
-  return 1;
-}
-#endif
-
-
 static int os_pushresult (lua_State *L, int i, const char *filename) {
   int en = errno;  /* calls to Lua API may change this value */
   if (i) {
@@ -242,9 +217,6 @@ static int os_exit (lua_State *L) {
 }
 
 static const luaL_Reg syslib[] = {
-#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-  {"sleep",		os_sleep},
-#endif
   {"clock",     os_clock},
   {"date",      os_date},
   {"difftime",  os_difftime},
