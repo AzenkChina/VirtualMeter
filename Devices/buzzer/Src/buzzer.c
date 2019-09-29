@@ -23,8 +23,6 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __dev_status status = DEVICE_NOTINIT;
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -33,7 +31,7 @@ static enum __dev_status status = DEVICE_NOTINIT;
   */
 static enum __dev_status buz_status(void)
 {
-    return(status);
+    return(DEVICE_INIT);
 }
 
 /**
@@ -41,7 +39,7 @@ static enum __dev_status buz_status(void)
   */
 static void buz_init(enum __dev_state state)
 {
-    status = DEVICE_INIT;
+    
 }
 
 /**
@@ -49,7 +47,7 @@ static void buz_init(enum __dev_state state)
   */
 static void buz_suspend(void)
 {
-    status = DEVICE_NOTINIT;
+    
 }
 
 /**
@@ -65,7 +63,7 @@ static void buz_runner(uint16_t msecond)
   */
 static enum __switch_status buz_get(void)
 {
-    
+    return(SWITCH_OPEN);
 }
 
 /**
@@ -73,7 +71,7 @@ static enum __switch_status buz_get(void)
   */
 static uint8_t buz_set(enum __switch_status status)
 {
-    
+    return((uint8_t)SWITCH_OPEN);
 }
 
 const struct __switch buzzer = 

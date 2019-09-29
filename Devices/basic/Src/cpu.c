@@ -394,9 +394,9 @@ static void cpu_core_init(enum __cpu_level level)
             RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
             /* PCLK = HCLK */
             RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
-            /* PLL configuration = HSI * 3 = 24 MHz */
+            /* PLL configuration = HSI / 2 * 6 = 24 MHz */
             RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
-            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSI_PREDIV | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL3);
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSI_DIV2 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
             /* Enable PLL */
             RCC->CR |= RCC_CR_PLLON;
 

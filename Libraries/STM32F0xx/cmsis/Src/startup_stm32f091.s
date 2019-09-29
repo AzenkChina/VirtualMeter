@@ -65,7 +65,6 @@
         SECTION .intvec:CODE:NOROOT(2)
 
         EXTERN  __iar_program_start
-        EXTERN  SystemInit
         PUBLIC  __vector_table
 
         DATA

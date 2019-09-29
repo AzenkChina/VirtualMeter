@@ -200,7 +200,7 @@ static void key_runner(uint16_t msecond)
     
     if((id_before & (KEY_ID_UP | KEY_ID_DOWN)) != id_sample[0])
     {
-        mdelay(2);
+        mdelay(1);
         
         if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
         {
@@ -254,6 +254,7 @@ static void key_runner(uint16_t msecond)
 
 static uint16_t key_get(void)
 {
+#if defined (STM32F091)
     uint16_t id_sample = 0;
     
     if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
@@ -267,6 +268,7 @@ static uint16_t key_get(void)
     }
     
     return(id_sample);
+#endif
 }
 
 static void key_filling(void(*callback)(uint16_t id, enum __key_status status))

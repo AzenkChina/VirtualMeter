@@ -52,10 +52,6 @@ GraphEnabled=0
 ShowTimeLog=1
 SumEnabled=0
 ShowTimeSum=1
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Count=0
 [Interrupts]
 Enabled=1
 [MemConfig]
@@ -67,9 +63,13 @@ Stop=1
 [Trace1]
 Enabled=0
 ShowSource=1
-[Aliases]
-Count=0
-SuppressDialog=0
 [Simulator]
 Freq=10000000
 MultiCoreRunAll=1
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Count=0
+[Aliases]
+Count=0
+SuppressDialog=0

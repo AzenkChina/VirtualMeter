@@ -39,6 +39,19 @@ static enum __dev_status led_relay_status(void)
   */
 static void led_relay_init(enum __dev_state state)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    GPIO_SetBits(GPIOA, GPIO_Pin_7);
+#endif
 }
 
 /**
@@ -53,7 +66,22 @@ static void led_relay_suspend(void)
   */
 static enum __led_status led_relay_get(void)
 {
-	return(LED_OFF);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    return(LED_OFF);
+#else
+
+#if defined (STM32F091)
+    if(GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_7) == Bit_SET)
+    {
+        return(LED_OFF);
+    }
+    else
+    {
+        return(LED_ON);
+    }
+#endif
+
+#endif
 }
 
 /**
@@ -61,7 +89,24 @@ static enum __led_status led_relay_get(void)
   */
 static uint8_t led_relay_set(enum __led_status value)
 {
-	return(0);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    return(0);
+#else
+
+#if defined (STM32F091)
+    if(value == LED_ON)
+    {
+        GPIO_ResetBits(GPIOA, GPIO_Pin_7);
+    }
+    else
+    {
+        GPIO_SetBits(GPIOA, GPIO_Pin_7);
+    }
+    
+    return((uint8_t)value);
+#endif
+
+#endif
 }
 
 /**
@@ -77,6 +122,19 @@ static enum __dev_status led_warn_status(void)
   */
 static void led_warn_init(enum __dev_state state)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    GPIO_SetBits(GPIOA, GPIO_Pin_3);
+#endif
 }
 
 /**
@@ -91,7 +149,22 @@ static void led_warn_suspend(void)
   */
 static enum __led_status led_warn_get(void)
 {
-	return(LED_OFF);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    return(LED_OFF);
+#else
+
+#if defined (STM32F091)
+    if(GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_3) == Bit_SET)
+    {
+        return(LED_OFF);
+    }
+    else
+    {
+        return(LED_ON);
+    }
+#endif
+
+#endif
 }
 
 /**
@@ -99,7 +172,24 @@ static enum __led_status led_warn_get(void)
   */
 static uint8_t led_warn_set(enum __led_status value)
 {
-	return(0);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    return(0);
+#else
+
+#if defined (STM32F091)
+    if(value == LED_ON)
+    {
+        GPIO_ResetBits(GPIOA, GPIO_Pin_3);
+    }
+    else
+    {
+        GPIO_SetBits(GPIOA, GPIO_Pin_3);
+    }
+    
+    return((uint8_t)value);
+#endif
+
+#endif
 }
 
 const struct __led led[LED_AMOUNT] = 

@@ -50,9 +50,10 @@ static enum __power_status power_check(void)
     
     GPIO_InitTypeDef GPIO_InitStructure;
     ADC_InitTypeDef ADC_InitStructure;
-    int64_t Voltage;
+    int64_t Voltage[3];
     int64_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
+    uint8_t cnt;
     
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
@@ -79,14 +80,16 @@ static enum __power_status power_check(void)
     ADC_GetCalibrationFactor(ADC1);
     /* Enable the ADC peripheral */
     ADC_Cmd(ADC1, ENABLE);
+    
+    
     /* ADC1 regular Software Start Conv */ 
     ADC_StartOfConversion(ADC1);
     while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
     /* Get ADC1 converted data */
-    Voltage = ADC_GetConversionValue(ADC1);
-    if(Voltage)
+    Voltage[0] = ADC_GetConversionValue(ADC1);
+    if(Voltage[0])
     {
-        Ref = ((int64_t)*Cali) * 3300 / Voltage;
+        Ref = ((int64_t)*Cali) * 3300 / Voltage[0];
         ADC_VrefintCmd(DISABLE);
     }
     else
@@ -100,21 +103,29 @@ static enum __power_status power_check(void)
 	
     ADC1->CHSELR = 0;
 	ADC_ChannelConfig(ADC1, ADC_Channel_12 , ADC_SampleTime_41_5Cycles);
-	ADC_StartOfConversion(ADC1);
-	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
-	Voltage = ADC_GetConversionValue(ADC1);
-	Voltage = Voltage * Ref / 4096;
-	Voltage *= 3;
-    
+    for(cnt=0; cnt<3; cnt++)
+    {
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        Voltage[cnt] = ADC_GetConversionValue(ADC1);
+        Voltage[cnt] = Voltage[cnt] * Ref / 4096;
+        Voltage[cnt] *= 3;
+    }
     ADC_DeInit(ADC1);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
     
-    if((status_before == SUPPLY_BATTERY) && (Voltage > POWER_UP_VOL))
+    if((status_before == SUPPLY_BATTERY) && \
+        (Voltage[0] > POWER_UP_VOL) && \
+        (Voltage[1] > POWER_UP_VOL) && \
+        (Voltage[2] > POWER_UP_VOL))
     {
         status_before = SUPPLY_AC;
     }
     
-    if((status_before == SUPPLY_AC) && (Voltage < POWER_DOWN_VOL))
+    if((status_before == SUPPLY_AC) && \
+        (Voltage[0] < POWER_DOWN_VOL) && \
+        (Voltage[1] < POWER_DOWN_VOL) && \
+        (Voltage[2] < POWER_DOWN_VOL))
     {
         status_before = SUPPLY_BATTERY;
     }

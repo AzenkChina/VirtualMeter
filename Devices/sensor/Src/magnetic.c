@@ -21,8 +21,6 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __dev_status status = DEVICE_NOTINIT;
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -31,7 +29,7 @@ static enum __dev_status status = DEVICE_NOTINIT;
   */
 static enum __dev_status hsensor_status(void)
 {
-    return(status);
+    return(DEVICE_INIT);
 }
 
 /**
@@ -39,7 +37,14 @@ static enum __dev_status hsensor_status(void)
   */
 static void hsensor_init(enum __dev_state state)
 {
-    status = DEVICE_INIT;
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOE, &GPIO_InitStructure);
+#endif
 }
 
 /**
@@ -47,12 +52,10 @@ static void hsensor_init(enum __dev_state state)
   */
 static void hsensor_suspend(void)
 {
-    status = DEVICE_NOTINIT;
 }
 
 static void hsensor_runner(uint16_t msecond)
 {
-    
 }
 
 static enum __switch_status hsensor_get(void)
@@ -60,7 +63,18 @@ static enum __switch_status hsensor_get(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(mailslot_magnetic());
 #else
-	return(SWITCH_OPEN);
+
+#if defined (STM32F091)
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_5) == Bit_RESET)
+    {
+        return(SWITCH_CLOSE);
+    }
+    else
+    {
+        return(SWITCH_OPEN);
+    }
+#endif
+
 #endif
 }
 

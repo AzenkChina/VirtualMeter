@@ -2122,18 +2122,6 @@
       <name>$PROJ_DIR$\..\..\Docs\00_readme.txt</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\Docs\mid_fatfs.txt</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\Docs\mid_lzo.txt</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\Docs\mid_mxml.txt</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\Docs\resource_management.txt</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\stm32f091xC.icf</name>
     </file>
   </group>

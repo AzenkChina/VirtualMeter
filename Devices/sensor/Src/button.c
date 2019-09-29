@@ -28,9 +28,8 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __dev_status status = DEVICE_NOTINIT;
-
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+static enum __dev_status status = DEVICE_NOTINIT;
 enum __switch_status status_main_cover = SWITCH_CLOSE;
 enum __switch_status status_sub_cover = SWITCH_CLOSE;
 enum __switch_status status_magnetic = SWITCH_OPEN;
@@ -94,7 +93,15 @@ enum __switch_status mailslot_magnetic(void)
   */
 static enum __dev_status main_cover_status(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(status);
+#else
+
+#if defined (STM32F091)
+    return(DEVICE_INIT);
+#endif
+
+#endif
 }
 
 /**
@@ -131,7 +138,16 @@ static void main_cover_init(enum __dev_state state)
     	status = DEVICE_INIT;
     }
 #else
-	status = DEVICE_INIT;
+
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOE, &GPIO_InitStructure);
+#endif
+
 #endif
 }
 
@@ -149,7 +165,7 @@ static void main_cover_suspend(void)
     
     status = DEVICE_SUSPENDED;
 #else
-	status = DEVICE_SUSPENDED;
+
 #endif
 }
 
@@ -158,13 +174,23 @@ static enum __switch_status main_cover_get(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(status_main_cover);
 #else
-	return(SWITCH_OPEN);
+
+#if defined (STM32F091)
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_8) == Bit_RESET)
+    {
+        return(SWITCH_OPEN);
+    }
+    else
+    {
+        return(SWITCH_CLOSE);
+    }
+#endif
+	
 #endif
 }
 
 static void main_cover_runner(uint16_t msecond)
 {
-    
 }
 
 static uint8_t main_cover_set(enum __switch_status status)
@@ -179,7 +205,11 @@ static uint8_t main_cover_set(enum __switch_status status)
   */
 static enum __dev_status sub_cover_status(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(status);
+#else
+	return(DEVICE_INIT);
+#endif
 }
 
 /**
@@ -187,7 +217,14 @@ static enum __dev_status sub_cover_status(void)
   */
 static void sub_cover_init(enum __dev_state state)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
     
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+#endif
 }
 
 /**
@@ -195,12 +232,10 @@ static void sub_cover_init(enum __dev_state state)
   */
 static void sub_cover_suspend(void)
 {
-    
 }
 
 static void sub_cover_runner(uint16_t msecond)
 {
-    
 }
 
 static enum __switch_status sub_cover_get(void)
@@ -208,7 +243,18 @@ static enum __switch_status sub_cover_get(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(status_sub_cover);
 #else
-	return(SWITCH_OPEN);
+
+#if defined (STM32F091)
+    if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_6) == Bit_RESET)
+    {
+        return(SWITCH_OPEN);
+    }
+    else
+    {
+        return(SWITCH_CLOSE);
+    }
+#endif
+
 #endif
 }
 
