@@ -10,7 +10,11 @@
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #include "comm_socket.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,9 +107,7 @@ static enum __dev_status lcd_status(void)
   */
 static void lcd_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    status = DEVICE_INIT;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     memset(&lcd_message, 0, sizeof(lcd_message));
     
     lcd_message.global = LCD_GLO_SHOW_ALL;
@@ -122,6 +124,8 @@ static void lcd_init(enum __dev_state state)
 		emitter.write(sock, &src, (uint8_t *)&lcd_message, sizeof(lcd_message));
         status = DEVICE_INIT;
     }
+#else
+    status = DEVICE_INIT;
 #endif
 }
 
@@ -130,9 +134,7 @@ static void lcd_init(enum __dev_state state)
   */
 static void lcd_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     memset(&lcd_message, 0, sizeof(lcd_message));
     lcd_message.global = LCD_GLO_SHOW_NONE;
     
@@ -142,6 +144,8 @@ static void lcd_suspend(void)
 		emitter.close(sock);
 		sock = INVALID_SOCKET;
     }
+#else
+
 #endif
     
     status = DEVICE_NOTINIT;
@@ -154,9 +158,7 @@ static void lcd_suspend(void)
   */
 static void lcd_runner(uint16_t msecond)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     if((sock != INVALID_SOCKET) && (status == DEVICE_INIT))
     {
         if(emitter.write(sock, &src, (uint8_t *)&lcd_message, sizeof(lcd_message)) != sizeof(lcd_message))
@@ -174,6 +176,8 @@ static void lcd_runner(uint16_t msecond)
 			status = DEVICE_INIT;
 		}
     }
+#else
+
 #endif
 }
 
@@ -182,10 +186,10 @@ static void lcd_runner(uint16_t msecond)
   */
 static void lcd_show_none(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.global = LCD_GLO_SHOW_NONE;
+#else
+
 #endif
 }
 
@@ -194,10 +198,10 @@ static void lcd_show_none(void)
   */
 static void lcd_show_all(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.global = LCD_GLO_SHOW_ALL;
+#else
+
 #endif
 }
 
@@ -206,11 +210,11 @@ static void lcd_show_all(void)
   */
 static enum __lcd_backlight lcd_backlight_open(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.backlight = LCD_BKL_OPEN;
     return(lcd_message.backlight);
+#else
+
 #endif
 }
 
@@ -219,11 +223,11 @@ static enum __lcd_backlight lcd_backlight_open(void)
   */
 static enum __lcd_backlight lcd_backlight_close(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.backlight = LCD_BKL_NONE;
     return(lcd_message.backlight);
+#else
+
 #endif
 }
 
@@ -232,10 +236,10 @@ static enum __lcd_backlight lcd_backlight_close(void)
   */
 static enum __lcd_backlight lcd_backlight_status(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(lcd_message.backlight);
+#else
+
 #endif
 }
 
@@ -246,9 +250,7 @@ static enum __lcd_backlight lcd_backlight_status(void)
   */
 static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, enum __lcd_unit unit)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -258,6 +260,8 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].unit = unit;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_BIN;
 	lcd_message.windows[channel].value.bin = val;
+#else
+
 #endif
 }
 
@@ -266,9 +270,7 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
   */
 static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, enum __lcd_unit unit)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -278,15 +280,15 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 	lcd_message.windows[channel].unit = unit;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = val;
+#else
+
 #endif
 }
 
 
 static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, enum __lcd_unit unit)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -296,6 +298,8 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].unit = unit;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_HEX;
 	lcd_message.windows[channel].value.hex = val;
+#else
+
 #endif
 }
 
@@ -304,9 +308,7 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
   */
 static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_format theme)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -315,6 +317,8 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
 	lcd_message.windows[channel].format = theme;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DATE;
 	lcd_message.windows[channel].value.date = val;
+#else
+
 #endif
 }
 
@@ -323,9 +327,7 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
   */
 static uint8_t window_show_msg(uint8_t channel, const char *msg)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return(0);
@@ -343,6 +345,8 @@ static uint8_t window_show_msg(uint8_t channel, const char *msg)
 		memcpy(lcd_message.windows[channel].value.message, msg, strlen(msg));
 		return((uint8_t)strlen(msg));
 	}
+#else
+
 #endif
 }
 
@@ -351,9 +355,7 @@ static uint8_t window_show_msg(uint8_t channel, const char *msg)
   */
 static void window_show_none(uint8_t channel)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -363,6 +365,8 @@ static void window_show_none(uint8_t channel)
 	lcd_message.windows[channel].unit = LCD_UNIT_NONE;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = 0;
+#else
+
 #endif
 }
 
@@ -371,9 +375,7 @@ static void window_show_none(uint8_t channel)
   */
 static void window_show_all(uint8_t channel)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
@@ -383,6 +385,8 @@ static void window_show_all(uint8_t channel)
 	lcd_message.windows[channel].unit = LCD_UNIT_NONE;
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = 88888888;
+#else
+
 #endif
 }
 
@@ -391,13 +395,13 @@ static void window_show_all(uint8_t channel)
   */
 static void window_read(uint8_t channel, void *dat)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_WINDOWS)
 	{
 		return;
 	}
+#else
+
 #endif
 }
 
@@ -410,9 +414,7 @@ static void window_read(uint8_t channel, void *dat)
   */
 static void lcd_label_on(uint8_t channel, uint8_t state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_LABELS)
 	{
 		return;
@@ -420,6 +422,8 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
     lcd_message.global = LCD_GLO_NONE_OPTION;
 	lcd_message.label[channel].status = LCD_LAB_SHOW_ON;
 	lcd_message.label[channel].value = state;
+#else
+
 #endif
 }
 
@@ -428,15 +432,15 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
   */
 static void lcd_label_off(uint8_t channel)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_LABELS)
 	{
 		return;
 	}
     lcd_message.global = LCD_GLO_NONE_OPTION;
 	lcd_message.label[channel].status = LCD_LAB_SHOW_OFF;
+#else
+
 #endif
 }
 
@@ -445,15 +449,15 @@ static void lcd_label_off(uint8_t channel)
   */
 static void lcd_label_flash(uint8_t channel)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(channel >= LCD_MAX_LABELS)
 	{
 		return;
 	}
     lcd_message.global = LCD_GLO_NONE_OPTION;
 	lcd_message.label[channel].status = LCD_LAB_SHOW_FLASH;
+#else
+
 #endif
 }
 

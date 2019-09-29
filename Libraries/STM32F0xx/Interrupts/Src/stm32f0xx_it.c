@@ -31,6 +31,7 @@
 #include "stm32f0xx_it.h"
 
 #include "jiffy.h"
+#include "cpu.h"
 
 /** @addtogroup Template_Project
   * @{
@@ -94,7 +95,10 @@ void HardFault_Handler(void)
   */
 void SysTick_Handler(void)
 {
-    jitter_update(1);
+    if(cpu.core.status() != CPU_POWERSAVE)
+    {
+        jitter_update(1);
+    }
 }
 
 /******************************************************************************/
@@ -117,5 +121,24 @@ void SysTick_Handler(void)
   * @}
   */ 
 
-
+/**
+  * @brief  This function handles RTC Handler.
+  * @param  None
+  * @retval None
+  */
+void RTC_IRQHandler(void)
+{
+	if(RTC_GetITStatus(RTC_IT_WUT) != RESET)
+	{
+		/* Clear the Alarm A Pending Bit */
+		RTC_ClearITPendingBit(RTC_IT_WUT);
+		/* Clear EXTI line17 pending bit */
+		EXTI_ClearITPendingBit(EXTI_Line20);
+	}
+    
+    if(cpu.core.status() == CPU_POWERSAVE)
+    {
+        jitter_update(1000);
+    }
+}
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

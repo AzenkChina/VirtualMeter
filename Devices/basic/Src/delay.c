@@ -13,7 +13,9 @@
 #elif defined ( __linux )
 #include <unistd.h>
 #else
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -27,9 +29,13 @@
   */
 void udelay(uint16_t count)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    ;
+#else
+
+#if defined (STM32F091)
 	uint16_t loop;
-	
+    
 	if(cpu.core.status() == CPU_NORMAL)
 	{
         for(loop=0; loop<count; loop++)
@@ -41,8 +47,16 @@ void udelay(uint16_t count)
             __NOP();
         }
 	}
-#else
-	;
+	else
+	{
+        for(loop=0; loop<count; loop++)
+        {
+            __NOP();
+            __NOP();
+        }
+	}
+#endif
+
 #endif
 }
 
@@ -56,22 +70,26 @@ void mdelay(uint16_t count)
 #elif defined ( __linux )
 	usleep(count*1000);
 #else
+
+#if defined (STM32F091)
 	uint32_t cnt;
 	
 	if(cpu.core.status() == CPU_NORMAL)
 	{
 		while(count --)
 		{
-			for(cnt=0; cnt<30000; cnt++);
+			for(cnt=0; cnt<2894; cnt++);
 		}
 	}
 	else
 	{
 		while(count --)
 		{
-			for(cnt=0; cnt<300000; cnt++);
+			for(cnt=0; cnt<3*2894; cnt++);
 		}
 	}
+#endif
+
 #endif
 }
 

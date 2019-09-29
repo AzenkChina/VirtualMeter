@@ -21,7 +21,11 @@
 #include <termios.h>
 #include "stdio.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 

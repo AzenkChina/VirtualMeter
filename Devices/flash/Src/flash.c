@@ -23,8 +23,12 @@
 #include "stdlib.h"
 #include "string.h"
 #else
+
+#if defined (STM32F091)
 #include "spi2.h"
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,9 +65,7 @@ static enum __dev_status flash_status(void)
   */
 static void flash_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     
@@ -106,7 +108,8 @@ static void flash_init(enum __dev_state state)
 #else
     Sleep(100);
 #endif
-
+#else
+    //...
 #endif
     status = DEVICE_INIT;
 }
@@ -116,7 +119,9 @@ static void flash_init(enum __dev_state state)
   */
 static void flash_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    
+#else
     
 #endif
     status = DEVICE_SUSPENDED;
@@ -131,11 +136,7 @@ static void flash_suspend(void)
   */
 static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, uint8_t * buffer)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-    return(0);
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     
     if(block >= FLASH_BLOCK_AMOUNT)
@@ -183,6 +184,8 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
 #endif
 	
     return(size);
+#else
+    return(0);
 #endif
 }
 
@@ -191,12 +194,7 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
   */
 static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size, const uint8_t *buffer)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-    return(0);
-    
-#else
-    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     uint16_t cnt;
@@ -266,6 +264,8 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
 #endif
     
     return(size);
+#else
+    return(0);
 #endif
 }
 
@@ -274,10 +274,7 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
   */
 static uint32_t flash_eraseblock(uint32_t block)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
-    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     
@@ -328,6 +325,8 @@ static uint32_t flash_eraseblock(uint32_t block)
 #endif
     
     return(FLASH_BLOCK_SIZE);
+#else
+    return(0);
 #endif
 }
 
@@ -352,10 +351,7 @@ static uint32_t flash_chipsize(void)
   */
 static uint32_t flash_eraseall(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
-    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     
@@ -401,6 +397,8 @@ static uint32_t flash_eraseall(void)
 #endif
     
     return(FLASH_CHIP_SIZE);
+#else
+    return(0);
 #endif
 }
 

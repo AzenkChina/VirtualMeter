@@ -10,7 +10,11 @@
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #include "button.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,10 +57,10 @@ static void hsensor_runner(uint16_t msecond)
 
 static enum __switch_status hsensor_get(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	return(SWITCH_OPEN);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(mailslot_magnetic());
+#else
+	return(SWITCH_OPEN);
 #endif
 }
 

@@ -61,9 +61,7 @@ static enum __dev_status eep_status(void)
   */
 static void eep_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     
@@ -106,7 +104,8 @@ static void eep_init(enum __dev_state state)
 		Sleep(10);
 #endif
     }
-    
+#else
+    //...
 #endif
     status = DEVICE_INIT;
 }
@@ -121,9 +120,7 @@ static void eep_suspend(void)
 
 static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uint8_t * buffer)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     
     if(page >= EEP_PAGE_AMOUNT)
@@ -171,14 +168,14 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
 #endif
     
     return(size);
+#else
+    return(0);
 #endif
 }
 
 static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, const uint8_t *buffer)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     
     if(page >= EEP_PAGE_AMOUNT)
@@ -227,14 +224,14 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
 #endif
     
     return(size);
+#else
+    return(0);
 #endif
 }
 
 static uint32_t eep_erase(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     char *mem = (char *)0;
     
@@ -280,6 +277,8 @@ static uint32_t eep_erase(void)
 #endif
     
     return(EEP_CHIP_SIZE);
+#else
+    return(0);
 #endif
 }
 

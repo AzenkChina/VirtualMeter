@@ -16,8 +16,12 @@
 #include <pthread.h>
 #include "comm_socket.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
 #include "spi1.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -123,25 +127,7 @@ static enum __dev_status meter_status(void)
   */
 static void meter_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
-    spi1.control.init(state);
-    
-    if(spi1.control.status() != DEVICE_INIT)
-    {
-        status = DEVICE_ERROR;
-        return;
-    }
-    
-    //PD12 教表参数/事件输出
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50002);
 
 	if(sock == INVALID_SOCKET)
@@ -165,11 +151,31 @@ static void meter_init(enum __dev_state state)
         CloseHandle(hThread);
 #endif
     }
+#else
+
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
     
+    spi1.control.init(state);
+    
+    if(spi1.control.status() != DEVICE_INIT)
+    {
+        status = DEVICE_ERROR;
+        return;
+    }
+    
+    //PD12 教表参数/事件输出
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+#endif
+
 #endif
     
     meter_callback= (void(*)(void *))0;
-    
     status = DEVICE_INIT;
 }
 
@@ -178,7 +184,13 @@ static void meter_init(enum __dev_state state)
   */
 static void meter_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	if(sock != INVALID_SOCKET)
+	{
+		receiver.close(sock);
+		sock = INVALID_SOCKET;
+	}
+#else
     //...IO，寄存器，时钟等关闭
     GPIO_InitTypeDef GPIO_InitStruct;
     
@@ -188,18 +200,12 @@ static void meter_suspend(void)
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(GPIOD, &GPIO_InitStruct);
-#else
-	if(sock != INVALID_SOCKET)
-	{
-		receiver.close(sock);
-		sock = INVALID_SOCKET;
-	}
 #endif
     
     status = DEVICE_SUSPENDED;
 }
 
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined (STM32F091)
 /**
   * @brief  将 __metering_meta 转换为 702x 的命名字
   */
@@ -341,9 +347,7 @@ static uint8_t meter_cmd_translate(enum __metering_meta id)
 
 static void meter_runner(uint16_t msecond)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
-#endif
+    
 }
 
 
@@ -359,9 +363,7 @@ static uint32_t meter_config_write(uint32_t addr, uint32_t count, const void *bu
 
 static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return(0);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     uint16_t id = (uint16_t)addr;
     uint16_t loop;
     int32_t *result = (int32_t *)buffer;
@@ -450,6 +452,8 @@ static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
     }
     
     return((count & 0xffff));
+#else
+    return(0);
 #endif
 }
 

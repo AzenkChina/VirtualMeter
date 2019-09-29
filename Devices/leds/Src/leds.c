@@ -13,7 +13,11 @@
 #elif defined ( __linux )
 
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/

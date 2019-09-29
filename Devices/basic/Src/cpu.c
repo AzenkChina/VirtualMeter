@@ -19,7 +19,9 @@
 #include "stdlib.h"
 #include "jiffy.h"
 #else
- #include "stm32f0xx.h"
+#if defined (STM32F091)
+#include "stm32f0xx.h"
+#endif
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -111,7 +113,11 @@ static const char* cpu_core_details(void)
 #elif defined ( __linux )
     static const char details[] = "x86 linux";
 #else
+
+#if defined (STM32F091)
     static const char details[] = "stm32f091 arm cortex-m0 thumb2";
+#endif
+
 #endif
     return(details);
 }
@@ -160,7 +166,11 @@ static void cpu_core_reset(void)
 #endif
     exit(0);
 #else
+
+#if defined (STM32F091)
     NVIC_SystemReset();
+#endif
+
 #endif
 	TRACE(TRACE_ERR, "Rebooting faild.");
 }
@@ -170,9 +180,7 @@ static void cpu_core_reset(void)
   */
 static void cpu_core_sleep(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	in_sleep = 0xff;
 	
 	while(in_sleep)
@@ -183,6 +191,12 @@ static void cpu_core_sleep(void)
 		Sleep(10);
 #endif
 	}
+#else
+
+#if defined (STM32F091)
+    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
+#endif
+
 #endif
 }
 
@@ -191,10 +205,14 @@ static void cpu_core_sleep(void)
   */
 static void watchdog_feed(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	IWDG_ReloadCounter();
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    counter = 0;
 #else
-	counter = 0;
+
+#if defined (STM32F091)
+    IWDG_ReloadCounter();
+#endif
+
 #endif
 }
 
@@ -204,7 +222,7 @@ static void watchdog_feed(void)
 static void cpu_entr_disable(void)
 {
     intr_status = INTR_DISABLED;
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined (STM32F091)
     __disable_irq();
 #endif
 }
@@ -215,8 +233,8 @@ static void cpu_entr_disable(void)
 static void cpu_entr_enable(void)
 {
     intr_status = INTR_ENABLED;
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	__enable_irq();
+#if defined (STM32F091)
+    __enable_irq();
 #endif
 }
 
@@ -233,17 +251,59 @@ static enum __interrupt_status cpu_entr_status(void)
   */
 static void cpu_core_init(enum __cpu_level level)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    
-    enum __interrupt_status intrs = cpu_entr_status();
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	static uint8_t flag = 0;
+#if defined ( __linux )
+	pthread_t thread;
+	pthread_attr_t thread_attr;
+#else
+	HANDLE hThread;
+#endif
+	
+    if(level == CPU_NORMAL)
+    {
+        cpu_level = CPU_NORMAL;
+    }
+    else
+    {
+        cpu_level = CPU_POWERSAVE;
+    }
+	
+    if(!flag)
+    {
+#if defined ( __linux )
+		pthread_attr_init(&thread_attr);
+		pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+		pthread_create(&thread, &thread_attr, ThreadTick, NULL);
+		pthread_attr_destroy(&thread_attr);
+		
+		pthread_attr_init(&thread_attr);
+		pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+		pthread_create(&thread, &thread_attr, ThreadDog, NULL);
+		pthread_attr_destroy(&thread_attr);
+#else
+		hThread = CreateThread(NULL, 0, ThreadTick, 0, 0, NULL);
+		CloseHandle(hThread);
+		
+		hThread = CreateThread(NULL, 0, ThreadDog, 0, 0, NULL);
+		CloseHandle(hThread);
+#endif
+        flag = 0xff;
+    }
+#else
 
+#if defined (STM32F091)
+    RTC_InitTypeDef RTC_InitStructure;
+    RTC_TimeTypeDef RTC_TimeStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+    EXTI_InitTypeDef EXTI_InitStructure;
+    enum __interrupt_status intrs = cpu_entr_status();
+    
     if(intrs == INTR_ENABLED)
     {
         cpu_entr_disable();
     }
-
-    memcpy((void *)0x20000000, (const void *)0x08001800, 0xc0);
-    SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);//中断向量表重映射
+    
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
@@ -355,6 +415,42 @@ static void cpu_core_init(enum __cpu_level level)
             }
         }
         
+        /* Enable the PWR clock */
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+        /* Allow access to RTC */
+        PWR_BackupAccessCmd(DISABLE);
+        RTC_DeInit();
+        
+        /* LSI used as RTC source clock */
+        /* The RTC Clock may varies due to LSI frequency dispersion. */
+        /* Disable the LSI OSC */
+        RCC_LSICmd(DISABLE);
+        
+        /* Disable the RTC Wakeup Interrupt */
+        RTC_ITConfig(RTC_IT_WUT, DISABLE);
+        /* Disable Wakeup Counter */
+        RTC_WakeUpCmd(DISABLE);
+        
+        /* EXTI configuration */
+        EXTI_ClearITPendingBit(EXTI_Line20);
+        EXTI_InitStructure.EXTI_Line = EXTI_Line20;
+        EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+        EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+        EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+        EXTI_Init(&EXTI_InitStructure);
+        
+        /* Enable the RTC Wakeup Interrupt */
+        NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
+        NVIC_InitStructure.NVIC_IRQChannelPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+        NVIC_Init(&NVIC_InitStructure);
+        
+        SysTick->CTRL = 0x00000000;
+        SysTick->LOAD = ((24000000 / 1000) - 1); //设置 SysTick 溢出时间为1ms
+        SysTick->VAL  = 0x00000000;
+        NVIC_SetPriority(SysTick_IRQn, 3);
+        SysTick->CTRL = 0x00000007;
+        
         cpu_level = CPU_NORMAL;
     }
     else
@@ -388,6 +484,66 @@ static void cpu_core_init(enum __cpu_level level)
         RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
         RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
         
+        SysTick->CTRL = 0x00000000; //关闭 SysTick
+        SysTick->VAL  = 0x00000000;
+        
+        /* Enable the PWR clock */
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+        /* Allow access to RTC */
+        PWR_BackupAccessCmd(ENABLE);
+        RTC_DeInit();
+        
+        /* LSI used as RTC source clock */
+        /* The RTC Clock may varies due to LSI frequency dispersion. */
+        /* Enable the LSI OSC */
+        RCC_LSICmd(ENABLE);
+        
+        /* Wait till LSI is ready */
+        while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET)
+        {
+        }
+        
+        /* Select the RTC Clock Source */
+        RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+        /* Enable the RTC Clock */
+        RCC_RTCCLKCmd(ENABLE);
+        /* Wait for RTC APB registers synchronisation */
+        RTC_WaitForSynchro();
+        /* Calendar Configuration */
+        RTC_InitStructure.RTC_AsynchPrediv = 99;
+        RTC_InitStructure.RTC_SynchPrediv   =  399; /* (40KHz / 100) - 1 = 399*/
+        RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
+        RTC_Init(&RTC_InitStructure);
+        
+        /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
+        RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
+        RTC_SetWakeUpCounter(0);
+        /* Enable the RTC Wakeup Interrupt */
+        RTC_ITConfig(RTC_IT_WUT, ENABLE);
+        /* Enable Wakeup Counter */
+        RTC_WakeUpCmd(ENABLE);
+        
+        /* EXTI configuration */
+        EXTI_ClearITPendingBit(EXTI_Line20);
+        EXTI_InitStructure.EXTI_Line = EXTI_Line20;
+        EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+        EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+        EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+        EXTI_Init(&EXTI_InitStructure);
+        
+        /* Enable the RTC Wakeup Interrupt */
+        NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
+        NVIC_InitStructure.NVIC_IRQChannelPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
+        
+        /* Set the time to 00h 00mn 00s AM */
+        RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
+        RTC_TimeStructure.RTC_Hours   = 0x00;
+        RTC_TimeStructure.RTC_Minutes = 0x00;
+        RTC_TimeStructure.RTC_Seconds = 0x00;
+        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStructure);
+        
         cpu_level = CPU_POWERSAVE;
     }
 
@@ -395,47 +551,7 @@ static void cpu_core_init(enum __cpu_level level)
     {
         cpu_entr_enable();
     }
-    
-#else
-
-	static uint8_t flag = 0;
-#if defined ( __linux )
-	pthread_t thread;
-	pthread_attr_t thread_attr;
-#else
-	HANDLE hThread;
 #endif
-	
-    if(level == CPU_NORMAL)
-    {
-        cpu_level = CPU_NORMAL;
-    }
-    else
-    {
-        cpu_level = CPU_POWERSAVE;
-    }
-	
-    if(!flag)
-    {
-#if defined ( __linux )
-		pthread_attr_init(&thread_attr);
-		pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
-		pthread_create(&thread, &thread_attr, ThreadTick, NULL);
-		pthread_attr_destroy(&thread_attr);
-		
-		pthread_attr_init(&thread_attr);
-		pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
-		pthread_create(&thread, &thread_attr, ThreadDog, NULL);
-		pthread_attr_destroy(&thread_attr);
-#else
-		hThread = CreateThread(NULL, 0, ThreadTick, 0, 0, NULL);
-		CloseHandle(hThread);
-		
-		hThread = CreateThread(NULL, 0, ThreadDog, 0, 0, NULL);
-		CloseHandle(hThread);
-#endif
-        flag = 0xff;
-    }
 
 #endif
 }
@@ -633,37 +749,36 @@ const struct __cpu cpu =
     },
     .ram                =
     {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-		.base           = SRAM_BASE,
-		.size           = 32 * 1024,
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
+#elif defined (STM32F091)
+		.base           = SRAM_BASE,
+		.size           = 32 * 1024,
 #endif
         .read           = cpu_ram_get,
         .write          = cpu_ram_set,
     },
     .rom                =
     {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-		.base           = FLASH_BASE,
-		.size           = 256 * 1024,
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
+#elif defined (STM32F091)
+		.base           = FLASH_BASE,
+		.size           = 256 * 1024,
 #endif
-        
         .read           = cpu_rom_get,
         .write          = cpu_rom_set,
     },
     .reg                =
     {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+		.base           = 0,
+		.size           = 0,
+#elif defined (STM32F091)
         .base           = PERIPH_BASE,
         .size           = 0xBFFFFFFF,
-#else
-        .base           = 0,
-        .size           = 0,
 #endif
         .read           = cpu_reg_get,
         .write          = cpu_reg_set,

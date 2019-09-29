@@ -12,7 +12,11 @@
 #elif defined ( __linux )
 #include <unistd.h>
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +52,30 @@ static void buz_suspend(void)
     status = DEVICE_NOTINIT;
 }
 
+/**
+  * @brief  
+  */
+static void buz_runner(uint16_t msecond)
+{
+    
+}
+
+/**
+  * @brief  
+  */
+static enum __switch_status buz_get(void)
+{
+    
+}
+
+/**
+  * @brief  
+  */
+static uint8_t buz_set(enum __switch_status status)
+{
+    
+}
+
 const struct __switch buzzer = 
 {
 	.control        = 
@@ -57,5 +85,9 @@ const struct __switch buzzer =
 		.init       = buz_init,
 		.suspend    = buz_suspend,
 	},
+    
+    .runner         = buz_runner,
+    .get            = buz_get,
+    .set            = buz_set,
 };
 

@@ -17,7 +17,11 @@
 #include "comm_socket.h"
 #include "trace.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,9 +95,7 @@ static enum __dev_status relay_status(void)
   */
 static void relay_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_INIT;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50004);
 
 	if (sock == INVALID_SOCKET)
@@ -121,6 +123,8 @@ static void relay_init(enum __dev_state state)
 	    
     	status = DEVICE_INIT;
     }
+#else
+	status = DEVICE_INIT;
 #endif
 }
 
@@ -129,9 +133,7 @@ static void relay_init(enum __dev_state state)
   */
 static void relay_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_SUSPENDED;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if (sock != INVALID_SOCKET)
 	{
 		receiver.close(sock);
@@ -139,6 +141,8 @@ static void relay_suspend(void)
 	}
     
     status = DEVICE_SUSPENDED;
+#else
+	status = DEVICE_SUSPENDED;
 #endif
 }
 
@@ -154,11 +158,11 @@ static enum __switch_status relay_get(void)
 
 static uint8_t relay_set(enum __switch_status status)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-    return((uint8_t)relay_state);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	relay_state = status;
 	return((uint8_t)relay_state);
+#else
+    return((uint8_t)relay_state);
 #endif
 }
 

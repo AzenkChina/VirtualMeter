@@ -17,7 +17,12 @@
 #include "comm_socket.h"
 #include "trace.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#include "delay.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,9 +96,7 @@ static enum __dev_status key_status(void)
   */
 static void key_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_INIT;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	KeyData.status = KEY_NONE;
 	
 	sock = receiver.open(50006);
@@ -123,6 +126,32 @@ static void key_init(enum __dev_state state)
 	    
     	status = DEVICE_INIT;
     }
+#else
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    
+    //上翻按键
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    //编程按键
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
+    
+    //上翻按键
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOE, &GPIO_InitStructure);
+    
+	status = DEVICE_INIT;
+#endif
+
 #endif
 }
 
@@ -131,9 +160,7 @@ static void key_init(enum __dev_state state)
   */
 static void key_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_SUSPENDED;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     if(sock != INVALID_SOCKET)
     {
 		receiver.close(sock);
@@ -141,26 +168,105 @@ static void key_suspend(void)
     }
     
     status = DEVICE_SUSPENDED;
+#else
+	status = DEVICE_SUSPENDED;
 #endif
 }
 
 
 static void key_runner(uint16_t msecond)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     if(key_changed && (KeyData.status != KEY_NONE))
     {
     	key_changed(KeyData.id, KeyData.status);
     	KeyData.status = KEY_NONE;
     }
+#else
+
+#if defined (STM32F091)
+    static uint16_t id_before = 0;
+    uint16_t id_sample[3] = {0};
+    
+    if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
+    {
+        id_sample[0] |= KEY_ID_UP;
+    }
+    
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_7) == Bit_SET)
+    {
+        id_sample[0] |= KEY_ID_DOWN;
+    }
+    
+    if((id_before & (KEY_ID_UP | KEY_ID_DOWN)) != id_sample[0])
+    {
+        mdelay(2);
+        
+        if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
+        {
+            id_sample[1] |= KEY_ID_UP;
+        }
+        
+        if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_7) == Bit_SET)
+        {
+            id_sample[1] |= KEY_ID_DOWN;
+        }
+        
+        if(id_sample[0] != id_sample[1])
+        {
+            return;
+        }
+        
+        mdelay(2);
+        
+        if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
+        {
+            id_sample[2] |= KEY_ID_UP;
+        }
+        
+        if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_7) == Bit_SET)
+        {
+            id_sample[2] |= KEY_ID_DOWN;
+        }
+        
+        if(id_sample[1] != id_sample[2])
+        {
+            return;
+        }
+        
+        if(id_sample[0] != 0)
+        {
+            key_changed(id_sample[0], KEY_PRESS);
+        }
+        else
+        {
+            key_changed(id_sample[0], KEY_RELEASE);
+        }
+        
+        id_before &= (KEY_ID_UP | KEY_ID_DOWN);
+        id_before |= id_sample[0];
+    }
+    
+#endif
+
 #endif
 }
 
 static uint16_t key_get(void)
 {
-    return(0);
+    uint16_t id_sample = 0;
+    
+    if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
+    {
+        id_sample |= KEY_ID_UP;
+    }
+    
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_7) == Bit_SET)
+    {
+        id_sample |= KEY_ID_DOWN;
+    }
+    
+    return(id_sample);
 }
 
 static void key_filling(void(*callback)(uint16_t id, enum __key_status status))

@@ -41,9 +41,7 @@
   */
 void TRACE(enum __trace_level level, const char *str, ...)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     FILE *fp;
     va_list ap;
     struct tm *ptm;
@@ -101,7 +99,9 @@ void TRACE(enum __trace_level level, const char *str, ...)
     fprintf(fp, "\n");
     fflush(fp);
     fclose(fp);
-#endif /* #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) */
+#else
+
+#endif /* #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux ) */
 }
 
 #endif /* __USE_TRACE */

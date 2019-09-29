@@ -10,8 +10,12 @@
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #include <time.h>
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
 #include "viic.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,14 +56,10 @@ static void rtc_suspend(void)
   */
 static uint8_t rtc_config_read(uint8_t *param)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
-	
 #else
-
 	return(0);
-	
 #endif
 }
 
@@ -69,14 +69,10 @@ static uint8_t rtc_config_read(uint8_t *param)
   */
 static uint8_t rtc_config_write(const uint8_t *param)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
-	
 #else
-
 	return(0);
-	
 #endif
 }
 
@@ -85,17 +81,13 @@ static uint8_t rtc_config_write(const uint8_t *param)
   */
 static uint64_t rtc_read(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
-	return(0);
-	
-#else
-
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	time_t stamp;
 	time(&stamp);
 	
 	return((uint64_t)stamp);
-	
+#else
+	return(0);
 #endif
 }
 
@@ -105,14 +97,10 @@ static uint64_t rtc_read(void)
   */
 static uint64_t rtc_write(uint64_t stamp)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
-	
 #else
-
 	return(0);
-	
 #endif
 }
 

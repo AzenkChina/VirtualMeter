@@ -81,10 +81,6 @@ static enum __dev_status rs485_status(void)
 static void rs485_init(enum __dev_state state)
 {
 	UART_USED.control.init(state);
-/////////////////////////////////////////////
-    //for test
-    UART_USED.parity.set(PARI_NONE);
-/////////////////////////////////////////////
 	
     serial_state.status = BUS_IDLE;
     serial_state.mode = SERIAL_AUTO;

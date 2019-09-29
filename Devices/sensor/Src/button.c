@@ -17,7 +17,11 @@
 #include "comm_socket.h"
 #include "trace.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,10 +102,7 @@ static enum __dev_status main_cover_status(void)
   */
 static void main_cover_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_INIT;
-#else
-
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50003);
     
     if(sock == INVALID_SOCKET)
@@ -129,6 +130,8 @@ static void main_cover_init(enum __dev_state state)
 	    
     	status = DEVICE_INIT;
     }
+#else
+	status = DEVICE_INIT;
 #endif
 }
 
@@ -137,9 +140,7 @@ static void main_cover_init(enum __dev_state state)
   */
 static void main_cover_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status = DEVICE_SUSPENDED;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     if(sock != INVALID_SOCKET)
     {
 		receiver.close(sock);
@@ -147,15 +148,17 @@ static void main_cover_suspend(void)
     }
     
     status = DEVICE_SUSPENDED;
+#else
+	status = DEVICE_SUSPENDED;
 #endif
 }
 
 static enum __switch_status main_cover_get(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	return(SWITCH_OPEN);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(status_main_cover);
+#else
+	return(SWITCH_OPEN);
 #endif
 }
 
@@ -202,10 +205,10 @@ static void sub_cover_runner(uint16_t msecond)
 
 static enum __switch_status sub_cover_get(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	return(SWITCH_OPEN);
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(status_sub_cover);
+#else
+	return(SWITCH_OPEN);
 #endif
 }
 

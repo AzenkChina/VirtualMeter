@@ -17,7 +17,11 @@
 #include "comm_socket.h"
 #include "trace.h"
 #else
+
+#if defined (STM32F091)
 #include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -26,10 +30,10 @@
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status_rtc = DEVICE_NOTINIT;
 static enum __dev_status status_backup = DEVICE_NOTINIT;
-static enum __battery_status battery_status_rtc = BAT_FULL;
-static enum __battery_status battery_status_backup = BAT_FULL;
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+static enum __battery_status battery_status_rtc = BAT_FULL;
+static enum __battery_status battery_status_backup = BAT_FULL;
 static SOCKET sock = INVALID_SOCKET;
 static struct __battery_data
 {
@@ -100,9 +104,7 @@ static enum __dev_status bat_rtc_status(void)
   */
 static void bat_rtc_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status_rtc = DEVICE_INIT;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50005);
 
 	if (sock == INVALID_SOCKET)
@@ -130,7 +132,12 @@ static void bat_rtc_init(enum __dev_state state)
 	    
     	status_rtc = DEVICE_INIT;
     }
-    
+#else
+
+#if defined (STM32F091)
+    status_rtc = DEVICE_INIT;
+#endif
+
 #endif
 }
 
@@ -139,9 +146,7 @@ static void bat_rtc_init(enum __dev_state state)
   */
 static void bat_rtc_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-	status_rtc = DEVICE_SUSPENDED;
-#else
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if (sock != INVALID_SOCKET)
 	{
 		receiver.close(sock);
@@ -149,6 +154,12 @@ static void bat_rtc_suspend(void)
 	}
     
     status_rtc = DEVICE_SUSPENDED;
+#else
+
+#if defined (STM32F091)
+    status_rtc = DEVICE_SUSPENDED;
+#endif
+
 #endif
 }
 
@@ -173,7 +184,75 @@ static uint32_t battery_rtc_rated_voltage(void)
   */
 static uint32_t battery_rtc_voltage(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(3000);
+#else
+
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    ADC_InitTypeDef ADC_InitStructure;
+    int64_t Voltage;
+    int64_t Ref;
+    uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    
+    /* ADC1 Periph clock enable */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+	
+    /* ADCs DeInit */
+    ADC_DeInit(ADC1);
+    /* Initialize ADC structure */
+    ADC_StructInit(&ADC_InitStructure);
+    /* Configure the ADC1 in continuous mode with a resolution equal to 12 bits  */
+    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
+    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_VrefintCmd(ENABLE);
+    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_239_5Cycles);
+    /* ADC Calibration */
+    ADC_GetCalibrationFactor(ADC1);
+    /* Enable the ADC peripheral */
+    ADC_Cmd(ADC1, ENABLE);
+    /* ADC1 regular Software Start Conv */ 
+    ADC_StartOfConversion(ADC1);
+    while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+    /* Get ADC1 converted data */
+    Voltage = ADC_GetConversionValue(ADC1);
+    if(Voltage)
+    {
+        Ref = ((int64_t)*Cali) * 3300 / Voltage;
+        ADC_VrefintCmd(DISABLE);
+    }
+    else
+    {
+        ADC_VrefintCmd(DISABLE);
+        ADC_DeInit(ADC1);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+        return(0);
+    }
+	
+    ADC1->CHSELR = 0;
+	ADC_ChannelConfig(ADC1, ADC_Channel_10 , ADC_SampleTime_41_5Cycles);
+	ADC_StartOfConversion(ADC1);
+	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+	Voltage = ADC_GetConversionValue(ADC1);
+	Voltage = Voltage * Ref / 4096;
+	Voltage *= 2;
+    
+    ADC_DeInit(ADC1);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+    
+    return((uint32_t)Voltage);
+#endif
+
+#endif
 }
 
 /**
@@ -181,7 +260,28 @@ static uint32_t battery_rtc_voltage(void)
   */
 static enum __battery_status battery_rtc_status(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(battery_status_rtc);
+#else
+
+#if defined (STM32F091)
+    uint32_t voltage = battery_rtc_voltage();
+    
+    if(voltage > 3600)
+    {
+        return(BAT_FULL);
+    }
+    else if(voltage > 3400)
+    {
+        return(BAT_LOW);
+    }
+    else
+    {
+        return(BAT_EMPTY);
+    }
+#endif
+
+#endif
 }
 
 
@@ -208,7 +308,7 @@ static enum __dev_status bat_bkp_status(void)
   */
 static void bat_bkp_init(enum __dev_state state)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	status_backup = DEVICE_INIT;
 #else
 	status_backup = DEVICE_INIT;
@@ -220,7 +320,7 @@ static void bat_bkp_init(enum __dev_state state)
   */
 static void bat_bkp_suspend(void)
 {
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	status_backup = DEVICE_SUSPENDED;
 #else
     status_backup = DEVICE_SUSPENDED;
@@ -248,7 +348,75 @@ static uint32_t battery_bkp_rated_voltage(void)
   */
 static uint32_t battery_bkp_voltage(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(6300);
+#else
+
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStructure;
+    ADC_InitTypeDef ADC_InitStructure;
+    int64_t Voltage;
+    int64_t Ref;
+    uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    
+    /* ADC1 Periph clock enable */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+	
+    /* ADCs DeInit */  
+    ADC_DeInit(ADC1);
+    /* Initialize ADC structure */
+    ADC_StructInit(&ADC_InitStructure);
+    /* Configure the ADC1 in continuous mode with a resolution equal to 12 bits  */
+    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
+    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
+    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_VrefintCmd(ENABLE);
+    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_239_5Cycles);
+    /* ADC Calibration */
+    ADC_GetCalibrationFactor(ADC1);
+    /* Enable the ADC peripheral */
+    ADC_Cmd(ADC1, ENABLE);
+    /* ADC1 regular Software Start Conv */ 
+    ADC_StartOfConversion(ADC1);
+    while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+    /* Get ADC1 converted data */
+    Voltage = ADC_GetConversionValue(ADC1);
+    if(Voltage)
+    {
+        Ref = ((int64_t)*Cali) * 3300 / Voltage;
+        ADC_VrefintCmd(DISABLE);
+    }
+    else
+    {
+        ADC_VrefintCmd(DISABLE);
+        ADC_DeInit(ADC1);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+        return(0);
+    }
+	
+    ADC1->CHSELR = 0;
+	ADC_ChannelConfig(ADC1, ADC_Channel_13 , ADC_SampleTime_41_5Cycles);
+	ADC_StartOfConversion(ADC1);
+	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+	Voltage = ADC_GetConversionValue(ADC1);
+	Voltage = Voltage * Ref / 4096;
+	Voltage *= 3;
+    
+    ADC_DeInit(ADC1);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+    
+    return((uint32_t)Voltage);
+#endif
+
+#endif
 }
 
 /**
@@ -256,7 +424,28 @@ static uint32_t battery_bkp_voltage(void)
   */
 static enum __battery_status battery_bkp_status(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(battery_status_backup);
+#else
+
+#if defined (STM32F091)
+    uint32_t voltage = battery_bkp_voltage();
+    
+    if(voltage > 6200)
+    {
+        return(BAT_FULL);
+    }
+    else if(voltage > 5800)
+    {
+        return(BAT_LOW);
+    }
+    else
+    {
+        return(BAT_EMPTY);
+    }
+#endif
+
+#endif
 }
 
 const struct __battery battery[BAT_AMOUNT] = 
