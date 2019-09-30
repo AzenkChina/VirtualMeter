@@ -8,8 +8,11 @@
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 
 #include "spi2.h"
-#include "stm32f0xx.h"
 #include "delay.h"
+
+#if defined (STM32F091)
+#include "stm32f0xx.h"
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -32,6 +35,7 @@ static enum __dev_status spi2_status(void)
   */
 static void spi2_init(enum __dev_state state)
 {
+#if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     SPI_InitTypeDef SPI_InitStruct;
     
@@ -74,6 +78,7 @@ static void spi2_init(enum __dev_state state)
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     
     GPIO_Init(GPIOB, &GPIO_InitStruct);
+#endif
     
     status = DEVICE_INIT;
 }
@@ -83,6 +88,7 @@ static void spi2_init(enum __dev_state state)
   */
 static void spi2_suspend(void)
 {
+#if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     SPI_I2S_DeInit(SPI2);
@@ -99,6 +105,7 @@ static void spi2_suspend(void)
     GPIO_SetBits(GPIOB, GPIO_Pin_13);
     GPIO_SetBits(GPIOB, GPIO_Pin_14);
     GPIO_SetBits(GPIOB, GPIO_Pin_15);
+#endif
     
     status = DEVICE_SUSPENDED;
 }
@@ -106,16 +113,21 @@ static void spi2_suspend(void)
 
 static uint8_t spi2_select(uint8_t cs)
 {
+#if defined (STM32F091)
     GPIO_ResetBits(GPIOB, GPIO_Pin_12);
     udelay(300);
+#endif
     
     return(0);
 }
 
 static uint8_t spi2_release(uint8_t cs)
 {
+#if defined (STM32F091)
     udelay(300);
     GPIO_SetBits(GPIOB, GPIO_Pin_12);
+#endif
+    
     return(0);
 }
 
@@ -135,6 +147,7 @@ static uint32_t spi2_freq_set(uint32_t rate)
   */
 static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
 {
+#if defined (STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -143,6 +156,7 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -150,6 +164,7 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
   */
 static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
 {
+#if defined (STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -158,6 +173,7 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -165,6 +181,7 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
   */
 static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t * rbuffer)
 {
+#if defined (STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -173,6 +190,7 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -180,11 +198,13 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
   */
 static uint32_t spi2_readchar(void)
 {
+#if defined (STM32F091)
     uint8_t val;
     
     val = SPI_I2S_Send_ReceiveData(SPI2, 0xff);
     
     return((uint32_t)val);
+#endif
 }
 
 /**
@@ -192,9 +212,11 @@ static uint32_t spi2_readchar(void)
   */
 static uint32_t spi2_writechar(uint32_t ch)
 {
+#if defined (STM32F091)
     SPI_I2S_Send_ReceiveData(SPI2, (uint8_t)ch);
     
     return(ch);
+#endif
 }
 
 /**
@@ -202,11 +224,13 @@ static uint32_t spi2_writechar(uint32_t ch)
   */
 static uint32_t spi2_readwritechar(uint32_t ch)
 {
+#if defined (STM32F091)
     uint8_t val;
     
     val = (uint8_t)SPI_I2S_Send_ReceiveData(SPI2, ch);
     
     return((uint32_t)val);
+#endif
 }
 
 /**

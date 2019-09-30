@@ -40,6 +40,8 @@ static void hsensor_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStructure;
     
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;

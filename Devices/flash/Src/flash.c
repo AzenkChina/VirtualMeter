@@ -34,12 +34,57 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 //Block size
 #define FLASH_BLOCK_SIZE            ((uint32_t)(4096))
 //Block amount
 #define FLASH_BLOCK_AMOUNT          ((uint32_t)(1024))
 //Chip size
 #define FLASH_CHIP_SIZE             ((uint32_t)(FLASH_BLOCK_SIZE * FLASH_BLOCK_AMOUNT))
+#else
+
+#if defined (STM32F091)
+//Main Memory Page Read D2H
+#define AT45_CMD_RDPG          0xD2
+//Buffer 1 Read 54H
+#define AT45_CMD_RDBF1         0x54
+//Buffer 2 Read 56H
+#define AT45_CMD_RDBF2         0x56
+//Page Erase 81H
+#define AT45_CMD_ERPG          0x81
+//Block Erase 50H
+#define AT45_CMD_ERBL          0x50
+//Sector Erase 7CH
+#define AT45_CMD_ERSE          0x7C
+//Chip Erase C7H, 94H, 80H, 9AH
+#define AT45_CMD_ERIC          0xC7, 0x94, 0x80, 0x9A
+//Buffer 1 Write 84H
+#define AT45_CMD_WRBF1          0x84
+//Buffer 2 Write 87H
+#define AT45_CMD_WRBF2          0x87
+//Buffer 1 to Main Memory Page Program with Built-in Erase 83H
+#define AT45_CMD_WREPBF1        0x83
+//Buffer 2 to Main Memory Page Program with Built-in Erase 86H
+#define AT45_CMD_WREPBF2        0x86
+//Buffer 1 to Main Memory Page Program without Built-in Erase 88H
+#define AT45_CMD_WRPBF1         0x88
+//Buffer 2 to Main Memory Page Program without Built-in Erase 89H
+#define AT45_CMD_WRPBF2         0x89
+//Status Register Read D7H
+#define AT45_CMD_SR             0xD7
+//Manufacturer and Device ID Read 9FH
+#define AT45_CMD_RDID           0x9F
+
+//Block size
+#define FLASH_BLOCK_SIZE            ((uint32_t)(512))
+//Block amount
+#define FLASH_BLOCK_AMOUNT          ((uint32_t)(8192))
+//Chip size
+#define FLASH_CHIP_SIZE             ((uint32_t)(FLASH_BLOCK_SIZE * FLASH_BLOCK_AMOUNT))
+#endif
+
+#endif
+
 
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
@@ -109,7 +154,31 @@ static void flash_init(enum __dev_state state)
     Sleep(100);
 #endif
 #else
-    //...
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    
+    //PD8 n reset
+    //PD9 n power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_ResetBits(GPIOD, GPIO_Pin_9);
+    GPIO_ResetBits(GPIOD, GPIO_Pin_8);
+    
+    mdelay(50);
+    GPIO_SetBits(GPIOD, GPIO_Pin_8);
+    mdelay(50);
+    
+    spi2.control.init(state);
+#endif
+    
 #endif
     status = DEVICE_INIT;
 }
@@ -122,6 +191,24 @@ static void flash_suspend(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     
 #else
+
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    //PD8 n reset
+    //PD9 n power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_SetBits(GPIOD, GPIO_Pin_8);
+    GPIO_SetBits(GPIOD, GPIO_Pin_9);
+    
+    spi2.control.suspend();
+#endif
     
 #endif
     status = DEVICE_SUSPENDED;
@@ -185,7 +272,52 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
 	
     return(size);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+	uint32_t addr_sent = 0;
+    
+    if(block >= FLASH_BLOCK_AMOUNT)
+    {
+        return(0);
+    }
+    
+    if(offset >= FLASH_BLOCK_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > FLASH_BLOCK_SIZE))
+    {
+        return(0);
+    }
+    
+    addr_sent = (block << 10); 
+    addr_sent |= 0x00C00000;
+    addr_sent += offset;
+    
+    spi2.select(0);
+    
+	//写入命令
+	spi2.octet.write(AT45_CMD_RDPG);
+    
+	//写入地址
+	spi2.octet.write(addr_sent>>16);
+	spi2.octet.write(addr_sent>>8);
+	spi2.octet.write(addr_sent);
+    
+    spi2.octet.write(0xff);
+    spi2.octet.write(0xff);
+    spi2.octet.write(0xff);
+    spi2.octet.write(0xff);
+    
+	//开始读数据
+    spi2.read(size, buffer);
+    
+	spi2.release(0);
+    
+    return(size);
+#endif
+
 #endif
 }
 
@@ -265,7 +397,79 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     
     return(size);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+	uint32_t addr_sent = 0;
+    uint8_t status;
+    uint8_t count_try = 50;
+    
+    if(block >= FLASH_BLOCK_AMOUNT)
+    {
+        return(0);
+    }
+    
+    if(offset >= FLASH_BLOCK_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > FLASH_BLOCK_SIZE))
+    {
+        return(0);
+    }
+    
+    spi2.select(0);
+    
+    addr_sent = (block << 10);
+    addr_sent |= 0x00C00000;
+    addr_sent += offset;
+    
+	//写入命令
+	spi2.octet.write(AT45_CMD_WRBF1);
+    
+	//写入地址
+	spi2.octet.write(0);
+	spi2.octet.write(0);
+	spi2.octet.write(0);
+    
+    spi2.write(size, (const uint8_t *)buffer);
+    
+	spi2.release(0);
+    
+    spi2.select(0);
+    
+	//写入命令
+	spi2.octet.write(AT45_CMD_WREPBF1);
+    
+	//写入地址
+	spi2.octet.write(addr_sent>>16);
+	spi2.octet.write(addr_sent>>8);
+	spi2.octet.write(addr_sent);
+    
+    spi2.write(size, (const uint8_t *)buffer);
+    
+	spi2.release(0);
+    
+    do
+    {
+        spi2.select(0);
+        spi2.octet.write(AT45_CMD_SR);
+        status = spi2.octet.read();
+        count_try -= 1;
+        udelay(100);
+        spi2.release(0);
+    }
+    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && count_try);
+    
+    
+    if(((status&0x3c) != 0x34) || (!count_try))
+    {
+        return(0);
+    }
+    
+    return(size);
+#endif
+    
 #endif
 }
 
@@ -326,7 +530,11 @@ static uint32_t flash_eraseblock(uint32_t block)
     
     return(FLASH_BLOCK_SIZE);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+    return(FLASH_BLOCK_SIZE);
+#endif
+    
 #endif
 }
 
@@ -398,7 +606,11 @@ static uint32_t flash_eraseall(void)
     
     return(FLASH_CHIP_SIZE);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+    return(FLASH_CHIP_SIZE);
+#endif
+    
 #endif
 }
 

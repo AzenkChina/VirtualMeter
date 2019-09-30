@@ -131,6 +131,10 @@ static void key_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStructure;
     
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    
     //ÉÏ·­°´¼ü
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;

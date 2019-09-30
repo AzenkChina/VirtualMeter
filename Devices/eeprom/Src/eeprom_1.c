@@ -23,19 +23,28 @@
 #include "stdlib.h"
 #include "string.h"
 #else
+
+#if defined (STM32F091)
 #include "viic.h"
+#include "stm32f0xx.h"
+#endif
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 //Page size
-#define EEP_PAGE_SIZE          ((uint32_t)(64))
+#define EEP_PAGE_SIZE           ((uint32_t)(64))
 //Page amount
-#define EEP_PAGE_AMOUNT        ((uint32_t)(512))
-
+#define EEP_PAGE_AMOUNT         ((uint32_t)(512))
 //Chip size
-#define EEP_CHIP_SIZE          ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
+#define EEP_CHIP_SIZE           ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
+
+#if defined (STM32F091)
+//Device address
+#define EEP_ADDR                ((uint8_t)0x57)
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
@@ -105,7 +114,36 @@ static void eep_init(enum __dev_state state)
 #endif
     }
 #else
-    //...
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+    
+    GPIO_ResetBits(GPIOE, GPIO_Pin_0);
+    
+    viic.control.init(state);
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    
+    //PD9 n power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_ResetBits(GPIOD, GPIO_Pin_9);
+#endif
+    
 #endif
     status = DEVICE_INIT;
 }
@@ -115,6 +153,21 @@ static void eep_init(enum __dev_state state)
   */
 static void eep_suspend(void)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+    
+    GPIO_SetBits(GPIOE, GPIO_Pin_0);
+    
+    viic.control.suspend();
+#endif
+    
     status = DEVICE_SUSPENDED;
 }
 
@@ -169,7 +222,26 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
     
     return(size);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+    if(page >= EEP_PAGE_AMOUNT)
+    {
+        return(0);
+    }
+    
+    if(offset >= EEP_PAGE_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > EEP_PAGE_SIZE))
+    {
+        return(0);
+    }
+    
+    return(viic.bus.read(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer));
+#endif
+    
 #endif
 }
 
@@ -225,7 +297,32 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
     
     return(size);
 #else
-    return(0);
+    
+#if defined (STM32F091)
+    uint32_t val;
+    
+    if(page >= EEP_PAGE_AMOUNT)
+    {
+        return(0);
+    }
+    
+    if(offset >= EEP_PAGE_SIZE)
+    {
+        return(0);
+    }
+    
+    if(!size || (size > EEP_PAGE_SIZE))
+    {
+        return(0);
+    }
+    
+    GPIO_SetBits(GPIOE, GPIO_Pin_0);
+    val = viic.bus.write(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer);
+    mdelay(5);
+    GPIO_ResetBits(GPIOE, GPIO_Pin_0);
+    return(val);
+#endif
+    
 #endif
 }
 

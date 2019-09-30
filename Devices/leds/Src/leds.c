@@ -42,6 +42,8 @@ static void led_relay_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStructure;
     
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
@@ -124,6 +126,8 @@ static void led_warn_init(enum __dev_state state)
 {
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStructure;
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
