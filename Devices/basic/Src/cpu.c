@@ -293,16 +293,48 @@ static void cpu_core_init(enum __cpu_level level)
 #else
 
 #if defined (STM32F091)
-    RTC_InitTypeDef RTC_InitStructure;
-    RTC_TimeTypeDef RTC_TimeStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
-    EXTI_InitTypeDef EXTI_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
+    RTC_InitTypeDef RTC_InitStruct;
+    RTC_TimeTypeDef RTC_TimeStruct;
+    NVIC_InitTypeDef NVIC_InitStruct;
+    EXTI_InitTypeDef EXTI_InitStruct;
+    
     enum __interrupt_status intrs = cpu_entr_status();
     
     if(intrs == INTR_ENABLED)
     {
         cpu_entr_disable();
     }
+    
+    /* Set HSION bit */
+    RCC->CR |= (uint32_t)0x00000001;
+    /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
+    RCC->CFGR &= (uint32_t)0x08FFB80C;
+    /* Reset HSEON, CSSON and PLLON bits */
+    RCC->CR &= (uint32_t)0xFEF6FFFF;
+    /* Reset HSEBYP bit */
+    RCC->CR &= (uint32_t)0xFFFBFFFF;
+    /* Reset PLLSRC, PLLXTPRE and PLLMUL[3:0] bits */
+    RCC->CFGR &= (uint32_t)0xFFC0FFFF;
+    /* Reset PREDIV1[3:0] bits */
+    RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
+    /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits */
+    RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
+    /* Reset HSI14 bit */
+    RCC->CR2 &= (uint32_t)0xFFFFFFFE;
+    /* Reset HSI48 bit */
+    RCC->CR2 &= (uint32_t)0xFFFEFFFF;
+    /* Disable all interrupts */
+    RCC->CIR = 0x00000000;
+    /* Disable Prefetch Buffer and Flash Latency */
+    FLASH->ACR = 0x00000000;
+    /* HCLK = SYSCLK */
+    RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
+    /* PCLK = HCLK */
+    RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
+     //Disable SysTick
+    SysTick->CTRL = 0x00000000;
+    SysTick->VAL  = 0x00000000;
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
@@ -311,27 +343,9 @@ static void cpu_core_init(enum __cpu_level level)
     IWDG_SetReload(40000 / 32);
     IWDG_ReloadCounter();
     IWDG_Enable();
-
+    
     if(level == CPU_NORMAL)
     {
-        /* Set HSION bit */
-        RCC->CR |= (uint32_t)0x00000001;
-        /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
-        RCC->CFGR &= (uint32_t)0x08FFB80C;
-        /* Reset HSEON, CSSON and PLLON bits */
-        RCC->CR &= (uint32_t)0xFEF6FFFF;
-        /* Reset HSEBYP bit */
-        RCC->CR &= (uint32_t)0xFFFBFFFF;
-        /* Reset PLLSRC, PLLXTPRE and PLLMUL[3:0] bits */
-        RCC->CFGR &= (uint32_t)0xFFC0FFFF;
-        /* Reset PREDIV1[3:0] bits */
-        RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
-        /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits */
-        RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
-        /* Reset HSI14 bit */
-        RCC->CR2 &= (uint32_t)0xFFFFFFFE;
-        /* Disable all interrupts */
-        RCC->CIR = 0x00000000;
         /* Configure the System clock frequency, AHB/APBx prescalers and Flash settings */
         __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
         /* SYSCLK, HCLK, PCLK configuration ----------------------------------------*/
@@ -357,15 +371,8 @@ static void cpu_core_init(enum __cpu_level level)
 
         if(HSEStatus == (uint32_t)0x01)
         {
-            /* Enable Prefetch Buffer and set Flash Latency */
-            FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
-            /* HCLK = SYSCLK */
-            RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-            /* PCLK = HCLK */
-            RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
             /* PLL configuration = HSE * 3 = 24 MHz */
-            RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
-            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL3);
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSE_PREDIV | RCC_CFGR_PLLMULL3);
             /* Enable PLL */
             RCC->CR |= RCC_CR_PLLON;
 
@@ -387,16 +394,9 @@ static void cpu_core_init(enum __cpu_level level)
         {
             /* If HSE fails to start-up, the application will have wrong clock
             configuration. User can add here some code to deal with this error */
-            
-            /* Enable Prefetch Buffer and set Flash Latency */
-            FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
-            /* HCLK = SYSCLK */
-            RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-            /* PCLK = HCLK */
-            RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
-            /* PLL configuration = HSI / 2 * 6 = 24 MHz */
-            RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
-            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSI_DIV2 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
+
+            /* PLL configuration = HSI * 3 = 24 MHz */
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSI_PREDIV | RCC_CFGR_PLLMULL3);
             /* Enable PLL */
             RCC->CR |= RCC_CR_PLLON;
 
@@ -433,17 +433,17 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
-        EXTI_InitStructure.EXTI_Line = EXTI_Line20;
-        EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-        EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-        EXTI_InitStructure.EXTI_LineCmd = DISABLE;
-        EXTI_Init(&EXTI_InitStructure);
+        EXTI_InitStruct.EXTI_Line = EXTI_Line20;
+        EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+        EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
+        EXTI_InitStruct.EXTI_LineCmd = DISABLE;
+        EXTI_Init(&EXTI_InitStruct);
         
-        /* Enable the RTC Wakeup Interrupt */
-        NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
-        NVIC_InitStructure.NVIC_IRQChannelPriority = 0;
-        NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-        NVIC_Init(&NVIC_InitStructure);
+        /* Disable the RTC Wakeup Interrupt */
+        NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
+        NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
+        NVIC_InitStruct.NVIC_IRQChannelCmd = DISABLE;
+        NVIC_Init(&NVIC_InitStruct);
         
         SysTick->CTRL = 0x00000000;
         SysTick->LOAD = ((24000000 / 1000) - 1); //设置 SysTick 溢出时间为1ms
@@ -455,37 +455,9 @@ static void cpu_core_init(enum __cpu_level level)
     }
     else
     {
-        /* Set HSION bit */
-        RCC->CR |= (uint32_t)0x00000001;
-        /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
-        RCC->CFGR &= (uint32_t)0x08FFB80C;
-        /* Reset HSEON, CSSON and PLLON bits */
-        RCC->CR &= (uint32_t)0xFEF6FFFF;
-        /* Reset HSEBYP bit */
-        RCC->CR &= (uint32_t)0xFFFBFFFF;
-        /* Reset PLLSRC, PLLXTPRE and PLLMUL[3:0] bits */
-        RCC->CFGR &= (uint32_t)0xFFC0FFFF;
-        /* Reset PREDIV1[3:0] bits */
-        RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
-        /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits */
-        RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
-        /* Reset HSI14 bit */
-        RCC->CR2 &= (uint32_t)0xFFFFFFFE;
-        /* Disable all interrupts */
-        RCC->CIR = 0x00000000;
-        
-        /* Disable Prefetch Buffer and Flash Latency */
-        FLASH->ACR = 0x00000000;
-        /* HCLK = SYSCLK */
-        RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-        /* PCLK = HCLK */
-        RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
         /* Select HSI as system clock source */
         RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
         RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
-        
-        SysTick->CTRL = 0x00000000; //关闭 SysTick
-        SysTick->VAL  = 0x00000000;
         
         /* Enable the PWR clock */
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
@@ -510,10 +482,10 @@ static void cpu_core_init(enum __cpu_level level)
         /* Wait for RTC APB registers synchronisation */
         RTC_WaitForSynchro();
         /* Calendar Configuration */
-        RTC_InitStructure.RTC_AsynchPrediv = 99;
-        RTC_InitStructure.RTC_SynchPrediv   =  399; /* (40KHz / 100) - 1 = 399*/
-        RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
-        RTC_Init(&RTC_InitStructure);
+        RTC_InitStruct.RTC_AsynchPrediv = 99;
+        RTC_InitStruct.RTC_SynchPrediv   =  399; /* (40KHz / 100) - 1 = 399*/
+        RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
+        RTC_Init(&RTC_InitStruct);
         
         /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
         RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
@@ -525,27 +497,70 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
-        EXTI_InitStructure.EXTI_Line = EXTI_Line20;
-        EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-        EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-        EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-        EXTI_Init(&EXTI_InitStructure);
+        EXTI_InitStruct.EXTI_Line = EXTI_Line20;
+        EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+        EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
+        EXTI_InitStruct.EXTI_LineCmd = ENABLE;
+        EXTI_Init(&EXTI_InitStruct);
         
         /* Enable the RTC Wakeup Interrupt */
-        NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
-        NVIC_InitStructure.NVIC_IRQChannelPriority = 0;
-        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);
+        NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
+        NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
+        NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStruct);
         
         /* Set the time to 00h 00mn 00s AM */
-        RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
-        RTC_TimeStructure.RTC_Hours   = 0x00;
-        RTC_TimeStructure.RTC_Minutes = 0x00;
-        RTC_TimeStructure.RTC_Seconds = 0x00;
-        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStructure);
+        RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
+        RTC_TimeStruct.RTC_Hours   = 0x00;
+        RTC_TimeStruct.RTC_Minutes = 0x00;
+        RTC_TimeStruct.RTC_Seconds = 0x00;
+        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStruct);
         
         cpu_level = CPU_POWERSAVE;
     }
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.GPIO_Pin = ~(GPIO_Pin_13 | GPIO_Pin_14);
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_All;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+    GPIO_Init(GPIOF, &GPIO_InitStruct);
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
+    
+    SPI_I2S_DeInit(SPI1);
+    SPI_I2S_DeInit(SPI2);
+    ADC_DeInit(ADC1);
+    PWR_DeInit();
+    USART_DeInit(USART1);
+    USART_DeInit(USART2);
+    USART_DeInit(USART3);
+    USART_DeInit(USART4);
+    USART_DeInit(USART5);
+    USART_DeInit(USART6);
+    USART_DeInit(USART7);
+    USART_DeInit(USART8);
 
     if(intrs == INTR_ENABLED)
     {

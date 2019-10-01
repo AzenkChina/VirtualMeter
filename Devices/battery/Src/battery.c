@@ -189,37 +189,36 @@ static uint32_t battery_rtc_voltage(void)
 #else
 
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
-    ADC_InitTypeDef ADC_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
+    ADC_InitTypeDef ADC_InitStruct;
     int64_t Voltage;
     int64_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
     
     /* ADC1 Periph clock enable */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 	
     /* ADCs DeInit */
     ADC_DeInit(ADC1);
+    
+    /* Select ADC clock source */
+    ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
+    
     /* Initialize ADC structure */
-    ADC_StructInit(&ADC_InitStructure);
-    /* Configure the ADC1 in continuous mode with a resolution equal to 12 bits  */
-    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
-    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_StructInit(&ADC_InitStruct);
+    ADC_Init(ADC1, &ADC_InitStruct);
     ADC_VrefintCmd(ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_239_5Cycles);
+    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_71_5Cycles);
     /* ADC Calibration */
     ADC_GetCalibrationFactor(ADC1);
     /* Enable the ADC peripheral */
     ADC_Cmd(ADC1, ENABLE);
+    
     /* ADC1 regular Software Start Conv */ 
     ADC_StartOfConversion(ADC1);
     while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
@@ -239,7 +238,7 @@ static uint32_t battery_rtc_voltage(void)
     }
 	
     ADC1->CHSELR = 0;
-	ADC_ChannelConfig(ADC1, ADC_Channel_10 , ADC_SampleTime_41_5Cycles);
+	ADC_ChannelConfig(ADC1, ADC_Channel_10, ADC_SampleTime_41_5Cycles);
 	ADC_StartOfConversion(ADC1);
 	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
 	Voltage = ADC_GetConversionValue(ADC1);
@@ -353,37 +352,36 @@ static uint32_t battery_bkp_voltage(void)
 #else
 
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
-    ADC_InitTypeDef ADC_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
+    ADC_InitTypeDef ADC_InitStruct;
     int64_t Voltage;
     int64_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
     
     /* ADC1 Periph clock enable */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 	
     /* ADCs DeInit */  
     ADC_DeInit(ADC1);
+    
+    /* Select ADC clock source */
+    ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
+    
     /* Initialize ADC structure */
-    ADC_StructInit(&ADC_InitStructure);
-    /* Configure the ADC1 in continuous mode with a resolution equal to 12 bits  */
-    ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-    ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
-    ADC_Init(ADC1, &ADC_InitStructure);
+    ADC_StructInit(&ADC_InitStruct);
+    ADC_Init(ADC1, &ADC_InitStruct);
     ADC_VrefintCmd(ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_239_5Cycles);
+    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint, ADC_SampleTime_71_5Cycles);
     /* ADC Calibration */
     ADC_GetCalibrationFactor(ADC1);
     /* Enable the ADC peripheral */
     ADC_Cmd(ADC1, ENABLE);
+    
     /* ADC1 regular Software Start Conv */ 
     ADC_StartOfConversion(ADC1);
     while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);

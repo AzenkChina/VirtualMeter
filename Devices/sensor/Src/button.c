@@ -140,14 +140,14 @@ static void main_cover_init(enum __dev_state state)
 #else
 
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOE, &GPIO_InitStructure);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
 #endif
 
 #endif
@@ -220,14 +220,14 @@ static enum __dev_status sub_cover_status(void)
 static void sub_cover_init(enum __dev_state state)
 {
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
 #endif
 }
 

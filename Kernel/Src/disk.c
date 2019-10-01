@@ -122,10 +122,10 @@ static void disk_ctrl_lock(void)
 static void disk_ctrl_idle(void)
 {
     cpu.watchdog.feed();
-    eeprom.control.suspend();
+	flash.control.suspend();
     
     cpu.watchdog.feed();
-	flash.control.suspend();
+    eeprom.control.suspend();
 }
 
 /**

@@ -40,17 +40,17 @@ static enum __dev_status led_relay_status(void)
 static void led_relay_init(enum __dev_state state)
 {
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
     
     GPIO_SetBits(GPIOA, GPIO_Pin_7);
 #endif
@@ -125,17 +125,17 @@ static enum __dev_status led_warn_status(void)
 static void led_warn_init(enum __dev_state state)
 {
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
     
     GPIO_SetBits(GPIOA, GPIO_Pin_3);
 #endif

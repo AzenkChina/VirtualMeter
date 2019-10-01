@@ -8,7 +8,11 @@
 #include "eeprom.h"
 #include "eeprom_1.h"
 #include "eeprom_2.h"
-#include "crc.h"
+#include "trace.h"
+
+#if defined (STM32F091)
+#include "stm32f0xx.h"
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -41,9 +45,27 @@ static enum __dev_status eep_status(void)
   */
 static void eep_init(enum __dev_state state)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    
+    //PD9 n power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_ResetBits(GPIOD, GPIO_Pin_9);
+#endif
+    
 	eeprom_1.control.init(state);
 	eeprom_2.control.init(state);
     status = DEVICE_INIT;
+    
+    ASSERT(eeprom_1.info.pagesize() == eeprom_2.info.pagesize());
 }
 
 /**
@@ -53,6 +75,20 @@ static void eep_suspend(void)
 {
 	eeprom_1.control.suspend();
 	eeprom_2.control.suspend();
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    //PD9 n power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_SetBits(GPIOD, GPIO_Pin_9);
+#endif
     status = DEVICE_SUSPENDED;
 }
 

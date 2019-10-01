@@ -124,7 +124,32 @@ static void relay_init(enum __dev_state state)
     	status = DEVICE_INIT;
     }
 #else
-	status = DEVICE_INIT;
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    if(state == DEVICE_NORMAL)
+    {
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+        
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOC, &GPIO_InitStruct);
+        GPIO_SetBits(GPIOC, GPIO_Pin_8);
+    }
+    else
+    {
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+        GPIO_Init(GPIOC, &GPIO_InitStruct);
+    }
+    
+    status = DEVICE_INIT;
+#endif
+    
 #endif
 }
 
@@ -142,7 +167,17 @@ static void relay_suspend(void)
     
     status = DEVICE_SUSPENDED;
 #else
-	status = DEVICE_SUSPENDED;
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
+    
+    status = DEVICE_SUSPENDED;
+#endif
+    
 #endif
 }
 
@@ -153,7 +188,22 @@ static void relay_runner(uint16_t msecond)
 
 static enum __switch_status relay_get(void)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(relay_state);
+#else
+    
+#if defined (STM32F091)
+    if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_8) == Bit_RESET)
+    {
+        return(SWITCH_CLOSE);
+    }
+    else
+    {
+        return(SWITCH_OPEN);
+    }
+#endif
+    
+#endif
 }
 
 static uint8_t relay_set(enum __switch_status status)
@@ -162,7 +212,20 @@ static uint8_t relay_set(enum __switch_status status)
 	relay_state = status;
 	return((uint8_t)relay_state);
 #else
-    return((uint8_t)relay_state);
+    
+#if defined (STM32F091)
+    if(status == SWITCH_CLOSE)
+    {
+        GPIO_ResetBits(GPIOC, GPIO_Pin_8);
+        return(SWITCH_CLOSE);
+    }
+    else
+    {
+        GPIO_SetBits(GPIOC, GPIO_Pin_8);
+        return(SWITCH_OPEN);
+    }
+#endif
+    
 #endif
 }
 
