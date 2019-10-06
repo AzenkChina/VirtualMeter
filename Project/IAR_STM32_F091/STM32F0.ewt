@@ -2128,7 +2128,7 @@
       <group>
         <name>low</name>
         <file>
-          <name>$PROJ_DIR$\..\..\Devices\eeprom\Src\viic.c</name>
+          <name>$PROJ_DIR$\..\..\Devices\eeprom\Src\viic2.c</name>
         </file>
       </group>
       <file>
@@ -2146,7 +2146,7 @@
       <group>
         <name>low</name>
         <file>
-          <name>$PROJ_DIR$\..\..\Devices\flash\Src\spi2.c</name>
+          <name>$PROJ_DIR$\..\..\Devices\flash\Src\vspi2.c</name>
         </file>
       </group>
       <file>
@@ -2161,6 +2161,12 @@
     </group>
     <group>
       <name>lcd</name>
+      <group>
+        <name>low</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\lcd\Src\viic3.c</name>
+        </file>
+      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\lcd\Src\lcd.c</name>
       </file>
@@ -2176,7 +2182,7 @@
       <group>
         <name>low</name>
         <file>
-          <name>$PROJ_DIR$\..\..\Devices\metering\Src\spi1.c</name>
+          <name>$PROJ_DIR$\..\..\Devices\metering\Src\vspi1.c</name>
         </file>
       </group>
       <file>
@@ -2191,6 +2197,12 @@
     </group>
     <group>
       <name>rtc</name>
+      <group>
+        <name>low</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\viic1.c</name>
+        </file>
+      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\rtc\Src\rtc.c</name>
       </file>
@@ -2217,7 +2229,7 @@
         <group>
           <name>low</name>
           <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\uart3.c</name>
+            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart3.c</name>
           </file>
         </group>
       </group>
@@ -2226,7 +2238,7 @@
         <group>
           <name>low</name>
           <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\uart4.c</name>
+            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart4.c</name>
           </file>
         </group>
       </group>
@@ -2235,10 +2247,10 @@
         <group>
           <name>low</name>
           <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\uart1.c</name>
+            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart1.c</name>
           </file>
           <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\uart2.c</name>
+            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart2.c</name>
           </file>
         </group>
         <file>

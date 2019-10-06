@@ -19,7 +19,7 @@
   */
 uint8_t B2U8(uint8_t val)
 {
-    
+    return(((val) & 0x0f) + ((val) >> 4) * 10);
 }
 
 /**
@@ -27,7 +27,7 @@ uint8_t B2U8(uint8_t val)
   */
 uint8_t U2B8(uint8_t val)
 {
-    
+    return((((val) / 10) << 4) + (val) % 10);
 }
 
 /**

@@ -25,7 +25,7 @@
 #else
 
 #if defined (STM32F091)
-#include "viic.h"
+#include "viic2.h"
 #include "stm32f0xx.h"
 #endif
 
@@ -33,6 +33,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define deviic      viic2
+
 /* Private macro -------------------------------------------------------------*/
 //Page size
 #define EEP_PAGE_SIZE          ((uint32_t)(64))
@@ -151,7 +153,7 @@ static void eep_suspend(void)
     
     GPIO_SetBits(GPIOE, GPIO_Pin_1);
     
-    viic.control.suspend();    
+    deviic.control.suspend();    
 #endif
     
     status = DEVICE_SUSPENDED;
@@ -225,7 +227,7 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
         return(0);
     }
     
-    return(viic.bus.read(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer));
+    return(deviic.bus.read(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer));
 #endif
     
 #endif
@@ -303,7 +305,7 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
     }
     
     GPIO_SetBits(GPIOE, GPIO_Pin_1);
-    val = viic.bus.write(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer);
+    val = deviic.bus.write(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer);
     mdelay(5);
     GPIO_ResetBits(GPIOE, GPIO_Pin_1);
     return(val);

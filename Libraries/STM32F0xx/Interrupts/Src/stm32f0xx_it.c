@@ -141,4 +141,126 @@ void RTC_IRQHandler(void)
         jitter_update(1000);
     }
 }
+
+extern void VUART1_Recv_Handler(void);
+extern void VUART1_Trans_Handler(void);
+extern void VUART2_Recv_Handler(void);
+extern void VUART2_Trans_Handler(void);
+extern void VUART3_Recv_Handler(void);
+extern void VUART3_Trans_Handler(void);
+extern void VUART4_Recv_Handler(void);
+extern void VUART4_Trans_Handler(void);
+
+void USART3_8_IRQHandler(void)
+{
+	if(USART_GetITStatus(USART4, USART_IT_RXNE) != RESET)
+	{
+        if(USART_GetFlagStatus(USART4, USART_FLAG_PE) != RESET)
+        {
+            USART_ClearFlag(USART4, USART_FLAG_PE);
+            USART_ReceiveData(USART4);
+            return;
+        }
+        
+        VUART1_Recv_Handler();
+	}
+    
+	if(USART_GetITStatus(USART4, USART_IT_TC) != RESET)
+	{
+        VUART1_Trans_Handler();
+        USART_ClearFlag(USART4, USART_FLAG_TC);
+	}
+    
+	if(USART_GetITStatus(USART4, USART_IT_TXE) != RESET)
+	{
+		USART_ClearITPendingBit(USART4, USART_IT_TC);
+	}
+    
+    USART_ClearITPendingBit(USART4, USART_IT_ORE|USART_IT_FE);
+    
+    
+    
+    
+	if(USART_GetITStatus(USART6, USART_IT_RXNE) != RESET)
+	{
+        if(USART_GetFlagStatus(USART6, USART_FLAG_PE) != RESET)
+        {
+            USART_ClearFlag(USART6, USART_FLAG_PE);
+            USART_ReceiveData(USART6);
+            return;
+        }
+        
+        VUART2_Recv_Handler();
+	}
+    
+	if(USART_GetITStatus(USART6, USART_IT_TC) != RESET)
+	{
+        VUART2_Trans_Handler();
+        USART_ClearFlag(USART6, USART_FLAG_TC);
+	}
+    
+	if(USART_GetITStatus(USART6, USART_IT_TXE) != RESET)
+	{
+		USART_ClearITPendingBit(USART6, USART_IT_TC);
+	}
+    
+    USART_ClearITPendingBit(USART6, USART_IT_ORE|USART_IT_FE);
+    
+    
+    
+    
+	if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)
+	{
+        if(USART_GetFlagStatus(USART3, USART_FLAG_PE) != RESET)
+        {
+            USART_ClearFlag(USART3, USART_FLAG_PE);
+            USART_ReceiveData(USART3);
+            return;
+        }
+        
+        VUART3_Recv_Handler();
+	}
+    
+	if(USART_GetITStatus(USART3, USART_IT_TC) != RESET)
+	{
+        VUART3_Trans_Handler();
+        USART_ClearFlag(USART3, USART_FLAG_TC);
+	}
+    
+	if(USART_GetITStatus(USART3, USART_IT_TXE) != RESET)
+	{
+		USART_ClearITPendingBit(USART3, USART_IT_TC);
+	}
+    
+    USART_ClearITPendingBit(USART3, USART_IT_ORE|USART_IT_FE);
+    
+    
+    
+    
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+	{
+        if(USART_GetFlagStatus(USART1, USART_FLAG_PE) != RESET)
+        {
+            USART_ClearFlag(USART1, USART_FLAG_PE);
+            USART_ReceiveData(USART1);
+            return;
+        }
+        
+        VUART4_Recv_Handler();
+	}
+    
+	if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+	{
+        VUART4_Trans_Handler();
+        USART_ClearFlag(USART1, USART_FLAG_TC);
+	}
+    
+	if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
+	{
+		USART_ClearITPendingBit(USART1, USART_IT_TC);
+	}
+    
+    USART_ClearITPendingBit(USART1, USART_IT_ORE|USART_IT_FE);
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

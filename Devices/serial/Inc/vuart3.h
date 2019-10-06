@@ -1,6 +1,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __VIIC_H__
-#define __VIIC_H__
+#ifndef __VUART_3_H__
+#define __VUART_3_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
@@ -10,8 +10,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-extern const struct __iic viic;
-#endif /* !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) */
+extern const struct __uart vuart3;
 
-#endif /* __VIIC_H__ */
+#endif /* __VUART_3_H__ */

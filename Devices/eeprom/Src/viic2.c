@@ -7,7 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 
-#include "viic.h"
+#include "viic2.h"
 #include "delay.h"
 
 #if defined (STM32F091)
@@ -76,15 +76,6 @@ static void viic_init(enum __dev_state state)
 static void viic_suspend(void)
 {
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_Init(GPIOB, &GPIO_InitStruct);
-    
     GPIO_SetBits(GPIOB, GPIO_Pin_6);
     GPIO_SetBits(GPIOB, GPIO_Pin_7);
 #endif
@@ -443,16 +434,16 @@ static uint16_t viic_bus_write(uint16_t addr, uint16_t reg, uint16_t count, cons
     return(count);
 }
 
-enum __bus_status viic_bus_status(void)
+static enum __bus_status viic_bus_status(void)
 {
     return(BUS_IDLE);
 }
 
-const struct __iic viic = 
+const struct __iic viic2 = 
 {
     .control        = 
     {
-        .name       = "viic",
+        .name       = "virtual iic 2",
         .status     = viic_status,
         .init       = viic_init,
         .suspend    = viic_suspend,

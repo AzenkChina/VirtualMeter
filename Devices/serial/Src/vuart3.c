@@ -5,7 +5,7 @@
  **/
 
 /* Includes ------------------------------------------------------------------*/
-#include "uart3.h"
+#include "vuart3.h"
 #include "cpu.h"
 #include "trace.h"
 
@@ -52,6 +52,15 @@ static enum __stop uart_stop = STOP_ONE;
 static HANDLE hcomm = INVALID_HANDLE_VALUE;
 #elif defined ( __linux )
 static int fd = -1;
+#else
+
+#if defined (STM32F091)
+static enum __dev_state drv_state;
+static const uint8_t *data = (const uint8_t *)0;
+static uint16_t length = 0;
+static uint16_t sent = 0;
+#endif
+
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,8 +103,8 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	    	}
 	    }
 		
-		read_size = 0;
-	    
+	    read_size = 0;
+		
 	    bus_status = BUS_IDLE;
 	}
 	
@@ -110,7 +119,7 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	while(1)
 	{
 		Sleep(5);
-
+		
 		if(hcomm == INVALID_HANDLE_VALUE)
 		{
 			continue;
@@ -144,12 +153,37 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 	    		received_byte(buff[cnt]);
 	    	}
 	    }
-		
+        
 	    bus_status = BUS_IDLE;
 	}
 	
 	return(0);
 #endif
+}
+#endif
+
+#if defined (STM32F091)
+void VUART3_Recv_Handler(void)
+{
+    uint8_t c = USART_ReceiveData(USART3);
+    
+    if(received_byte)
+    {
+        received_byte(c);
+    }
+}
+
+void VUART3_Trans_Handler(void)
+{
+    if((data) && (sent < length))
+    {
+        USART_SendData(USART3, data[sent]);
+        sent += 1;
+    }
+    else
+    {
+        bus_status = BUS_IDLE;
+    }
 }
 #endif
 
@@ -379,7 +413,75 @@ static void uart_init(enum __dev_state state)
         pthread_attr_destroy(&thread_attr);
     }
 #else
-
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    NVIC_InitTypeDef NVIC_InitStruct;
+    USART_InitTypeDef USART_InitStruct;
+    
+    if(state == DEVICE_NORMAL)
+    {
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+		GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_4);
+		GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_4);
+		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+		GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_3;
+		GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+		GPIO_Init(GPIOB, &GPIO_InitStruct);
+        
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+        NVIC_InitStruct.NVIC_IRQChannel = USART3_8_IRQn;
+        NVIC_InitStruct.NVIC_IRQChannelPriority = 0x01;
+        NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStruct);
+        
+        USART_DeInit(USART3);
+        
+        USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+        USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+        
+        USART_InitStruct.USART_BaudRate = ((uint32_t)uart_baud) * 100;
+        if(uart_stop == STOP_TWO)
+        {
+            USART_InitStruct.USART_StopBits = USART_StopBits_2;
+        }
+        else if(uart_stop == STOP_ONE5)
+        {
+            USART_InitStruct.USART_StopBits = USART_StopBits_1_5;
+        }
+        else
+        {
+            USART_InitStruct.USART_StopBits = USART_StopBits_1;
+        }
+        
+        if(uart_parity == PARI_EVEN)
+        {
+            USART_InitStruct.USART_Parity = USART_Parity_Even;
+            USART_InitStruct.USART_WordLength = USART_WordLength_9b;
+        }
+        else if(uart_parity == PARI_ODD)
+        {
+            USART_InitStruct.USART_Parity = USART_Parity_Odd;
+            USART_InitStruct.USART_WordLength = USART_WordLength_9b;
+        }
+        else
+        {
+            USART_InitStruct.USART_Parity = USART_Parity_No;
+            USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+        }
+        
+        USART_Init(USART3, &USART_InitStruct);
+        
+        USART_SendData(USART3, USART_ReceiveData(USART3));
+        USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+        USART_Cmd(USART3, ENABLE);
+    }
+    
+    drv_state = state;
+#endif
+    
 #endif
     status = DEVICE_INIT;
 }
@@ -420,7 +522,19 @@ static void uart_suspend(void)
 #endif
 
 #else
-
+    
+#if defined (STM32F091)
+    USART_DeInit(USART3);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, DISABLE);
+    NVIC_DisableIRQ(USART3_8_IRQn);
+    NVIC_ClearPendingIRQ(USART3_8_IRQn);
+    
+	data = (const uint8_t *)0;
+	length = 0;
+	sent = 0;
+    bus_status = BUS_IDLE;
+#endif
+    
 #endif
     status = DEVICE_SUSPENDED;
 }
@@ -472,7 +586,24 @@ static uint16_t uart_write(uint16_t count, const uint8_t *buffer)
     
     return((uint16_t)(write_size>=0? write_size : 0));
 #else
-
+    
+#if defined (STM32F091)
+    if((!buffer) || (!count))
+    {
+        return(0);
+    }
+    
+    data = buffer;
+    length = count;
+    sent = 0;
+    
+    bus_status = BUS_TRANSFER;
+    USART_SendData(USART3, data[sent]);
+    sent += 1;
+    
+    return(count);
+#endif
+    
 #endif
 }
 
@@ -554,7 +685,15 @@ static enum __baud uart_baudrate_set(enum __baud baudrate)
         }
     }
 #else
-
+    
+#if defined (STM32F091)
+    uart_baud = baudrate;
+    if(status == DEVICE_INIT)
+    {
+        uart_init(drv_state);
+    }
+#endif
+    
 #endif
 
 	return(uart_baud);
@@ -683,7 +822,16 @@ static enum __parity uart_parity_set(enum __parity parity)
     
 	return(uart_parity);
 #else
-
+    
+#if defined (STM32F091)
+    uart_parity = parity;
+    if(status == DEVICE_INIT)
+    {
+        uart_init(drv_state);
+    }
+    return(uart_parity);
+#endif
+    
 #endif
 }
 
@@ -792,7 +940,16 @@ static enum __stop uart_stop_set(enum __stop stop)
     
 	return(uart_stop);
 #else
-
+    
+#if defined (STM32F091)
+    uart_stop = stop;
+    if(status == DEVICE_INIT)
+    {
+        uart_init(drv_state);
+    }
+    return(uart_stop);
+#endif
+    
 #endif
 }
 
@@ -849,11 +1006,11 @@ static void uart_handler_clear(void)
 /**
   * @brief  
   */
-const struct __uart uart3 = 
+const struct __uart vuart3 = 
 {
     .control        = 
     {
-        .name       = "uart3",
+        .name       = "virtual uart 3",
         .status     = uart_status,
         .init       = uart_init,
         .suspend    = uart_suspend,

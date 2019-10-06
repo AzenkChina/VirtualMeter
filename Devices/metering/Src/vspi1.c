@@ -7,7 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 
-#include "spi1.h"
+#include "vspi1.h"
 #include "stm32f0xx.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -247,11 +247,11 @@ static enum __bus_status spi1_bus_status(void)
 /**
   * @brief  
   */
-const struct __spi spi1 = 
+const struct __spi vspi1 = 
 {
     .control            = 
     {
-        .name           = "spi1",
+        .name           = "virtual spi 1",
         .status         = spi1_status,
         .init           = spi1_init,
         .suspend        = spi1_suspend,

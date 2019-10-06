@@ -1,6 +1,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SPI1_H__
-#define __SPI1_H__
+#ifndef __VUART_2_H__
+#define __VUART_2_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
@@ -10,8 +10,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-extern const struct __spi spi1;
-#endif /* !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) */
+extern const struct __uart vuart2;
 
-#endif /* __SPI1_H__ */
+#endif /* __VUART_2_H__ */

@@ -25,7 +25,7 @@
 #else
 
 #if defined (STM32F091)
-#include "spi2.h"
+#include "vspi2.h"
 #include "stm32f0xx.h"
 #endif
 
@@ -33,6 +33,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define devspi      vspi2
+
 /* Private macro -------------------------------------------------------------*/
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 //Block size
@@ -176,7 +178,7 @@ static void flash_init(enum __dev_state state)
     GPIO_SetBits(GPIOD, GPIO_Pin_8);
     mdelay(50);
     
-    spi2.control.init(state);
+    devspi.control.init(state);
 #endif
     
 #endif
@@ -207,7 +209,7 @@ static void flash_suspend(void)
     GPIO_SetBits(GPIOD, GPIO_Pin_8);
     GPIO_SetBits(GPIOD, GPIO_Pin_9);
     
-    spi2.control.suspend();
+    devspi.control.suspend();
 #endif
     
 #endif
@@ -295,25 +297,25 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     addr_sent |= 0x00C00000;
     addr_sent += offset;
     
-    spi2.select(0);
+    devspi.select(0);
     
 	//写入命令
-	spi2.octet.write(AT45_CMD_RDPG);
+	devspi.octet.write(AT45_CMD_RDPG);
     
 	//写入地址
-	spi2.octet.write(addr_sent>>16);
-	spi2.octet.write(addr_sent>>8);
-	spi2.octet.write(addr_sent);
+	devspi.octet.write(addr_sent>>16);
+	devspi.octet.write(addr_sent>>8);
+	devspi.octet.write(addr_sent);
     
-    spi2.octet.write(0xff);
-    spi2.octet.write(0xff);
-    spi2.octet.write(0xff);
-    spi2.octet.write(0xff);
+    devspi.octet.write(0xff);
+    devspi.octet.write(0xff);
+    devspi.octet.write(0xff);
+    devspi.octet.write(0xff);
     
 	//开始读数据
-    spi2.read(size, buffer);
+    devspi.read(size, buffer);
     
-	spi2.release(0);
+	devspi.release(0);
     
     return(size);
 #endif
@@ -418,46 +420,46 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
         return(0);
     }
     
-    spi2.select(0);
+    devspi.select(0);
     
     addr_sent = (block << 10);
     addr_sent |= 0x00C00000;
     addr_sent += offset;
     
 	//写入命令
-	spi2.octet.write(AT45_CMD_WRBF1);
+	devspi.octet.write(AT45_CMD_WRBF1);
     
 	//写入地址
-	spi2.octet.write(0);
-	spi2.octet.write(0);
-	spi2.octet.write(0);
+	devspi.octet.write(0);
+	devspi.octet.write(0);
+	devspi.octet.write(0);
     
-    spi2.write(size, (const uint8_t *)buffer);
+    devspi.write(size, (const uint8_t *)buffer);
     
-	spi2.release(0);
+	devspi.release(0);
     
-    spi2.select(0);
+    devspi.select(0);
     
 	//写入命令
-	spi2.octet.write(AT45_CMD_WREPBF1);
+	devspi.octet.write(AT45_CMD_WREPBF1);
     
 	//写入地址
-	spi2.octet.write(addr_sent>>16);
-	spi2.octet.write(addr_sent>>8);
-	spi2.octet.write(addr_sent);
+	devspi.octet.write(addr_sent>>16);
+	devspi.octet.write(addr_sent>>8);
+	devspi.octet.write(addr_sent);
     
-    spi2.write(size, (const uint8_t *)buffer);
+    devspi.write(size, (const uint8_t *)buffer);
     
-	spi2.release(0);
+	devspi.release(0);
     
     do
     {
-        spi2.select(0);
-        spi2.octet.write(AT45_CMD_SR);
-        status = spi2.octet.read();
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        status = devspi.octet.read();
         count_try -= 1;
         udelay(100);
-        spi2.release(0);
+        devspi.release(0);
     }
     while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && count_try);
     

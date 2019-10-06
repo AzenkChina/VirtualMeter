@@ -7,14 +7,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "rs485_2.h"
 #include "string.h"
-#include "uart2.h"
+#include "vuart2.h"
 #include "cpu.h"
 #include "trace.h"
 
+#if defined (STM32F091)
+#include "stm32f0xx.h"
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define UART_USED			uart2
+#define UART_USED			vuart2
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/

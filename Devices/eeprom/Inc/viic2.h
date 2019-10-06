@@ -1,6 +1,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __UART_1_H__
-#define __UART_1_H__
+#ifndef __VIIC2_H__
+#define __VIIC2_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
@@ -10,6 +10,8 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const struct __uart uart1;
+#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
+extern const struct __iic viic2;
+#endif /* !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux ) */
 
-#endif /* __UART_1_H__ */
+#endif /* __VIIC2_H__ */

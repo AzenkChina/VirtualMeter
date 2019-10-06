@@ -1,6 +1,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __UART_3_H__
-#define __UART_3_H__
+#ifndef __VUART_1_H__
+#define __VUART_1_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
@@ -10,6 +10,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const struct __uart uart3;
+extern const struct __uart vuart1;
 
-#endif /* __UART_3_H__ */
+#endif /* __VUART_1_H__ */

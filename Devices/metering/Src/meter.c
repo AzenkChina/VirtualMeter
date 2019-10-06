@@ -19,13 +19,15 @@
 
 #if defined (STM32F091)
 #include "stm32f0xx.h"
-#include "spi1.h"
+#include "vspi1.h"
 #endif
 
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define devspi      vspi1
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
@@ -156,9 +158,9 @@ static void meter_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    spi1.control.init(state);
+    devspi.control.init(state);
     
-    if(spi1.control.status() != DEVICE_INIT)
+    if(devspi.control.status() != DEVICE_INIT)
     {
         status = DEVICE_ERROR;
         return;
@@ -194,7 +196,7 @@ static void meter_suspend(void)
     //...IO£¬¼Ä´æÆ÷£¬Ê±ÖÓµÈ¹Ø±Õ
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    spi1.control.suspend();
+    devspi.control.suspend();
     
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;

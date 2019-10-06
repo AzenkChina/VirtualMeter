@@ -81,6 +81,8 @@ struct __win_lcd_message
 };
 #endif
 /* Private define ------------------------------------------------------------*/
+#define deviic      viic3
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;

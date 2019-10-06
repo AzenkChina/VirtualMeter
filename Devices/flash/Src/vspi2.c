@@ -7,7 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 
-#include "spi2.h"
+#include "vspi2.h"
 #include "delay.h"
 
 #if defined (STM32F091)
@@ -246,11 +246,11 @@ static enum __bus_status spi2_bus_status(void)
 /**
   * @brief  
   */
-const struct __spi spi2 = 
+const struct __spi vspi2 = 
 {
     .control            = 
     {
-        .name           = "spi2",
+        .name           = "virtual spi 2",
         .status         = spi2_status,
         .init           = spi2_init,
         .suspend        = spi2_suspend,

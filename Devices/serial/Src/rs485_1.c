@@ -7,14 +7,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "rs485_1.h"
 #include "string.h"
-#include "uart1.h"
+#include "vuart1.h"
 #include "cpu.h"
 #include "trace.h"
 
+#if defined (STM32F091)
+#include "stm32f0xx.h"
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define UART_USED			uart1
+#define UART_USED			vuart1
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -80,6 +83,9 @@ static enum __dev_status rs485_status(void)
   */
 static void rs485_init(enum __dev_state state)
 {
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+#endif
 	UART_USED.control.init(state);
 	
     serial_state.status = BUS_IDLE;
@@ -98,6 +104,17 @@ static void rs485_init(enum __dev_state state)
 	if(state == DEVICE_NORMAL)
 	{
 		UART_USED.handler.filling(recv_callback);
+#if defined (STM32F091)
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+        
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_15;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOA, &GPIO_InitStruct);
+        GPIO_SetBits(GPIOA, GPIO_Pin_8);
+#endif
 	}
     
     status = DEVICE_INIT;
@@ -185,6 +202,9 @@ static void rs485_runner(uint16_t msecond)
         //串口状态已空闲，如果总线状态忙，则复位总线状态
 		if(serial_state.status == BUS_TRANSFER)
 		{
+#if defined (STM32F091)
+            GPIO_SetBits(GPIOA, GPIO_Pin_8);
+#endif
             serial_state.status = BUS_IDLE;
 			serial_state.tx_data_size = 0;
 		}
@@ -192,6 +212,9 @@ static void rs485_runner(uint16_t msecond)
         //有数据等待传输
 		if(serial_state.tx_data_size)
 		{
+#if defined (STM32F091)
+            GPIO_ResetBits(GPIOA, GPIO_Pin_8);
+#endif
 			serial_state.status = BUS_TRANSFER;
 			UART_USED.write(serial_state.tx_data_size, serial_state.tx_buff);
 		}

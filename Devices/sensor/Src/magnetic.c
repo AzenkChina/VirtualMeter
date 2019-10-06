@@ -46,6 +46,23 @@ static void hsensor_init(enum __dev_state state)
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     GPIO_Init(GPIOE, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+    
+    if(state == DEVICE_NORMAL)
+    {
+        GPIO_ResetBits(GPIOE, GPIO_Pin_6);
+    }
+    else
+    {
+        GPIO_SetBits(GPIOE, GPIO_Pin_6);
+    }
 #endif
 }
 
@@ -54,6 +71,7 @@ static void hsensor_init(enum __dev_state state)
   */
 static void hsensor_suspend(void)
 {
+    
 }
 
 static void hsensor_runner(uint16_t msecond)
