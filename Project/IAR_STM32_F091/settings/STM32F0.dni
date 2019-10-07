@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-300041303
+Checksum=348003607
 [CodeCoverage]
 Enabled=_ 0
 [Exceptions]
@@ -34,7 +34,7 @@ ShowSource=1
 Freq=10000000
 MultiCoreRunAll=1
 [stlink]
-stlinkserialNo=37447E1E
+stlinkserialNo=B1B83CF3
 stlinkfoundProbes=
 [SWOTraceHWSettings]
 OverrideDefaultClocks=0
@@ -110,8 +110,8 @@ ShowTiming=1
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\Devices\serial\Src\rs485_1.c}.89.2" 0 0 1 "" 0 "" 0
-Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\Libraries\STM32F0xx\Interrupts\Src\stm32f0xx_it.c}.156.2" 0 0 1 "" 0 "" 0
+Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Keyboard\Src\task_keyboard.c}.60.9" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_DATA_LOG" "keyboard_callback" 0 0
 Count=2
 [Aliases]
 Count=0

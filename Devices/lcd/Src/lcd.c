@@ -13,6 +13,7 @@
 
 #if defined (STM32F091)
 #include "stm32f0xx.h"
+#include "viic3.h"
 #endif
 
 #endif
@@ -127,7 +128,38 @@ static void lcd_init(enum __dev_state state)
         status = DEVICE_INIT;
     }
 #else
+    
+#if defined (STM32F091)
+    GPIO_InitTypeDef GPIO_InitStruct;
+    
+    deviic.control.init(state);
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    
+    if(state == DEVICE_NORMAL)
+    {
+        //n backlight
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_13;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+        GPIO_SetBits(GPIOE, GPIO_Pin_13);
+    }
+    
+    //p power
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_14;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    GPIO_SetBits(GPIOE, GPIO_Pin_14);
+    
     status = DEVICE_INIT;
+#endif
+
 #endif
 }
 
@@ -147,7 +179,11 @@ static void lcd_suspend(void)
 		sock = INVALID_SOCKET;
     }
 #else
-
+    
+#if defined (STM32F091)
+    deviic.control.suspend();
+#endif
+    
 #endif
     
     status = DEVICE_NOTINIT;
@@ -216,7 +252,11 @@ static enum __lcd_backlight lcd_backlight_open(void)
     lcd_message.backlight = LCD_BKL_OPEN;
     return(lcd_message.backlight);
 #else
-
+    
+#if defined (STM32F091)
+    GPIO_ResetBits(GPIOE, GPIO_Pin_13);
+#endif
+    
 #endif
 }
 
@@ -229,7 +269,11 @@ static enum __lcd_backlight lcd_backlight_close(void)
     lcd_message.backlight = LCD_BKL_NONE;
     return(lcd_message.backlight);
 #else
-
+    
+#if defined (STM32F091)
+    GPIO_SetBits(GPIOE, GPIO_Pin_13);
+#endif
+    
 #endif
 }
 
@@ -241,7 +285,18 @@ static enum __lcd_backlight lcd_backlight_status(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     return(lcd_message.backlight);
 #else
-
+    
+#if defined (STM32F091)
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_13) == Bit_SET)
+    {
+        return(LCD_BACKLIGHT_OFF);
+    }
+    else
+    {
+        return(LCD_BACKLIGHT_ON);
+    }
+#endif
+    
 #endif
 }
 

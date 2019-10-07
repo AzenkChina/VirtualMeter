@@ -24,7 +24,6 @@
 
 #if defined (STM32F091)
 #include "stm32f0xx.h"
-#include "delay.h"
 #endif
 
 #endif
@@ -166,7 +165,7 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 #if defined (STM32F091)
 void VUART2_Recv_Handler(void)
 {
-    uint8_t c = USART_ReceiveData(USART6);
+    uint8_t c = USART_ReceiveData(USART5);
     
     if(received_byte)
     {
@@ -178,12 +177,12 @@ void VUART2_Trans_Handler(void)
 {
     if((data) && (sent < length))
     {
-        USART_SendData(USART6, data[sent]);
+        USART_SendData(USART5, data[sent]);
         sent += 1;
     }
     else
     {
-        USART_ITConfig(USART4, USART_IT_TC, DISABLE);
+        USART_ITConfig(USART5, USART_IT_TC, DISABLE);
         bus_status = BUS_IDLE;
     }
 }
@@ -423,23 +422,29 @@ static void uart_init(enum __dev_state state)
     
     if(state == DEVICE_NORMAL)
     {
-        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-		GPIO_PinAFConfig(GPIOA, GPIO_PinSource4, GPIO_AF_5);
-		GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_5);
-		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+        
+		GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_2);
+		GPIO_PinAFConfig(GPIOD, GPIO_PinSource2, GPIO_AF_2);
+        
+		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
 		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
 		GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_3;
 		GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-		GPIO_Init(GPIOA, &GPIO_InitStruct);
+		GPIO_Init(GPIOC, &GPIO_InitStruct);
         
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2;
+        GPIO_Init(GPIOD, &GPIO_InitStruct);
+        
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART5, ENABLE);
         NVIC_InitStruct.NVIC_IRQChannel = USART3_8_IRQn;
         NVIC_InitStruct.NVIC_IRQChannelPriority = 0x01;
         NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStruct);
         
-        USART_DeInit(USART6);
+        USART_DeInit(USART5);
         
         USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
         USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
@@ -474,12 +479,11 @@ static void uart_init(enum __dev_state state)
             USART_InitStruct.USART_WordLength = USART_WordLength_8b;
         }
         
-        USART_Init(USART6, &USART_InitStruct);
+        USART_Init(USART5, &USART_InitStruct);
         
-        USART_SendData(USART6, USART_ReceiveData(USART6));
-        mdelay(2);
-        USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
-        USART_Cmd(USART6, ENABLE);
+        USART_SendData(USART5, USART_ReceiveData(USART5));
+        USART_ITConfig(USART5, USART_IT_RXNE, ENABLE);
+        USART_Cmd(USART5, ENABLE);
     }
     
     drv_state = state;
@@ -527,8 +531,8 @@ static void uart_suspend(void)
 #else
     
 #if defined (STM32F091)
-    USART_DeInit(USART6);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, DISABLE);
+    USART_DeInit(USART5);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART5, DISABLE);
     NVIC_DisableIRQ(USART3_8_IRQn);
     NVIC_ClearPendingIRQ(USART3_8_IRQn);
     
@@ -601,8 +605,8 @@ static uint16_t uart_write(uint16_t count, const uint8_t *buffer)
     sent = 0;
     
     bus_status = BUS_TRANSFER;
-    USART_ITConfig(USART6, USART_IT_TC, ENABLE);
-    USART_SendData(USART6, data[sent]);
+    USART_ITConfig(USART5, USART_IT_TC, ENABLE);
+    USART_SendData(USART5, data[sent]);
     sent += 1;
     
     return(count);

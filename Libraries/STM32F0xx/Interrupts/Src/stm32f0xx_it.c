@@ -181,30 +181,30 @@ void USART3_8_IRQHandler(void)
     
     
     
-	if(USART_GetITStatus(USART6, USART_IT_RXNE) != RESET)
+	if(USART_GetITStatus(USART5, USART_IT_RXNE) != RESET)
 	{
-        if(USART_GetFlagStatus(USART6, USART_FLAG_PE) != RESET)
+        if(USART_GetFlagStatus(USART5, USART_FLAG_PE) != RESET)
         {
-            USART_ClearFlag(USART6, USART_FLAG_PE);
-            USART_ReceiveData(USART6);
+            USART_ClearFlag(USART5, USART_FLAG_PE);
+            USART_ReceiveData(USART5);
             return;
         }
         
         VUART2_Recv_Handler();
 	}
     
-	if(USART_GetITStatus(USART6, USART_IT_TC) != RESET)
+	if(USART_GetITStatus(USART5, USART_IT_TC) != RESET)
 	{
         VUART2_Trans_Handler();
-        USART_ClearFlag(USART6, USART_FLAG_TC);
+        USART_ClearFlag(USART5, USART_FLAG_TC);
 	}
     
-	if(USART_GetITStatus(USART6, USART_IT_TXE) != RESET)
+	if(USART_GetITStatus(USART5, USART_IT_TXE) != RESET)
 	{
-		USART_ClearITPendingBit(USART6, USART_IT_TC);
+		USART_ClearITPendingBit(USART5, USART_IT_TC);
 	}
     
-    USART_ClearITPendingBit(USART6, USART_IT_ORE|USART_IT_FE);
+    USART_ClearITPendingBit(USART5, USART_IT_ORE|USART_IT_FE);
     
     
     

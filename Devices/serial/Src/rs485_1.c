@@ -112,7 +112,7 @@ static void rs485_init(enum __dev_state state)
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
         GPIO_Init(GPIOA, &GPIO_InitStruct);
-        GPIO_SetBits(GPIOA, GPIO_Pin_8);
+        GPIO_SetBits(GPIOA, GPIO_Pin_15);
 #endif
         UART_USED.handler.filling(recv_callback);
 	}
@@ -203,7 +203,7 @@ static void rs485_runner(uint16_t msecond)
 		if(serial_state.status == BUS_TRANSFER)
 		{
 #if defined (STM32F091)
-            GPIO_SetBits(GPIOA, GPIO_Pin_8);
+            GPIO_SetBits(GPIOA, GPIO_Pin_15);
 #endif
             serial_state.status = BUS_IDLE;
 			serial_state.tx_data_size = 0;
@@ -213,7 +213,7 @@ static void rs485_runner(uint16_t msecond)
 		if(serial_state.tx_data_size)
 		{
 #if defined (STM32F091)
-            GPIO_ResetBits(GPIOA, GPIO_Pin_8);
+            GPIO_ResetBits(GPIOA, GPIO_Pin_15);
 #endif
 			serial_state.status = BUS_TRANSFER;
 			UART_USED.write(serial_state.tx_data_size, serial_state.tx_buff);

@@ -24,7 +24,6 @@
 
 #if defined (STM32F091)
 #include "stm32f0xx.h"
-#include "delay.h"
 #endif
 
 #endif
@@ -477,7 +476,6 @@ static void uart_init(enum __dev_state state)
         USART_Init(USART4, &USART_InitStruct);
         
         USART_SendData(USART4, USART_ReceiveData(USART4));
-        mdelay(2);
         USART_ITConfig(USART4, USART_IT_RXNE, ENABLE);
         USART_Cmd(USART4, ENABLE);
     }
