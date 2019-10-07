@@ -93,7 +93,7 @@
         </option>
         <option>
           <name>GenLowLevelInterface</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>GEndianModeBE</name>
@@ -185,7 +185,6 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state>_DLIB_TIME_ALLOW_64</state>
           <state>USE_STDPERIPH_DRIVER</state>
           <state>STM32F091</state>
         </option>
@@ -2062,6 +2061,18 @@
         <name>low</name>
         <file>
           <name>$PROJ_DIR$\..\..\Devices\rtc\Src\viic1.c</name>
+        </file>
+      </group>
+      <group>
+        <name>stubs</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\clock.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\time.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\time64.c</name>
         </file>
       </group>
       <file>

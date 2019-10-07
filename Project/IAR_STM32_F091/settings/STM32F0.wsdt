@@ -12,7 +12,7 @@
           
           
           
-        <Column0>232</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>394</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -31,7 +31,7 @@
         
         
       <ColumnWidth0>556</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>953</ColumnWidth2></Select-Ambiguous-Definitions>
-    <TerminalIO/><Tool-Output/><Breakpoints><col-names><item>Breakpoint</item><item>_I0</item></col-names><col-widths><item>500</item><item>35</item></col-widths></Breakpoints></Static>
+    <TerminalIO/><Tool-Output/><Breakpoints><col-names><item>Breakpoint</item><item>_I0</item></col-names><col-widths><item>500</item><item>35</item></col-widths></Breakpoints><Debug-Log><ColumnWidth0>19</ColumnWidth0><ColumnWidth1>1634</ColumnWidth1></Debug-Log></Static>
     <Windows>
       
       
@@ -43,11 +43,11 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Devices</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>STM32F0</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd1><Wnd4>
+      <SelectedTab>0</SelectedTab></Wnd1><Wnd3>
         <Tabs>
           <Tab>
             <Identity>TabID-6747-13364</Identity>
@@ -67,9 +67,9 @@
             <Factory>Select-Ambiguous-Definitions</Factory>
             <Session/>
           </Tab>
-        <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab><Tab><Identity>TabID-1329-825</Identity><TabName>Breakpoints</TabName><Factory>Breakpoints</Factory></Tab></Tabs>
+        <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab><Tab><Identity>TabID-1329-825</Identity><TabName>Breakpoints</TabName><Factory>Breakpoints</Factory></Tab><Tab><Identity>TabID-13352-23398</Identity><TabName>Debug Log</TabName><Factory>Debug-Log</Factory><Session/></Tab></Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd4></Windows>
+      <SelectedTab>0</SelectedTab></Wnd3></Windows>
     <Editor>
       
       
@@ -82,7 +82,7 @@
       
       
       
-    <Top><Row0><Sizes><Toolbar-025D6AA0><key>iaridepm.enu1</key></Toolbar-025D6AA0></Sizes></Row0></Top><Left><Row0><Sizes><Wnd1><Rect><Top>-2</Top><Left>-2</Left><Bottom>438</Bottom><Right>323</Right><x>-2</x><y>-2</y><xscreen>112</xscreen><yscreen>209</yscreen><sizeHorzCX>81991</sizeHorzCX><sizeHorzCY>304665</sizeHorzCY><sizeVertCX>237921</sizeVertCX><sizeVertCY>641399</sizeVertCY></Rect></Wnd1></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd4><Rect><Top>-2</Top><Left>-2</Left><Bottom>203</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>205</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>298834</sizeHorzCY><sizeVertCX>81991</sizeVertCX><sizeVertCY>304665</sizeVertCY></Rect></Wnd4></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-02DB9B50><key>iaridepm.enu1</key></Toolbar-02DB9B50></Sizes></Row0><Row1><Sizes/></Row1></Top><Left><Row0><Sizes><Wnd1><Rect><Top>-2</Top><Left>-2</Left><Bottom>590</Bottom><Right>468</Right><x>-2</x><y>-2</y><xscreen>162</xscreen><yscreen>309</yscreen><sizeHorzCX>93050</sizeHorzCX><sizeHorzCY>330128</sizeHorzCY><sizeVertCX>269960</sizeVertCX><sizeVertCY>632479</sizeVertCY></Rect></Wnd1></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>301</Bottom><Right>1743</Right><x>-2</x><y>-2</y><xscreen>1745</xscreen><yscreen>303</yscreen><sizeHorzCX>1002298</sizeHorzCX><sizeHorzCY>323718</sizeHorzCY><sizeVertCX>93050</sizeVertCX><sizeVertCY>330128</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

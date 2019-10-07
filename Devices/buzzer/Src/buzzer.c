@@ -23,6 +23,8 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+static enum __dev_status status = DEVICE_NOTINIT;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -31,7 +33,7 @@
   */
 static enum __dev_status buz_status(void)
 {
-    return(DEVICE_INIT);
+    return(status);
 }
 
 /**
@@ -39,6 +41,10 @@ static enum __dev_status buz_status(void)
   */
 static void buz_init(enum __dev_state state)
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    status = DEVICE_INIT;
+#else
+    
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
@@ -53,13 +59,10 @@ static void buz_init(enum __dev_state state)
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
         GPIO_Init(GPIOE, &GPIO_InitStruct);
         GPIO_ResetBits(GPIOE, GPIO_Pin_10);
+        status = DEVICE_INIT;
     }
-    else
-    {
-        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10;
-        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-        GPIO_Init(GPIOE, &GPIO_InitStruct);
-    }
+#endif
+    
 #endif
 }
 
@@ -68,12 +71,14 @@ static void buz_init(enum __dev_state state)
   */
 static void buz_suspend(void)
 {
-#if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    status = DEVICE_SUSPENDED;
+#else
     
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_Init(GPIOE, &GPIO_InitStruct);
+#if defined (STM32F091)
+    status = DEVICE_SUSPENDED;
+#endif
+    
 #endif
 }
 

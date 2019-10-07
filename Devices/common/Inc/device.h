@@ -285,8 +285,8 @@ struct __iic
     
     struct
     {
-        uint16_t                    (*read)(uint16_t addr, uint16_t reg, uint16_t count, uint8_t * buffer); //从 addr 设备的 reg 地址读 count 个数据
-        uint16_t                    (*write)(uint16_t addr, uint16_t reg, uint16_t count, const uint8_t *buffer); //写 count 个数据到 addr 设备的 reg 地址处
+        uint16_t                    (*read)(uint16_t addr, uint32_t reg, uint8_t reglen, uint16_t count, uint8_t * buffer); //从 addr 设备的 reg 地址读 count 个数据
+        uint16_t                    (*write)(uint16_t addr, uint32_t reg, uint8_t reglen, uint16_t count, const uint8_t *buffer); //写 count 个数据到 addr 设备的 reg 地址处
         
     }                               bus;
     

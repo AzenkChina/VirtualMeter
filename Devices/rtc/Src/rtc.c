@@ -10,6 +10,7 @@
 
 #if defined (STM32F091)
 #include <stdbool.h>
+#include <string.h>
 #include "stm32f0xx.h"
 #include "bcd.h"
 #include "viic1.h"
@@ -103,7 +104,11 @@ static uint8_t rtc_config_read(uint8_t *param)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
 #else
+    
+#if defined (STM32F091)
 	return(0);
+#endif
+    
 #endif
 }
 
@@ -116,7 +121,11 @@ static uint8_t rtc_config_write(const uint8_t *param)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
 #else
+    
+#if defined (STM32F091)
 	return(0);
+#endif
+    
 #endif
 }
 
@@ -138,7 +147,13 @@ static uint64_t rtc_read(void)
     
     if(status == DEVICE_INIT)
     {
-        deviic.bus.read(RTC_ADDR, RX8025_REG_SEC, 7, date);
+        memset(date, 0, sizeof(date));
+        memset(&tim, 0, sizeof(tim));
+        
+        if(deviic.bus.read(RTC_ADDR, RX8025_REG_SEC, 1, 7, date) != 7)
+        {
+            return(0);
+        }
         
         tim.tm_sec = B2U8(date[RX8025_REG_SEC] & 0x7f);
         tim.tm_min = B2U8(date[RX8025_REG_MIN] & 0x7f);
@@ -191,12 +206,12 @@ static uint64_t rtc_write(uint64_t stamp)
         date[RX8025_REG_SEC] = U2B8(tim->tm_sec);
         date[RX8025_REG_MIN] = U2B8(tim->tm_min);
         date[RX8025_REG_HOUR] = U2B8(tim->tm_hour);
-        date[RX8025_REG_WDAY] = U2B8(tim->tm_wday);
+        date[RX8025_REG_WDAY] = (1 << U2B8(tim->tm_wday));
         date[RX8025_REG_MDAY] = U2B8(tim->tm_mday);
         date[RX8025_REG_MONTH] = U2B8(tim->tm_mon + 1);
         date[RX8025_REG_YEAR] = U2B8((tim->tm_year > 100)? (tim->tm_year - 100):0);
         
-        deviic.bus.write(RTC_ADDR, RX8025_REG_SEC, 7, date);
+        deviic.bus.write(RTC_ADDR, RX8025_REG_SEC, 1, 7, date);
         
         return(t);
     }
@@ -237,84 +252,3 @@ const struct __rtc rtc =
         .write		= rtc_config_write,
     },
 };
-
-
-#if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
-
-#if defined ( __CC_ARM )
-#ifndef __CLK_TCK
-#error __CLK_TCK not defined.
-#elif( __CLK_TCK != 1 )
-#error __CLK_TCK val is not proper.
-#endif
-void _clock_init(void)
-{
-    
-}
-
-clock_t clock(void)
-{
-    return((clock_t)rtc_read());
-}
-
-time_t time(time_t *timer)
-{
-    if(timer)
-    {
-        *timer = (time_t) -1;
-        return(time_t) -1;
-    }
-    else
-    {
-        return((time_t)rtc_read());
-    }
-}
-#elif defined ( __ICCARM__ )
-clock_t clock(void)
-{
-    return((clock_t)rtc_read());
-}
-
-const char * __getzone(void)
-{
-    return ":GMT+8:GMT+8:+0800";
-}
-
-#if _DLIB_TIME_ALLOW_64
-__time64_t (__time64)(__time64_t *t)
-{
-    if (t)
-    {
-        *t = (__time64_t) -1;
-        return(__time64_t) -1;
-    }
-    else
-    {
-        return((__time64_t)rtc_read());
-    }
-}
-#else
-__time32_t (__time32)(__time32_t *t)
-{
-    if (t)
-    {
-        *t = (__time32_t) -1;
-        return(__time32_t) -1;
-    }
-    else
-    {
-        return((__time32_t)rtc_read());
-    }
-}
-#endif
-
-#elif defined ( __GNUC__ )
-#error APIs in time.h may not work.
-#elif defined ( __TASKING__ )
-#error APIs in time.h may not work.
-#else
-#error APIs in time.h may not work.
-#endif
-
-#endif
-

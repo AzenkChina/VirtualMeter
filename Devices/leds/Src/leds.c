@@ -8,16 +8,8 @@
 #include "leds.h"
 #include "trace.h"
 
-#if defined ( _WIN32 ) || defined ( _WIN64 )
-
-#elif defined ( __linux )
-
-#else
-
 #if defined (STM32F091)
 #include "stm32f0xx.h"
-#endif
-
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,17 +34,20 @@ static void led_relay_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOA, GPIO_Pin_7);
+    if(state == DEVICE_NORMAL)
+    {
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+        
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        
+        GPIO_Init(GPIOA, &GPIO_InitStruct);
+        
+        GPIO_SetBits(GPIOA, GPIO_Pin_7);
+    }
 #endif
 }
 
@@ -127,17 +122,20 @@ static void led_warn_init(enum __dev_state state)
 #if defined (STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOA, GPIO_Pin_3);
+    if(state == DEVICE_NORMAL)
+    {
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+        
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        
+        GPIO_Init(GPIOA, &GPIO_InitStruct);
+        
+        GPIO_SetBits(GPIOA, GPIO_Pin_3);
+    }
 #endif
 }
 

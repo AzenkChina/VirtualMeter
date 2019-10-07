@@ -25,7 +25,7 @@ if not "%1" == "" goto debugFile
 
 @echo on 
 
-"D:\Program Files\IAR Systems\common\bin\cspybat" -f "F:\WorkSpace\Codes\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.general.xcl" --backend -f "F:\WorkSpace\Codes\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.driver.xcl" 
+"D:\Program Files\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "F:\Works\Codes\GitHub\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.general.xcl" --backend -f "F:\Works\Codes\GitHub\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"D:\Program Files\IAR Systems\common\bin\cspybat" -f "F:\WorkSpace\Codes\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.general.xcl" "--debug_file=%1" --backend -f "F:\WorkSpace\Codes\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.driver.xcl" 
+"D:\Program Files\IAR Systems\Embedded Workbench 7.2\common\bin\cspybat" -f "F:\Works\Codes\GitHub\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.general.xcl" "--debug_file=%1" --backend -f "F:\Works\Codes\GitHub\VirtualMeter\Project\IAR_STM32_F091\settings\STM32F0.Debug.driver.xcl" 
 
 @echo off 
 :end

@@ -27,9 +27,9 @@ enum __iic_res
 #define VIIC_SCL_H					GPIO_SetBits(GPIOB,GPIO_Pin_8)
 #define VIIC_SDA_L					GPIO_ResetBits(GPIOB,GPIO_Pin_9)
 #define VIIC_SDA_H					GPIO_SetBits(GPIOB,GPIO_Pin_9)
-#define VIIC_SDA_DATA               GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_9)
+#define VIIC_SDA_DATA               (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_9) == Bit_SET)
 #define VIIC_SDA_DIR_OUT            
-#define VIIC_SDA_DIR_IN             
+#define VIIC_SDA_DIR_IN             GPIO_SetBits(GPIOB,GPIO_Pin_9)
 #endif
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,7 +60,7 @@ static void viic_init(enum __dev_state state)
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_2;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_3;
     GPIO_Init(GPIOB, &GPIO_InitStruct);
     
     GPIO_SetBits(GPIOB, GPIO_Pin_8);
@@ -75,11 +75,6 @@ static void viic_init(enum __dev_state state)
   */
 static void viic_suspend(void)
 {
-#if defined (STM32F091)
-    GPIO_SetBits(GPIOB, GPIO_Pin_8);
-    GPIO_SetBits(GPIOB, GPIO_Pin_9);
-#endif
-    
     status = DEVICE_SUSPENDED;
 }
 
@@ -335,11 +330,16 @@ static uint16_t viic_raw_write(uint16_t count, const uint8_t *buffer)
     return(count);
 }
 
-static uint16_t viic_bus_read(uint16_t addr, uint16_t reg, uint16_t count, uint8_t * buffer)
+static uint16_t viic_bus_read(uint16_t addr, uint32_t reg, uint8_t reglen, uint16_t count, uint8_t * buffer)
 {
     uint16_t loop;
     
     if(!count || !buffer)
+    {
+        return(0);
+    }
+    
+    if(reglen > 4)
     {
         return(0);
     }
@@ -352,16 +352,15 @@ static uint16_t viic_bus_read(uint16_t addr, uint16_t reg, uint16_t count, uint8
         return(0);
     }
     
-    viic_raw_putchar((uint8_t)((reg >> 8) & 0xff));
-    if(viic_low_ack_get() != IIC_ACK)
+    while(reglen)
     {
-        return(0);
-    }
-    
-    viic_raw_putchar((uint8_t)(reg & 0xff));
-    if(viic_low_ack_get() != IIC_ACK)
-    {
-        return(0);
+        viic_raw_putchar((uint8_t)((reg >> ((reglen - 1) * 8)) & 0xff));
+        if(viic_low_ack_get() != IIC_ACK)
+        {
+            return(0);
+        }
+        
+        reglen -= 1;
     }
     
     viic_low_start();
@@ -388,11 +387,16 @@ static uint16_t viic_bus_read(uint16_t addr, uint16_t reg, uint16_t count, uint8
     return(count);
 }
 
-static uint16_t viic_bus_write(uint16_t addr, uint16_t reg, uint16_t count, const uint8_t *buffer)
+static uint16_t viic_bus_write(uint16_t addr, uint32_t reg, uint8_t reglen, uint16_t count, const uint8_t *buffer)
 {
     uint16_t loop;
     
     if(!count || !buffer)
+    {
+        return(0);
+    }
+    
+    if(reglen > 4)
     {
         return(0);
     }
@@ -406,16 +410,15 @@ static uint16_t viic_bus_write(uint16_t addr, uint16_t reg, uint16_t count, cons
         return(0);
     }
     
-    viic_raw_putchar((uint8_t)((reg >> 8) & 0xff));
-    if(viic_low_ack_get() != IIC_ACK)
+    while(reglen)
     {
-        return(0);
-    }
-    
-    viic_raw_putchar((uint8_t)(reg & 0xff));
-    if(viic_low_ack_get() != IIC_ACK)
-    {
-        return(0);
+        viic_raw_putchar((uint8_t)((reg >> ((reglen - 1) * 8)) & 0xff));
+        if(viic_low_ack_get() != IIC_ACK)
+        {
+            return(0);
+        }
+        
+        reglen -= 1;
     }
     
     for(loop=0; loop<count; loop++)

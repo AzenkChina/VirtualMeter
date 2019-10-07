@@ -8,15 +8,15 @@
 
 "-p" 
 
-"D:\Program Files\IAR Systems\arm\CONFIG\debugger\ST\STM32F091VC.ddf" 
+"D:\Program Files\IAR Systems\Embedded Workbench 7.2\arm\CONFIG\debugger\ST\STM32F091VC.ddf" 
 
-"--semihosting" 
+"--semihosting=none" 
 
 "--device=STM32F091VC" 
 
 "--drv_interface=SWD" 
 
-"--stlink_reset_strategy=0,0" 
+"--stlink_reset_strategy=0,2" 
 
 "--drv_swo_clock_setup=0,0,2000000" 
 

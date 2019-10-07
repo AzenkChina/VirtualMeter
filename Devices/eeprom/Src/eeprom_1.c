@@ -45,7 +45,8 @@
 
 #if defined (STM32F091)
 //Device address
-#define EEP_ADDR                ((uint8_t)0x57)
+//#define EEP_ADDR                ((uint8_t)0x57)
+#define EEP_ADDR                ((uint8_t)0x50)
 #endif
 
 /* Private variables ---------------------------------------------------------*/
@@ -122,28 +123,16 @@ static void eep_init(enum __dev_state state)
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
     
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_1;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
     GPIO_Init(GPIOE, &GPIO_InitStruct);
     
-    GPIO_ResetBits(GPIOE, GPIO_Pin_0);
+    GPIO_SetBits(GPIOE, GPIO_Pin_1);
     
     deviic.control.init(state);
-    
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
-    
-    //PD9 n power
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
-    
-    GPIO_ResetBits(GPIOD, GPIO_Pin_9);
 #endif
     
 #endif
@@ -156,17 +145,6 @@ static void eep_init(enum __dev_state state)
 static void eep_suspend(void)
 {
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_Init(GPIOE, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOE, GPIO_Pin_0);
-    
     deviic.control.suspend();
 #endif
     
@@ -241,7 +219,7 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
         return(0);
     }
     
-    return(deviic.bus.read(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer));
+    return(deviic.bus.read(EEP_ADDR, page * EEP_PAGE_SIZE + offset, 2, size, buffer));
 #endif
     
 #endif
@@ -318,10 +296,11 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
         return(0);
     }
     
-    GPIO_SetBits(GPIOE, GPIO_Pin_0);
-    val = deviic.bus.write(EEP_ADDR, page * EEP_PAGE_SIZE + offset, size, buffer);
+    GPIO_ResetBits(GPIOE, GPIO_Pin_1);
+    val = deviic.bus.write(EEP_ADDR, page * EEP_PAGE_SIZE + offset, 2, size, buffer);
     mdelay(5);
-    GPIO_ResetBits(GPIOE, GPIO_Pin_0);
+    GPIO_SetBits(GPIOE, GPIO_Pin_1);
+    
     return(val);
 #endif
     

@@ -101,6 +101,9 @@ static void rs485_init(enum __dev_state state)
 	if(state == DEVICE_NORMAL)
 	{
 		UART_USED.handler.filling(recv_callback);
+#if defined (STM32F091)
+        
+#endif
 	}
     
     status = DEVICE_INIT;

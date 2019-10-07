@@ -65,7 +65,7 @@ static void eep_init(enum __dev_state state)
 	eeprom_2.control.init(state);
     status = DEVICE_INIT;
     
-    ASSERT(eeprom_1.info.pagesize() == eeprom_2.info.pagesize());
+    ASSERT(eeprom_1.info.pagesize() != eeprom_2.info.pagesize());
 }
 
 /**
@@ -76,19 +76,6 @@ static void eep_suspend(void)
 	eeprom_1.control.suspend();
 	eeprom_2.control.suspend();
     
-#if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
-    //PD9 n power
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOD, GPIO_Pin_9);
-#endif
     status = DEVICE_SUSPENDED;
 }
 

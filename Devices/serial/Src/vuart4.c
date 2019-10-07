@@ -24,6 +24,7 @@
 
 #if defined (STM32F091)
 #include "stm32f0xx.h"
+#include "delay.h"
 #endif
 
 #endif
@@ -182,6 +183,7 @@ void VUART4_Trans_Handler(void)
     }
     else
     {
+        USART_ITConfig(USART1, USART_IT_TC, DISABLE);
         bus_status = BUS_IDLE;
     }
 }
@@ -475,6 +477,7 @@ static void uart_init(enum __dev_state state)
         USART_Init(USART1, &USART_InitStruct);
         
         USART_SendData(USART1, USART_ReceiveData(USART1));
+        mdelay(2);
         USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
         USART_Cmd(USART1, ENABLE);
     }
@@ -598,6 +601,7 @@ static uint16_t uart_write(uint16_t count, const uint8_t *buffer)
     sent = 0;
     
     bus_status = BUS_TRANSFER;
+    USART_ITConfig(USART1, USART_IT_TC, ENABLE);
     USART_SendData(USART1, data[sent]);
     sent += 1;
     

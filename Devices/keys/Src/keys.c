@@ -190,7 +190,11 @@ static void key_runner(uint16_t msecond)
 
 #if defined (STM32F091)
     static uint16_t id_before = 0;
-    uint16_t id_sample[3] = {0};
+    uint16_t id_sample[3];
+    
+    id_sample[0] = 0;
+    id_sample[1] = 0;
+    id_sample[2] = 0;
     
     if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)
     {
@@ -202,7 +206,12 @@ static void key_runner(uint16_t msecond)
         id_sample[0] |= KEY_ID_DOWN;
     }
     
-    if((id_before & (KEY_ID_UP | KEY_ID_DOWN)) != id_sample[0])
+    if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_15) == Bit_SET)
+    {
+        id_sample[0] |= KEY_ID_PROGRAM;
+    }
+    
+    if(id_before != id_sample[0])
     {
         mdelay(1);
         
@@ -214,6 +223,11 @@ static void key_runner(uint16_t msecond)
         if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_7) == Bit_SET)
         {
             id_sample[1] |= KEY_ID_DOWN;
+        }
+        
+        if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_15) == Bit_SET)
+        {
+            id_sample[1] |= KEY_ID_PROGRAM;
         }
         
         if(id_sample[0] != id_sample[1])
@@ -233,6 +247,11 @@ static void key_runner(uint16_t msecond)
             id_sample[2] |= KEY_ID_DOWN;
         }
         
+        if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_15) == Bit_SET)
+        {
+            id_sample[2] |= KEY_ID_PROGRAM;
+        }
+        
         if(id_sample[1] != id_sample[2])
         {
             return;
@@ -247,8 +266,7 @@ static void key_runner(uint16_t msecond)
             key_changed(id_sample[0], KEY_RELEASE);
         }
         
-        id_before &= (KEY_ID_UP | KEY_ID_DOWN);
-        id_before |= id_sample[0];
+        id_before = id_sample[0];
     }
     
 #endif

@@ -233,10 +233,10 @@ void USART3_8_IRQHandler(void)
 	}
     
     USART_ClearITPendingBit(USART3, USART_IT_ORE|USART_IT_FE);
-    
-    
-    
-    
+}
+
+void USART1_IRQHandler(void)
+{
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
 	{
         if(USART_GetFlagStatus(USART1, USART_FLAG_PE) != RESET)

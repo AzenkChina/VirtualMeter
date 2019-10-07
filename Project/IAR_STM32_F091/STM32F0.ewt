@@ -2203,6 +2203,18 @@
           <name>$PROJ_DIR$\..\..\Devices\rtc\Src\viic1.c</name>
         </file>
       </group>
+      <group>
+        <name>stubs</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\clock.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\time.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\time64.c</name>
+        </file>
+      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\rtc\Src\rtc.c</name>
       </file>

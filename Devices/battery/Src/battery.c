@@ -135,7 +135,10 @@ static void bat_rtc_init(enum __dev_state state)
 #else
 
 #if defined (STM32F091)
-    status_rtc = DEVICE_INIT;
+    if(state == DEVICE_NORMAL)
+    {
+        status_rtc = DEVICE_INIT;
+    }
 #endif
 
 #endif
@@ -195,60 +198,67 @@ static uint32_t battery_rtc_voltage(void)
     int64_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
     
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOC, &GPIO_InitStruct);
-    
-    /* ADC1 Periph clock enable */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-	
-    /* ADCs DeInit */
-    ADC_DeInit(ADC1);
-    
-    /* Select ADC clock source */
-    ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
-    
-    /* Initialize ADC structure */
-    ADC_StructInit(&ADC_InitStruct);
-    ADC_Init(ADC1, &ADC_InitStruct);
-    ADC_VrefintCmd(ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_71_5Cycles);
-    /* ADC Calibration */
-    ADC_GetCalibrationFactor(ADC1);
-    /* Enable the ADC peripheral */
-    ADC_Cmd(ADC1, ENABLE);
-    
-    /* ADC1 regular Software Start Conv */ 
-    ADC_StartOfConversion(ADC1);
-    while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
-    /* Get ADC1 converted data */
-    Voltage = ADC_GetConversionValue(ADC1);
-    if(Voltage)
+    if(status_rtc == DEVICE_INIT)
     {
-        Ref = ((int64_t)*Cali) * 3300 / Voltage;
-        ADC_VrefintCmd(DISABLE);
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOC, &GPIO_InitStruct);
+        
+        /* ADC1 Periph clock enable */
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+        
+        /* ADCs DeInit */
+        ADC_DeInit(ADC1);
+        
+        /* Select ADC clock source */
+        ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
+        
+        /* Initialize ADC structure */
+        ADC_StructInit(&ADC_InitStruct);
+        ADC_Init(ADC1, &ADC_InitStruct);
+        ADC_VrefintCmd(ENABLE);
+        ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint , ADC_SampleTime_71_5Cycles);
+        /* ADC Calibration */
+        ADC_GetCalibrationFactor(ADC1);
+        /* Enable the ADC peripheral */
+        ADC_Cmd(ADC1, ENABLE);
+        
+        /* ADC1 regular Software Start Conv */ 
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        /* Get ADC1 converted data */
+        Voltage = ADC_GetConversionValue(ADC1);
+        if(Voltage)
+        {
+            Ref = ((int64_t)*Cali) * 3300 / Voltage;
+            ADC_VrefintCmd(DISABLE);
+        }
+        else
+        {
+            ADC_VrefintCmd(DISABLE);
+            ADC_DeInit(ADC1);
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+            return(0);
+        }
+        
+        ADC1->CHSELR = 0;
+        ADC_ChannelConfig(ADC1, ADC_Channel_10, ADC_SampleTime_41_5Cycles);
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        Voltage = ADC_GetConversionValue(ADC1);
+        Voltage = Voltage * Ref / 4096;
+        Voltage *= 2;
+        
+        ADC_DeInit(ADC1);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+        
+        return((uint32_t)Voltage);
     }
     else
     {
-        ADC_VrefintCmd(DISABLE);
-        ADC_DeInit(ADC1);
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
         return(0);
     }
-	
-    ADC1->CHSELR = 0;
-	ADC_ChannelConfig(ADC1, ADC_Channel_10, ADC_SampleTime_41_5Cycles);
-	ADC_StartOfConversion(ADC1);
-	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
-	Voltage = ADC_GetConversionValue(ADC1);
-	Voltage = Voltage * Ref / 4096;
-	Voltage *= 2;
-    
-    ADC_DeInit(ADC1);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
-    
-    return((uint32_t)Voltage);
 #endif
 
 #endif
@@ -310,7 +320,14 @@ static void bat_bkp_init(enum __dev_state state)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	status_backup = DEVICE_INIT;
 #else
-	status_backup = DEVICE_INIT;
+    
+#if defined (STM32F091)
+    if(state == DEVICE_NORMAL)
+    {
+        status_backup = DEVICE_INIT;
+    }
+#endif
+    
 #endif
 }
 
@@ -322,7 +339,11 @@ static void bat_bkp_suspend(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	status_backup = DEVICE_SUSPENDED;
 #else
+    
+#if defined (STM32F091)
     status_backup = DEVICE_SUSPENDED;
+#endif
+    
 #endif
 }
 
@@ -358,60 +379,67 @@ static uint32_t battery_bkp_voltage(void)
     int64_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
     
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOC, &GPIO_InitStruct);
-    
-    /* ADC1 Periph clock enable */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-	
-    /* ADCs DeInit */  
-    ADC_DeInit(ADC1);
-    
-    /* Select ADC clock source */
-    ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
-    
-    /* Initialize ADC structure */
-    ADC_StructInit(&ADC_InitStruct);
-    ADC_Init(ADC1, &ADC_InitStruct);
-    ADC_VrefintCmd(ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint, ADC_SampleTime_71_5Cycles);
-    /* ADC Calibration */
-    ADC_GetCalibrationFactor(ADC1);
-    /* Enable the ADC peripheral */
-    ADC_Cmd(ADC1, ENABLE);
-    
-    /* ADC1 regular Software Start Conv */ 
-    ADC_StartOfConversion(ADC1);
-    while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
-    /* Get ADC1 converted data */
-    Voltage = ADC_GetConversionValue(ADC1);
-    if(Voltage)
+    if(status_backup == DEVICE_INIT)
     {
-        Ref = ((int64_t)*Cali) * 3300 / Voltage;
-        ADC_VrefintCmd(DISABLE);
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOC, &GPIO_InitStruct);
+        
+        /* ADC1 Periph clock enable */
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+        
+        /* ADCs DeInit */  
+        ADC_DeInit(ADC1);
+        
+        /* Select ADC clock source */
+        ADC_ClockModeConfig(ADC1, ADC_ClockMode_SynClkDiv2);
+        
+        /* Initialize ADC structure */
+        ADC_StructInit(&ADC_InitStruct);
+        ADC_Init(ADC1, &ADC_InitStruct);
+        ADC_VrefintCmd(ENABLE);
+        ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint, ADC_SampleTime_71_5Cycles);
+        /* ADC Calibration */
+        ADC_GetCalibrationFactor(ADC1);
+        /* Enable the ADC peripheral */
+        ADC_Cmd(ADC1, ENABLE);
+        
+        /* ADC1 regular Software Start Conv */ 
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        /* Get ADC1 converted data */
+        Voltage = ADC_GetConversionValue(ADC1);
+        if(Voltage)
+        {
+            Ref = ((int64_t)*Cali) * 3300 / Voltage;
+            ADC_VrefintCmd(DISABLE);
+        }
+        else
+        {
+            ADC_VrefintCmd(DISABLE);
+            ADC_DeInit(ADC1);
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+            return(0);
+        }
+        
+        ADC1->CHSELR = 0;
+        ADC_ChannelConfig(ADC1, ADC_Channel_13 , ADC_SampleTime_41_5Cycles);
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        Voltage = ADC_GetConversionValue(ADC1);
+        Voltage = Voltage * Ref / 4096;
+        Voltage *= 3;
+        
+        ADC_DeInit(ADC1);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
+        
+        return((uint32_t)Voltage);
     }
     else
     {
-        ADC_VrefintCmd(DISABLE);
-        ADC_DeInit(ADC1);
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
         return(0);
     }
-	
-    ADC1->CHSELR = 0;
-	ADC_ChannelConfig(ADC1, ADC_Channel_13 , ADC_SampleTime_41_5Cycles);
-	ADC_StartOfConversion(ADC1);
-	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
-	Voltage = ADC_GetConversionValue(ADC1);
-	Voltage = Voltage * Ref / 4096;
-	Voltage *= 3;
-    
-    ADC_DeInit(ADC1);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
-    
-    return((uint32_t)Voltage);
 #endif
 
 #endif

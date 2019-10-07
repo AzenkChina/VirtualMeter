@@ -10,6 +10,7 @@
 #include "types_timed.h"
 #include "config_timed.h"
 
+#include "rtc.h"
 #include "crc.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -179,7 +180,11 @@ static const struct __timed timed =
 
 
 
-
+//...just for test
+#warning test code here!
+#include <time.h>
+time_t t;
+struct tm *tim;
 
 /**
   * @brief  
@@ -202,6 +207,8 @@ static void timed_init(void)
         
         status = TASK_INIT;
         
+        rtc.control.init(DEVICE_NORMAL);
+        
         TRACE(TRACE_INFO, "Task timed initialized.");
 	}
 }
@@ -216,6 +223,10 @@ static void timed_loop(void)
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
+#warning test code here!
+        t = time(NULL);
+        tim = gmtime(&t);
+        
     	//...在这里判断秒变化
         
         if(!entries)

@@ -103,7 +103,6 @@ static void rs485_init(enum __dev_state state)
     
 	if(state == DEVICE_NORMAL)
 	{
-		UART_USED.handler.filling(recv_callback);
 #if defined (STM32F091)
         RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
         
@@ -115,6 +114,7 @@ static void rs485_init(enum __dev_state state)
         GPIO_Init(GPIOA, &GPIO_InitStruct);
         GPIO_SetBits(GPIOA, GPIO_Pin_8);
 #endif
+        UART_USED.handler.filling(recv_callback);
 	}
     
     status = DEVICE_INIT;

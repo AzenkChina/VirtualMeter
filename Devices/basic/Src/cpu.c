@@ -526,10 +526,6 @@ static void cpu_core_init(enum __cpu_level level)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
     
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
     GPIO_InitStruct.GPIO_Pin = ~(GPIO_Pin_13 | GPIO_Pin_14);
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
     GPIO_Init(GPIOA, &GPIO_InitStruct);

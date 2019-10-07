@@ -193,22 +193,8 @@ static void flash_suspend(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     
 #else
-
+    
 #if defined (STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
-    //PD8 n reset
-    //PD9 n power
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOD, GPIO_Pin_8);
-    GPIO_SetBits(GPIOD, GPIO_Pin_9);
-    
     devspi.control.suspend();
 #endif
     
