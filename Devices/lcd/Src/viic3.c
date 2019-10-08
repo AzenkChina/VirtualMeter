@@ -391,7 +391,7 @@ static uint16_t viic_bus_write(uint16_t addr, uint32_t reg, uint8_t reglen, uint
 {
     uint16_t loop;
     
-    if(!count || !buffer)
+    if(count && !buffer)
     {
         return(0);
     }

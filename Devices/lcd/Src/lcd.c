@@ -12,6 +12,7 @@
 #else
 
 #if defined (DEMO_STM32F091)
+#include "string.h"
 #include "stm32f0xx.h"
 #include "viic3.h"
 #endif
@@ -82,7 +83,22 @@ struct __win_lcd_message
 };
 #endif
 /* Private define ------------------------------------------------------------*/
+#if defined (DEMO_STM32F091)
 #define deviic      viic3
+#endif
+
+/* Private macro -------------------------------------------------------------*/
+#if defined (DEMO_STM32F091)
+#define LCD_ADDR                0x1F
+
+#define LCD_SOFTRST				0xef //显示开启状态下软件复位
+#define LCD_MODSET_ON			0xaf //显示开启状态下的模式设置
+#define LCD_MODSET_OFF			0x2f //显示关闭状态下的模式设置
+#define LCD_DISCTL				0x37 //显示控制命令字
+#define LCD_EVRSET				0x03 //电子可调电阻设置寄存器值设置
+#define LCD_ADSET				0x00 //缓冲区地址设置命令字
+#define LCD_INIT				((LCD_SOFTRST << 24)|(LCD_DISCTL<<16)|((LCD_EVRSET|0xc0)<<8)|LCD_ADSET) //初始化
+#endif
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -92,6 +108,12 @@ static enum __dev_status status = DEVICE_NOTINIT;
 static SOCKADDR_IN src;
 static SOCKET sock = INVALID_SOCKET;
 static struct __win_lcd_message lcd_message;
+#else
+
+#if defined (DEMO_STM32F091)
+static uint8_t disp_buff[32] = {0};
+#endif
+
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
@@ -154,8 +176,14 @@ static void lcd_init(enum __dev_state state)
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
     GPIO_Init(GPIOE, &GPIO_InitStruct);
-
+	
     GPIO_SetBits(GPIOE, GPIO_Pin_14);
+	
+	//init
+	deviic.bus.write(LCD_ADDR, LCD_INIT, 4, 0, 0);
+	
+	//enable display
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
     
     status = DEVICE_INIT;
 #endif
@@ -181,6 +209,8 @@ static void lcd_suspend(void)
 #else
     
 #if defined (DEMO_STM32F091)
+	//disable display
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_OFF, 1, 0, 0);
     deviic.control.suspend();
 #endif
     
@@ -227,6 +257,14 @@ static void lcd_show_none(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.global = LCD_GLO_SHOW_NONE;
 #else
+	
+#if defined (DEMO_STM32F091)
+	memset(disp_buff, 0, sizeof(disp_buff));
+	//write data
+	deviic.bus.write(LCD_ADDR, 0, 1, sizeof(disp_buff), disp_buff);
+	//enable display
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+#endif
 
 #endif
 }
@@ -239,7 +277,15 @@ static void lcd_show_all(void)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     lcd_message.global = LCD_GLO_SHOW_ALL;
 #else
-
+	
+#if defined (DEMO_STM32F091)
+	memset(disp_buff, 0xff, sizeof(disp_buff));
+	//write data
+	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(disp_buff), disp_buff);
+	//enable display
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+#endif
+	
 #endif
 }
 
@@ -423,7 +469,7 @@ static void window_show_none(uint8_t channel)
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = 0;
 #else
-
+	
 #endif
 }
 

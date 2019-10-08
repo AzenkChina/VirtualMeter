@@ -446,7 +446,7 @@ static void cpu_core_init(enum __cpu_level level)
         NVIC_Init(&NVIC_InitStruct);
         
         SysTick->CTRL = 0x00000000;
-        SysTick->LOAD = ((24000000 / 1000) - 1); //设置 SysTick 溢出时间为1ms
+        SysTick->LOAD = ((24000000 / 1000) - 1); /* Set SysTick Interrupt in every Millisecond */
         SysTick->VAL  = 0x00000000;
         NVIC_SetPriority(SysTick_IRQn, 3);
         SysTick->CTRL = 0x00000007;
@@ -482,8 +482,8 @@ static void cpu_core_init(enum __cpu_level level)
         /* Wait for RTC APB registers synchronisation */
         RTC_WaitForSynchro();
         /* Calendar Configuration */
-        RTC_InitStruct.RTC_AsynchPrediv = 99;
-        RTC_InitStruct.RTC_SynchPrediv   =  399; /* (40KHz / 100) - 1 = 399*/
+        RTC_InitStruct.RTC_AsynchPrediv = (10 - 1); /* (40KHz / 10) = 1KHz*/
+        RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
         RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
         RTC_Init(&RTC_InitStruct);
         
