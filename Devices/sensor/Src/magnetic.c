@@ -11,7 +11,7 @@
 #include "button.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -37,7 +37,7 @@ static enum __dev_status hsensor_status(void)
   */
 static void hsensor_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     if(state == DEVICE_NORMAL)
@@ -80,7 +80,7 @@ static enum __switch_status hsensor_get(void)
     return(mailslot_magnetic());
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_5) == Bit_RESET)
     {
         return(SWITCH_CLOSE);

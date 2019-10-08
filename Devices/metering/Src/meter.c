@@ -17,7 +17,7 @@
 #include "comm_socket.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #include "vspi1.h"
 #endif
@@ -155,7 +155,7 @@ static void meter_init(enum __dev_state state)
     }
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     devspi.control.init(state);
@@ -193,6 +193,8 @@ static void meter_suspend(void)
 		sock = INVALID_SOCKET;
 	}
 #else
+    
+#if defined (DEMO_STM32F091)
     //...IO，寄存器，时钟等关闭
     GPIO_InitTypeDef GPIO_InitStruct;
     
@@ -204,10 +206,12 @@ static void meter_suspend(void)
     GPIO_Init(GPIOD, &GPIO_InitStruct);
 #endif
     
+#endif
+    
     status = DEVICE_SUSPENDED;
 }
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 /**
   * @brief  将 __metering_meta 转换为 702x 的命名字
   */

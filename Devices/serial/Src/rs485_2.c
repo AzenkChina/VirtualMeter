@@ -11,7 +11,7 @@
 #include "cpu.h"
 #include "trace.h"
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -83,7 +83,7 @@ static enum __dev_status rs485_status(void)
   */
 static void rs485_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
 #endif
 	UART_USED.control.init(state);
@@ -103,7 +103,7 @@ static void rs485_init(enum __dev_state state)
     
 	if(state == DEVICE_NORMAL)
 	{
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
         RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
         
         GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
@@ -202,7 +202,7 @@ static void rs485_runner(uint16_t msecond)
         //串口状态已空闲，如果总线状态忙，则复位总线状态
 		if(serial_state.status == BUS_TRANSFER)
 		{
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
             GPIO_SetBits(GPIOD, GPIO_Pin_0);
 #endif
             serial_state.status = BUS_IDLE;
@@ -212,7 +212,7 @@ static void rs485_runner(uint16_t msecond)
         //有数据等待传输
 		if(serial_state.tx_data_size)
 		{
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
             GPIO_ResetBits(GPIOD, GPIO_Pin_0);
 #endif
 			serial_state.status = BUS_TRANSFER;

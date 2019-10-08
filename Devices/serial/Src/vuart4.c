@@ -22,7 +22,7 @@
 #include "stdio.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -54,7 +54,7 @@ static HANDLE hcomm = INVALID_HANDLE_VALUE;
 static int fd = -1;
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 static enum __dev_state drv_state;
 static const uint8_t *data = (const uint8_t *)0;
 static uint16_t length = 0;
@@ -162,7 +162,7 @@ static DWORD CALLBACK ThreadRecvByte(PVOID pvoid)
 }
 #endif
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 void VUART4_Recv_Handler(void)
 {
     uint8_t c = USART_ReceiveData(USART1);
@@ -415,7 +415,7 @@ static void uart_init(enum __dev_state state)
     }
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     NVIC_InitTypeDef NVIC_InitStruct;
     USART_InitTypeDef USART_InitStruct;
@@ -524,7 +524,7 @@ static void uart_suspend(void)
 
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     USART_DeInit(USART1);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, DISABLE);
     NVIC_DisableIRQ(USART1_IRQn);
@@ -588,7 +588,7 @@ static uint16_t uart_write(uint16_t count, const uint8_t *buffer)
     return((uint16_t)(write_size>=0? write_size : 0));
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if((!buffer) || (!count))
     {
         return(0);
@@ -688,7 +688,7 @@ static enum __baud uart_baudrate_set(enum __baud baudrate)
     }
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uart_baud = baudrate;
     if(status == DEVICE_INIT)
     {
@@ -825,7 +825,7 @@ static enum __parity uart_parity_set(enum __parity parity)
 	return(uart_parity);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uart_parity = parity;
     if(status == DEVICE_INIT)
     {
@@ -943,7 +943,7 @@ static enum __stop uart_stop_set(enum __stop stop)
 	return(uart_stop);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uart_stop = stop;
     if(status == DEVICE_INIT)
     {

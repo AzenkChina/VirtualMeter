@@ -18,7 +18,7 @@
 #include "trace.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -134,7 +134,7 @@ static void bat_rtc_init(enum __dev_state state)
     }
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(state == DEVICE_NORMAL)
     {
         status_rtc = DEVICE_INIT;
@@ -159,7 +159,7 @@ static void bat_rtc_suspend(void)
     status_rtc = DEVICE_SUSPENDED;
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     status_rtc = DEVICE_SUSPENDED;
 #endif
 
@@ -191,7 +191,7 @@ static uint32_t battery_rtc_voltage(void)
     return(3000);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     ADC_InitTypeDef ADC_InitStruct;
     int64_t Voltage;
@@ -273,7 +273,7 @@ static enum __battery_status battery_rtc_status(void)
     return(battery_status_rtc);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t voltage = battery_rtc_voltage();
     
     if(voltage > 3600)
@@ -321,7 +321,7 @@ static void bat_bkp_init(enum __dev_state state)
 	status_backup = DEVICE_INIT;
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(state == DEVICE_NORMAL)
     {
         status_backup = DEVICE_INIT;
@@ -340,7 +340,7 @@ static void bat_bkp_suspend(void)
 	status_backup = DEVICE_SUSPENDED;
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     status_backup = DEVICE_SUSPENDED;
 #endif
     
@@ -372,7 +372,7 @@ static uint32_t battery_bkp_voltage(void)
     return(6300);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     ADC_InitTypeDef ADC_InitStruct;
     int64_t Voltage;
@@ -454,7 +454,7 @@ static enum __battery_status battery_bkp_status(void)
     return(battery_status_backup);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t voltage = battery_bkp_voltage();
     
     if(voltage > 6200)

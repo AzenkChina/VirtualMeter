@@ -12,7 +12,7 @@
           
           
           
-        <Column0>276</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>380</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -25,7 +25,7 @@
         
         
         
-      <ColumnWidth0>665</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>812</ColumnWidth2><ColumnWidth3>317</ColumnWidth3></Find-in-Files>
+      <ColumnWidth0>854</ColumnWidth0><ColumnWidth1>79</ColumnWidth1><ColumnWidth2>812</ColumnWidth2><ColumnWidth3>317</ColumnWidth3></Find-in-Files>
       <Select-Ambiguous-Definitions>
         
         
@@ -35,7 +35,7 @@
     <Windows>
       
       
-    <Wnd0>
+    <Wnd2>
         <Tabs>
           <Tab>
             <Identity>TabID-8316-13335</Identity>
@@ -43,11 +43,11 @@
             <Factory>Workspace</Factory>
             <Session>
               
-            <NodeDict><ExpandedNode>STM32F0</ExpandedNode><ExpandedNode>STM32F0/Tasks</ExpandedNode><ExpandedNode>STM32F0/Tasks/Display</ExpandedNode></NodeDict></Session>
+            <NodeDict><ExpandedNode>STM32F0</ExpandedNode></NodeDict></Session>
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd0><Wnd2>
+      <SelectedTab>0</SelectedTab></Wnd2><Wnd4>
         <Tabs>
           <Tab>
             <Identity>TabID-6747-13364</Identity>
@@ -69,20 +69,20 @@
           </Tab>
         <Tab><Identity>TabID-5012-4438</Identity><TabName>Tool Output</TabName><Factory>Tool-Output</Factory><Session/></Tab><Tab><Identity>TabID-1329-825</Identity><TabName>Breakpoints</TabName><Factory>Breakpoints</Factory></Tab><Tab><Identity>TabID-13352-23398</Identity><TabName>Debug Log</TabName><Factory>Debug-Log</Factory><Session/></Tab></Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd2></Windows>
+      <SelectedTab>0</SelectedTab></Wnd4></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Kernel\Src\kernel.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>193</YPos2><SelStart2>5028</SelStart2><SelEnd2>5028</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Display\Src\task_display.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>1254</YPos2><SelStart2>35149</SelStart2><SelEnd2>35149</SelEnd2></Tab><ActiveTab>1</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Tasks\Keyboard\Src\task_keyboard.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>52</YPos2><SelStart2>1480</SelStart2><SelEnd2>1480</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane/><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-01176AA0><key>iaridepm.enu1</key></Toolbar-01176AA0></Sizes></Row0><Row1><Sizes/></Row1></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>421</Bottom><Right>367</Right><x>-2</x><y>-2</y><xscreen>127</xscreen><yscreen>226</yscreen><sizeHorzCX>92972</sizeHorzCX><sizeHorzCY>329446</sizeHorzCY><sizeVertCX>270132</sizeVertCX><sizeVertCY>616618</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>220</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>222</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>323615</sizeHorzCY><sizeVertCX>92972</sizeVertCX><sizeVertCY>329446</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-02ED8628><key>iaridepm.enu1</key></Toolbar-02ED8628></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>639</Bottom><Right>454</Right><x>-2</x><y>-2</y><xscreen>157</xscreen><yscreen>301</yscreen><sizeHorzCX>93009</sizeHorzCX><sizeHorzCY>329682</sizeHorzCY><sizeVertCX>270142</sizeVertCX><sizeVertCY>702081</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd4><Rect><Top>-2</Top><Left>-2</Left><Bottom>229</Bottom><Right>1690</Right><x>-2</x><y>-2</y><xscreen>1692</xscreen><yscreen>231</yscreen><sizeHorzCX>1002370</sizeHorzCX><sizeHorzCY>253012</sizeHorzCY><sizeVertCX>93009</sizeVertCX><sizeVertCY>329682</sizeVertCY></Rect></Wnd4></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

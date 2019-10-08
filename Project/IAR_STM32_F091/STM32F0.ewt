@@ -2209,6 +2209,9 @@
           <name>$PROJ_DIR$\..\..\Devices\rtc\Src\clock.c</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\getzone.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\..\Devices\rtc\Src\time.c</name>
         </file>
         <file>

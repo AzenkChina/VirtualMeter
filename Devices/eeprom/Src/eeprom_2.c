@@ -24,7 +24,7 @@
 #include "string.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "viic2.h"
 #include "stm32f0xx.h"
 #endif
@@ -43,7 +43,7 @@
 //Chip size
 #define EEP_CHIP_SIZE          ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 //Device address
 #define EEP_ADDR                ((uint8_t)0x50)
 #endif
@@ -125,7 +125,7 @@ static void eep_init(enum __dev_state state)
     }
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
@@ -149,7 +149,7 @@ static void eep_init(enum __dev_state state)
   */
 static void eep_suspend(void)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     deviic.control.suspend();    
 #endif
     
@@ -208,7 +208,7 @@ static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uin
     return(size);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(page >= EEP_PAGE_AMOUNT)
     {
         return(0);
@@ -283,7 +283,7 @@ static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, co
     return(size);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t val;
     
     if(page >= EEP_PAGE_AMOUNT)

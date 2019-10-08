@@ -10,7 +10,7 @@
 #include "vspi2.h"
 #include "delay.h"
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -35,7 +35,7 @@ static enum __dev_status spi2_status(void)
   */
 static void spi2_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     SPI_InitTypeDef SPI_InitStruct;
     
@@ -88,7 +88,7 @@ static void spi2_init(enum __dev_state state)
   */
 static void spi2_suspend(void)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     SPI_I2S_DeInit(SPI2);
@@ -113,7 +113,7 @@ static void spi2_suspend(void)
 
 static uint8_t spi2_select(uint8_t cs)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_ResetBits(GPIOB, GPIO_Pin_12);
     udelay(300);
 #endif
@@ -123,7 +123,7 @@ static uint8_t spi2_select(uint8_t cs)
 
 static uint8_t spi2_release(uint8_t cs)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     udelay(300);
     GPIO_SetBits(GPIOB, GPIO_Pin_12);
 #endif
@@ -147,7 +147,7 @@ static uint32_t spi2_freq_set(uint32_t rate)
   */
 static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -164,7 +164,7 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
   */
 static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -181,7 +181,7 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
   */
 static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t * rbuffer)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -198,7 +198,7 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
   */
 static uint32_t spi2_readchar(void)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint8_t val;
     
     val = SPI_I2S_Send_ReceiveData(SPI2, 0xff);
@@ -212,7 +212,7 @@ static uint32_t spi2_readchar(void)
   */
 static uint32_t spi2_writechar(uint32_t ch)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     SPI_I2S_Send_ReceiveData(SPI2, (uint8_t)ch);
     
     return(ch);
@@ -224,7 +224,7 @@ static uint32_t spi2_writechar(uint32_t ch)
   */
 static uint32_t spi2_readwritechar(uint32_t ch)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     uint8_t val;
     
     val = (uint8_t)SPI_I2S_Send_ReceiveData(SPI2, ch);

@@ -10,7 +10,7 @@
 #include "eeprom_2.h"
 #include "trace.h"
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -45,7 +45,7 @@ static enum __dev_status eep_status(void)
   */
 static void eep_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);

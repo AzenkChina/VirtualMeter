@@ -18,7 +18,7 @@
 #include "trace.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -97,7 +97,7 @@ static enum __dev_status main_cover_status(void)
 	return(status);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     return(DEVICE_INIT);
 #endif
 
@@ -139,7 +139,7 @@ static void main_cover_init(enum __dev_state state)
     }
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
@@ -177,7 +177,7 @@ static enum __switch_status main_cover_get(void)
     return(status_main_cover);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_8) == Bit_RESET)
     {
         return(SWITCH_OPEN);
@@ -219,7 +219,7 @@ static enum __dev_status sub_cover_status(void)
   */
 static void sub_cover_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
@@ -248,7 +248,7 @@ static enum __switch_status sub_cover_get(void)
     return(status_sub_cover);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_6) == Bit_RESET)
     {
         return(SWITCH_OPEN);

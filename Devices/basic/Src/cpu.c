@@ -19,7 +19,7 @@
 #include "stdlib.h"
 #include "jiffy.h"
 #else
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 #endif
@@ -114,7 +114,7 @@ static const char* cpu_core_details(void)
     static const char details[] = "x86 linux";
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     static const char details[] = "stm32f091 arm cortex-m0 thumb2";
 #endif
 
@@ -167,7 +167,7 @@ static void cpu_core_reset(void)
     exit(0);
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     NVIC_SystemReset();
 #endif
 
@@ -193,7 +193,7 @@ static void cpu_core_sleep(void)
 	}
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 #endif
 
@@ -209,7 +209,7 @@ static void watchdog_feed(void)
     counter = 0;
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     IWDG_ReloadCounter();
 #endif
 
@@ -222,7 +222,7 @@ static void watchdog_feed(void)
 static void cpu_entr_disable(void)
 {
     intr_status = INTR_DISABLED;
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     __disable_irq();
 #endif
 }
@@ -233,7 +233,7 @@ static void cpu_entr_disable(void)
 static void cpu_entr_enable(void)
 {
     intr_status = INTR_ENABLED;
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     __enable_irq();
 #endif
 }
@@ -292,7 +292,7 @@ static void cpu_core_init(enum __cpu_level level)
     }
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     RTC_InitTypeDef RTC_InitStruct;
     RTC_TimeTypeDef RTC_TimeStruct;
@@ -763,7 +763,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (STM32F091)
+#elif defined (DEMO_STM32F091)
 		.base           = SRAM_BASE,
 		.size           = 32 * 1024,
 #endif
@@ -775,7 +775,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (STM32F091)
+#elif defined (DEMO_STM32F091)
 		.base           = FLASH_BASE,
 		.size           = 256 * 1024,
 #endif
@@ -787,7 +787,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (STM32F091)
+#elif defined (DEMO_STM32F091)
         .base           = PERIPH_BASE,
         .size           = 0xBFFFFFFF,
 #endif

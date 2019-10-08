@@ -11,7 +11,7 @@
 #include "comm_socket.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #include "viic3.h"
 #endif
@@ -129,7 +129,7 @@ static void lcd_init(enum __dev_state state)
     }
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     deviic.control.init(state);
@@ -180,7 +180,7 @@ static void lcd_suspend(void)
     }
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     deviic.control.suspend();
 #endif
     
@@ -253,7 +253,7 @@ static enum __lcd_backlight lcd_backlight_open(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_ResetBits(GPIOE, GPIO_Pin_13);
 #endif
     
@@ -270,7 +270,7 @@ static enum __lcd_backlight lcd_backlight_close(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_SetBits(GPIOE, GPIO_Pin_13);
 #endif
     
@@ -286,7 +286,7 @@ static enum __lcd_backlight lcd_backlight_status(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_13) == Bit_SET)
     {
         return(LCD_BACKLIGHT_OFF);

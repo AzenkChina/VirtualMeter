@@ -11,7 +11,7 @@
 #include "meter.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -20,7 +20,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #define POWER_UP_VOL        (4900)
 #define POWER_DOWN_VOL      (4700)
 #endif
@@ -45,7 +45,7 @@ static enum __power_status power_check(void)
     }
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     static enum __power_status status_before = SUPPLY_BATTERY;
     
     GPIO_InitTypeDef GPIO_InitStruct;

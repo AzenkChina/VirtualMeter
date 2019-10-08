@@ -10,7 +10,7 @@
 #include "viic3.h"
 #include "delay.h"
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
 #endif
 
@@ -22,7 +22,7 @@ enum __iic_res
 };
 
 /* Private define ------------------------------------------------------------*/
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #define VIIC_SCL_L                  GPIO_ResetBits(GPIOE,GPIO_Pin_11)
 #define VIIC_SCL_H					GPIO_SetBits(GPIOE,GPIO_Pin_11)
 #define VIIC_SDA_L					GPIO_ResetBits(GPIOE,GPIO_Pin_12)
@@ -51,7 +51,7 @@ static enum __dev_status viic_status(void)
   */
 static void viic_init(enum __dev_state state)
 {
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);

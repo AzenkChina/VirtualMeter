@@ -24,7 +24,7 @@
 #include "string.h"
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 #include "vspi2.h"
 #include "stm32f0xx.h"
 #endif
@@ -45,7 +45,7 @@
 #define FLASH_CHIP_SIZE             ((uint32_t)(FLASH_BLOCK_SIZE * FLASH_BLOCK_AMOUNT))
 #else
 
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 //Main Memory Page Read D2H
 #define AT45_CMD_RDPG          0xD2
 //Buffer 1 Read 54H
@@ -165,7 +165,7 @@ static void flash_init(enum __dev_state state)
 #endif
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
@@ -202,7 +202,7 @@ static void flash_suspend(void)
     
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     devspi.control.suspend();
 #endif
     
@@ -269,7 +269,7 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     return(size);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 	uint32_t addr_sent = 0;
     
     if(block >= FLASH_BLOCK_AMOUNT)
@@ -394,7 +394,7 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     return(size);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
 	uint32_t addr_sent = 0;
     uint8_t status;
     uint8_t count_try = 50;
@@ -527,7 +527,7 @@ static uint32_t flash_eraseblock(uint32_t block)
     return(FLASH_BLOCK_SIZE);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     return(FLASH_BLOCK_SIZE);
 #endif
     
@@ -603,7 +603,7 @@ static uint32_t flash_eraseall(void)
     return(FLASH_CHIP_SIZE);
 #else
     
-#if defined (STM32F091)
+#if defined (DEMO_STM32F091)
     return(FLASH_CHIP_SIZE);
 #endif
     

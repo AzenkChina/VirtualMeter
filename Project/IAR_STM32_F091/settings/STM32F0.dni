@@ -110,9 +110,7 @@ ShowTiming=1
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Keyboard\Src\task_keyboard.c}.60.9" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_DATA_LOG" "keyboard_callback" 0 0
-Count=2
+Count=0
 [Aliases]
 Count=0
 SuppressDialog=0
