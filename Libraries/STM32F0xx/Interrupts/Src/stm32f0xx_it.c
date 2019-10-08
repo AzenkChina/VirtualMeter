@@ -132,9 +132,10 @@ void RTC_IRQHandler(void)
 	{
 		/* Clear the Alarm A Pending Bit */
 		RTC_ClearITPendingBit(RTC_IT_WUT);
-		/* Clear EXTI line17 pending bit */
-		EXTI_ClearITPendingBit(EXTI_Line20);
 	}
+    
+    /* Clear EXTI line20 pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line20);
     
     if(cpu.core.status() == CPU_POWERSAVE)
     {

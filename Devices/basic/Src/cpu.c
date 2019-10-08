@@ -344,6 +344,45 @@ static void cpu_core_init(enum __cpu_level level)
     IWDG_ReloadCounter();
     IWDG_Enable();
     
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
+    
+    GPIO_InitStruct.GPIO_Pin = ~(GPIO_Pin_13 | GPIO_Pin_14);
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_Init(GPIOA, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_All;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
+    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    GPIO_Init(GPIOE, &GPIO_InitStruct);
+    GPIO_Init(GPIOF, &GPIO_InitStruct);
+    
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
+    
+    SPI_I2S_DeInit(SPI1);
+    SPI_I2S_DeInit(SPI2);
+    ADC_DeInit(ADC1);
+    PWR_DeInit();
+    USART_DeInit(USART1);
+    USART_DeInit(USART2);
+    USART_DeInit(USART3);
+    USART_DeInit(USART4);
+    USART_DeInit(USART5);
+    USART_DeInit(USART6);
+    USART_DeInit(USART7);
+    USART_DeInit(USART8);
+    
     if(level == CPU_NORMAL)
     {
         /* Configure the System clock frequency, AHB/APBx prescalers and Flash settings */
@@ -417,19 +456,23 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* Enable the PWR clock */
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-        /* Allow access to RTC */
-        PWR_BackupAccessCmd(DISABLE);
-        RTC_DeInit();
+        /* Enable access to RTC */
+        PWR_BackupAccessCmd(ENABLE);
         
-        /* LSI used as RTC source clock */
-        /* The RTC Clock may varies due to LSI frequency dispersion. */
         /* Disable the LSI OSC */
         RCC_LSICmd(DISABLE);
         
         /* Disable the RTC Wakeup Interrupt */
         RTC_ITConfig(RTC_IT_WUT, DISABLE);
+        
         /* Disable Wakeup Counter */
         RTC_WakeUpCmd(DISABLE);
+        
+        /* Disable access to RTC */
+        PWR_BackupAccessCmd(DISABLE);
+        
+        /* Disable the PWR clock */
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
         
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
@@ -461,12 +504,10 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* Enable the PWR clock */
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+        
         /* Allow access to RTC */
         PWR_BackupAccessCmd(ENABLE);
-        RTC_DeInit();
         
-        /* LSI used as RTC source clock */
-        /* The RTC Clock may varies due to LSI frequency dispersion. */
         /* Enable the LSI OSC */
         RCC_LSICmd(ENABLE);
         
@@ -477,15 +518,25 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* Select the RTC Clock Source */
         RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+        RTC_DeInit();
+        
+        /* Calendar Configuration */
+        RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 40) = 1KHz*/
+        RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
+        RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
+        RTC_Init(&RTC_InitStruct);
+        
+        /* Set the time to 00h 00mn 00s AM */
+        RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
+        RTC_TimeStruct.RTC_Hours   = 0x00;
+        RTC_TimeStruct.RTC_Minutes = 0x00;
+        RTC_TimeStruct.RTC_Seconds = 0x00;
+        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStruct);
+        
         /* Enable the RTC Clock */
         RCC_RTCCLKCmd(ENABLE);
         /* Wait for RTC APB registers synchronisation */
         RTC_WaitForSynchro();
-        /* Calendar Configuration */
-        RTC_InitStruct.RTC_AsynchPrediv = (10 - 1); /* (40KHz / 10) = 1KHz*/
-        RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
-        RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
-        RTC_Init(&RTC_InitStruct);
         
         /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
         RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
@@ -494,6 +545,9 @@ static void cpu_core_init(enum __cpu_level level)
         RTC_ITConfig(RTC_IT_WUT, ENABLE);
         /* Enable Wakeup Counter */
         RTC_WakeUpCmd(ENABLE);
+        
+        /* Disable access to RTC */
+        PWR_BackupAccessCmd(DISABLE);
         
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
@@ -509,54 +563,8 @@ static void cpu_core_init(enum __cpu_level level)
         NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStruct);
         
-        /* Set the time to 00h 00mn 00s AM */
-        RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
-        RTC_TimeStruct.RTC_Hours   = 0x00;
-        RTC_TimeStruct.RTC_Minutes = 0x00;
-        RTC_TimeStruct.RTC_Seconds = 0x00;
-        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStruct);
-        
         cpu_level = CPU_POWERSAVE;
     }
-    
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, ENABLE);
-    
-    GPIO_InitStruct.GPIO_Pin = ~(GPIO_Pin_13 | GPIO_Pin_14);
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_All;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_Init(GPIOB, &GPIO_InitStruct);
-    GPIO_Init(GPIOC, &GPIO_InitStruct);
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
-    GPIO_Init(GPIOE, &GPIO_InitStruct);
-    GPIO_Init(GPIOF, &GPIO_InitStruct);
-    
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, DISABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, DISABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, DISABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, DISABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
-    
-    SPI_I2S_DeInit(SPI1);
-    SPI_I2S_DeInit(SPI2);
-    ADC_DeInit(ADC1);
-    PWR_DeInit();
-    USART_DeInit(USART1);
-    USART_DeInit(USART2);
-    USART_DeInit(USART3);
-    USART_DeInit(USART4);
-    USART_DeInit(USART5);
-    USART_DeInit(USART6);
-    USART_DeInit(USART7);
-    USART_DeInit(USART8);
 
     if(intrs == INTR_ENABLED)
     {
