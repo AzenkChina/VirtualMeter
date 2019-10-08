@@ -32,9 +32,10 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __klevel klevel = SYSTEM_BOOT;
-static uint32_t time_consumed = 0;
-static uint16_t accu_loop = 0;
-static uint16_t cpu_rate = 0;
+static uint32_t begin = 0;
+static uint32_t consumption = 0;
+static uint16_t calcu_loop = 0;
+static uint16_t cpu_load = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -148,9 +149,9 @@ static void tasks_sched(enum __klevel level)
         level_before = level;
         flush = 0xff;
         
-        cpu_rate = 0;
-        time_consumed = 0;
-        accu_loop = 0;
+        cpu_load = 0;
+        consumption = 0;
+        calcu_loop = 0;
     }
     
     //start loops
@@ -172,13 +173,13 @@ static void tasks_sched(enum __klevel level)
             	break;
         }
         
-        time_consumed += jiffy.after(timing);
-        accu_loop += 1;
-        if(accu_loop >= KERNEL_LOOP_FREQ)
+        consumption += jiffy.after(begin);
+        calcu_loop += 1;
+        if(calcu_loop >= KERNEL_LOOP_FREQ)
         {
-            cpu_rate = (time_consumed * 100) / (accu_loop * KERNEL_PERIOD);
-            time_consumed = 0;
-            accu_loop = 0;
+            cpu_load = (consumption * 100) / (calcu_loop * KERNEL_PERIOD);
+            consumption = 0;
+            calcu_loop = 0;
         }
     }
     
@@ -330,6 +331,7 @@ int main(void)
     
     while(1)
     {
+		begin = jiffy.value();
         klevel = get_state();
         tasks_sched(klevel);
         
@@ -363,6 +365,6 @@ enum __klevel system_status(void)
   */
 uint16_t system_usage(void)
 {
-    return(cpu_rate);
+    return(cpu_load);
 }
 
