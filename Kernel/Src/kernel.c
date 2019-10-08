@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -231,9 +232,14 @@ int main(void)
 	}
 	else
 	{
-	    printf("Press any key to start emulater.\n");
-		_getch();
-		printf("Emulater started.\n");
+#if defined ( BUILD_DAEMON )
+        ShowWindow(GetConsoleWindow(), SW_HIDE);
+        printf("Emulater started.\n");
+#else
+        printf("Press any key to start emulater.\n");
+        _getch();
+        printf("Emulater started.\n");
+#endif
 	}
 		
     proc_self = argv[0];
@@ -242,6 +248,42 @@ int main(void)
     int fd;
     struct flock fl;
     char mypid[16];
+    
+#if defined ( BUILD_DAEMON )
+	pid_t pid;
+    
+	pid = fork();
+    
+	if(pid == -1)
+	{
+		printf("Daemon start faild.\n");
+		exit(1);
+	}
+	else if(pid)
+	{
+		exit(0);
+	}
+    
+	if(setsid() == -1)
+	{
+		printf("Daemon start faild.\n");
+		exit(1);
+	}
+    
+	pid = fork();
+    
+	if(pid == -1)
+	{
+		printf("Daemon start faild.\n");
+		exit(1);
+	}
+	else if(pid)
+	{
+		exit(0);
+	}
+	
+	umask(0);
+#endif
     
     fd = open(lock, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
     if(fd < 0)
@@ -271,9 +313,13 @@ int main(void)
 	}
 	else
 	{
+#if defined ( BUILD_DAEMON )
+        printf("Emulater started.\n");
+#else
 	    printf("Press enter to start emulater.\n");
 		getchar();
-		printf("Emulater started.\n");
+        printf("Emulater started.\n");
+#endif
 	}
 	
     proc_self = argv[0];

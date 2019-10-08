@@ -13,7 +13,6 @@
 #include "allocator.h"
 #include "trace.h"
 #include "api.h"
-#include "callback.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

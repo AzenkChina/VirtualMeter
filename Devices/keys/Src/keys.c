@@ -289,6 +289,11 @@ static uint16_t key_get(void)
         id_sample |= KEY_ID_DOWN;
     }
     
+    if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_15) == Bit_SET)
+    {
+        id_sample |= KEY_ID_PROGRAM;
+    }
+    
     return(id_sample);
 #endif
 }

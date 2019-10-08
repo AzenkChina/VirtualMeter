@@ -10,6 +10,7 @@
 #include "types_keyboard.h"
 #include "config_keyboard.h"
 
+#include "types_display.h"
 #include "power.h"
 #include "crc.h"
 
@@ -27,13 +28,11 @@ static struct __wake_time
 } wake_time;
 
 /* Private function prototypes -----------------------------------------------*/
-CALLBACK_SLOT(display_key_changed);
-
 /* Private functions ---------------------------------------------------------*/
 
 static void key_changed(uint16_t id, enum __key_status status)
 {
-    struct __keyboard_event event;
+    struct __display *display;
     
     if((id != KEY_ID_UP) && (id != KEY_ID_DOWN))
     {
@@ -54,10 +53,39 @@ static void key_changed(uint16_t id, enum __key_status status)
 	    	return;
 		}
         
-        event.id = id;
-        event.status = status;
+        //显示处理
+	    if((system_status() != SYSTEM_WAKEUP) && (system_status() != SYSTEM_RUN))
+	    {
+            return;
+		}
+
+        display = api("task_display");
         
-        CALLBACK_TRIGGER(display_key_changed, &event);
+        if(!display)
+        {
+            return;
+        }
+        
+        //短按上键或者下键，当前显示列表不是键显列表，则切换到键显列表
+        if(display->channel() != DISP_CHANNEL_KEY)
+        {
+            display->change(DISP_CHANNEL_KEY);
+            return;
+        }
+        
+        //短按上键，显示上一屏
+        if(id == KEY_ID_UP)
+        {
+            display->list.show.last();
+            return;
+        }
+        
+        //短按下键，显示下一屏
+        if(id == KEY_ID_DOWN)
+        {
+            display->list.show.next();
+            return;
+        }
     }
 }
 

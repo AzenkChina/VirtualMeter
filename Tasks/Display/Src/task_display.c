@@ -14,7 +14,6 @@
 
 #include "mids.h"
 #include "types_protocol.h"
-#include "types_keyboard.h"
 #include "axdr.h"
 #include "string.h"
 
@@ -1255,38 +1254,3 @@ const struct __task_sched task_display =
     .api                = (void *)&display,
 };
 
-
-
-
-static void keyboard_callback(void *args)
-{
-    struct __keyboard_event *event = (struct __keyboard_event *)args;
-    
-    if(status != TASK_RUN)
-    {
-        return;
-    }
-    
-    //短按上键或者下键，当前显示列表不是键显列表，则切换到键显列表
-    if(display_channel() != DISP_CHANNEL_KEY)
-    {
-        display_change(DISP_CHANNEL_KEY);
-        return;
-    }
-    
-    //短按上键，显示上一屏
-    if(event->id == KEY_ID_UP)
-    {
-        display_list_show_last();
-        return;
-    }
-    
-    //短按下键，显示下一屏
-    if(event->id == KEY_ID_DOWN)
-    {
-        display_list_show_next();
-        return;
-    }
-}
-
-CALLBACK_CONNECT(display_key_changed, keyboard_callback);

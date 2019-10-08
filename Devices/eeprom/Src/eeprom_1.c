@@ -52,9 +52,17 @@
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
 
-#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 )
 #define FIL_PATH    "./memory/eeprom_1.bin"
 #define DIR_PATH    "./memory"
+#elif defined ( __linux )
+#if defined ( BUILD_DAEMON )
+#define FIL_PATH    "/var/virtual_meter/eeprom_1.bin"
+#define DIR_PATH    "/var/virtual_meter"
+#else
+#define FIL_PATH    "./memory/eeprom_1.bin"
+#define DIR_PATH    "./memory"
+#endif
 #endif
 
 /* Private function prototypes -----------------------------------------------*/

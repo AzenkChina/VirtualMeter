@@ -24,13 +24,19 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define MAX_LOG_SIZE        (64*1024) //日志文件大小上限
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+#if defined ( _WIN32 ) || defined ( _WIN64 )
 #define FIL_PATH    "./log/trace.log"
 #define DIR_PATH    "./log"
+#elif defined ( __linux )
+#if defined ( BUILD_DAEMON )
+#define FIL_PATH    "/var/log/virtual_meter.log"
+#define DIR_PATH    "/var/log"
+#else
+#define FIL_PATH    "./log/trace.log"
+#define DIR_PATH    "./log"
+#endif
 #endif
 
 /* Private function prototypes -----------------------------------------------*/

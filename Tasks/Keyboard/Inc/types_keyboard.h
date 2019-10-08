@@ -7,12 +7,6 @@
 #include "keys.h"
 
 /* Exported types ------------------------------------------------------------*/
-struct __keyboard_event
-{
-    uint16_t            id;
-    enum __key_status   status;
-};
-
 /**
   * @brief  keyboard task 的对外接口
   */
