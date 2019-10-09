@@ -37,7 +37,7 @@ static uint32_t jiff_time_after(uint32_t val)
     }
     else
     {
-        return(val - __jiffy);
+        return(~(val - __jiffy));
     }
 }
 

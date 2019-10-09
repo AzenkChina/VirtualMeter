@@ -89,7 +89,7 @@ static DWORD CALLBACK ThreadDog(PVOID pvoid)
 		if(counter > 25)
 		{
 			TRACE(TRACE_ERR, "Watchdog timeout.");
-			exit(0);
+			cpu.core.reset();
 		}
 		
 #if defined ( __linux )
@@ -311,6 +311,12 @@ static void cpu_core_init(enum __cpu_level level)
     /* Select HSI as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
     RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
+	/* Wait till HSI is used as system clock source */
+	while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_HSI);
+	/* Set LSI bit */
+	RCC->CSR |= RCC_CSR_LSION;
+	/* Wait till LSI is ready */
+	while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
     /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
     RCC->CFGR &= (uint32_t)0x08FFB80C;
     /* Reset HSEON, CSSON and PLLON bits */
@@ -346,9 +352,10 @@ static void cpu_core_init(enum __cpu_level level)
     RTC_ITConfig(RTC_IT_WUT, DISABLE);
     RTC_WakeUpCmd(DISABLE);
     RCC_RTCCLKCmd(DISABLE);
-    RCC_LSICmd(DISABLE);
+	RTC_DeInit();
     PWR_BackupAccessCmd(DISABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
+	/* Disable the RTC Interrupt */
     EXTI_ClearITPendingBit(EXTI_Line20);
     EXTI_InitStruct.EXTI_Line = EXTI_Line20;
     EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -379,7 +386,6 @@ static void cpu_core_init(enum __cpu_level level)
     USART_DeInit(USART6);
     USART_DeInit(USART7);
     USART_DeInit(USART8);
-    RTC_DeInit();
     
     /* Set All GPIO to Low Power Mode */
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
@@ -408,15 +414,18 @@ static void cpu_core_init(enum __cpu_level level)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
     
-    /* Enable WDG */
+    /* Enable DBG */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
+	DBGMCU_Config(DBGMCU_STOP, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
+	/* Enable WDG */
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
     IWDG_SetPrescaler(IWDG_Prescaler_256);
     IWDG_SetReload(40000 / 32);
     IWDG_ReloadCounter();
     IWDG_Enable();
-    
+	IWDG_WriteAccessCmd(IWDG_WriteAccess_Disable);
+	
     if(level == CPU_NORMAL)
     {
         /* Configure the System clock frequency, AHB/APBx prescalers and Flash settings */
@@ -450,18 +459,14 @@ static void cpu_core_init(enum __cpu_level level)
             RCC->CR |= RCC_CR_PLLON;
 
             /* Wait till PLL is ready */
-            while((RCC->CR & RCC_CR_PLLRDY) == 0)
-            {
-            }
+            while((RCC->CR & RCC_CR_PLLRDY) == 0);
 
             /* Select PLL as system clock source */
             RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
             RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
 
             /* Wait till PLL is used as system clock source */
-            while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL)
-            {
-            }
+            while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL);
         }
         else
         {
@@ -474,18 +479,14 @@ static void cpu_core_init(enum __cpu_level level)
             RCC->CR |= RCC_CR_PLLON;
 
             /* Wait till PLL is ready */
-            while((RCC->CR & RCC_CR_PLLRDY) == 0)
-            {
-            }
+            while((RCC->CR & RCC_CR_PLLRDY) == 0);
 
             /* Select PLL as system clock source */
             RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
             RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
 
             /* Wait till PLL is used as system clock source */
-            while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL)
-            {
-            }
+            while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_PLL);
         }
         
         
@@ -506,14 +507,6 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* Allow access to RTC */
         PWR_BackupAccessCmd(ENABLE);
-        
-        /* Enable the LSI OSC */
-        RCC_LSICmd(ENABLE);
-        
-        /* Wait till LSI is ready */
-        while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET)
-        {
-        }
         
         /* Select the RTC Clock Source */
         RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);

@@ -50,8 +50,8 @@ static enum __power_status power_check(void)
     
     GPIO_InitTypeDef GPIO_InitStruct;
     ADC_InitTypeDef ADC_InitStruct;
-    int64_t Voltage[3];
-    int64_t Ref;
+    uint32_t Voltage[3];
+    uint16_t Ref;
     uint16_t *Cali = (uint16_t *)0x1FFFF7BA;
     uint8_t cnt;
     
@@ -85,7 +85,7 @@ static enum __power_status power_check(void)
     Voltage[0] = ADC_GetConversionValue(ADC1);
     if(Voltage[0])
     {
-        Ref = ((int64_t)*Cali) * 3300 / Voltage[0];
+        Ref = (uint16_t)(((uint32_t)(*Cali) * 3300) / Voltage[0]);
         ADC_VrefintCmd(DISABLE);
     }
     else

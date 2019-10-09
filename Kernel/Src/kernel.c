@@ -47,6 +47,7 @@ static enum __klevel get_state(void)
     enum __klevel level_choice;
     enum __power_status status;
     
+	begin = jiffy.value();
     status = power.status();
     
     switch(status)
@@ -242,7 +243,7 @@ int main(void)
         printf("Emulater started.\n");
 #endif
 	}
-		
+	
     proc_self = argv[0];
 #elif defined ( __linux )
     const unsigned char *lock = "/tmp/virtual_meter.pid";
@@ -331,7 +332,6 @@ int main(void)
     
     while(1)
     {
-		begin = jiffy.value();
         klevel = get_state();
         tasks_sched(klevel);
         
