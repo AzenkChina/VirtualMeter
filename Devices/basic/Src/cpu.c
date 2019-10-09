@@ -194,6 +194,40 @@ static void cpu_core_sleep(void)
 #else
 
 #if defined (DEMO_STM32F091)
+    RTC_InitTypeDef RTC_InitStruct;
+    
+    /* Enable the PWR clock */
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    /* Allow access to RTC */
+    PWR_BackupAccessCmd(ENABLE);
+    /* Enable the LSI OSC */
+    RCC_LSICmd(ENABLE);
+    /* Wait till LSI is ready */
+    while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
+    /* Select the RTC Clock Source */
+    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+    RTC_DeInit();
+    /* Calendar Configuration */
+    RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 10) = 1KHz*/
+    RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
+    RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
+    RTC_Init(&RTC_InitStruct);
+    /* Enable the RTC Clock */
+    RCC_RTCCLKCmd(ENABLE);
+    /* Wait for RTC APB registers synchronisation */
+    RTC_WaitForSynchro();
+    /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
+    RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
+    RTC_SetWakeUpCounter(0);
+    /* Enable the RTC Wakeup Interrupt */
+    RTC_ITConfig(RTC_IT_WUT, ENABLE);
+    /* Enable Wakeup Counter */
+    RTC_WakeUpCmd(ENABLE);
+    /* Disable access to RTC */
+    PWR_BackupAccessCmd(DISABLE);
+    /* Disable the PWR clock */
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
+    
     PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 #endif
 
@@ -294,8 +328,6 @@ static void cpu_core_init(enum __cpu_level level)
 
 #if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
-    RTC_InitTypeDef RTC_InitStruct;
-    RTC_TimeTypeDef RTC_TimeStruct;
     NVIC_InitTypeDef NVIC_InitStruct;
     EXTI_InitTypeDef EXTI_InitStruct;
     
@@ -313,10 +345,6 @@ static void cpu_core_init(enum __cpu_level level)
     RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
 	/* Wait till HSI is used as system clock source */
 	while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_HSI);
-	/* Set LSI bit */
-	RCC->CSR |= RCC_CSR_LSION;
-	/* Wait till LSI is ready */
-	while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
     /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
     RCC->CFGR &= (uint32_t)0x08FFB80C;
     /* Reset HSEON, CSSON and PLLON bits */
@@ -346,15 +374,6 @@ static void cpu_core_init(enum __cpu_level level)
     SysTick->CTRL = 0x00000000;
     SysTick->VAL  = 0x00000000;
     
-    /* Disable the RTC */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-    PWR_BackupAccessCmd(ENABLE);
-    RTC_ITConfig(RTC_IT_WUT, DISABLE);
-    RTC_WakeUpCmd(DISABLE);
-    RCC_RTCCLKCmd(DISABLE);
-	RTC_DeInit();
-    PWR_BackupAccessCmd(DISABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
 	/* Disable the RTC Interrupt */
     EXTI_ClearITPendingBit(EXTI_Line20);
     EXTI_InitStruct.EXTI_Line = EXTI_Line20;
@@ -363,9 +382,19 @@ static void cpu_core_init(enum __cpu_level level)
     EXTI_InitStruct.EXTI_LineCmd = DISABLE;
     EXTI_Init(&EXTI_InitStruct);
     NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
     NVIC_InitStruct.NVIC_IRQChannelCmd = DISABLE;
     NVIC_Init(&NVIC_InitStruct);
+    
+    /* Disable the RTC */
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    PWR_BackupAccessCmd(ENABLE);
+    RCC_LSICmd(ENABLE);
+    while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
+    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+    RTC_DeInit();
+    PWR_BackupAccessCmd(DISABLE);
+    RCC_RTCCLKCmd(DISABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
     
     /* Reset All Peripheral */
     GPIO_DeInit(GPIOA);
@@ -416,7 +445,6 @@ static void cpu_core_init(enum __cpu_level level)
     
     /* Enable DBG */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
-	DBGMCU_Config(DBGMCU_STOP, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
 	/* Enable WDG */
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
@@ -502,45 +530,6 @@ static void cpu_core_init(enum __cpu_level level)
     }
     else
     {
-        /* Enable the PWR clock */
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-        
-        /* Allow access to RTC */
-        PWR_BackupAccessCmd(ENABLE);
-        
-        /* Select the RTC Clock Source */
-        RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
-        RTC_DeInit();
-        
-        /* Calendar Configuration */
-        RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 40) = 1KHz*/
-        RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
-        RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
-        RTC_Init(&RTC_InitStruct);
-        
-        /* Set the time to 00h 00mn 00s AM */
-        RTC_TimeStruct.RTC_H12     = RTC_H12_AM;
-        RTC_TimeStruct.RTC_Hours   = 0x00;
-        RTC_TimeStruct.RTC_Minutes = 0x00;
-        RTC_TimeStruct.RTC_Seconds = 0x00;
-        RTC_SetTime(RTC_Format_BCD, &RTC_TimeStruct);
-        
-        /* Enable the RTC Clock */
-        RCC_RTCCLKCmd(ENABLE);
-        /* Wait for RTC APB registers synchronisation */
-        RTC_WaitForSynchro();
-        
-        /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-        RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-        RTC_SetWakeUpCounter(0);
-        /* Enable the RTC Wakeup Interrupt */
-        RTC_ITConfig(RTC_IT_WUT, ENABLE);
-        /* Enable Wakeup Counter */
-        RTC_WakeUpCmd(ENABLE);
-        
-        /* Disable access to RTC */
-        PWR_BackupAccessCmd(DISABLE);
-        
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
         EXTI_InitStruct.EXTI_Line = EXTI_Line20;
