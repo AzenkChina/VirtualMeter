@@ -308,6 +308,9 @@ static void cpu_core_init(enum __cpu_level level)
     
     /* Set HSION bit */
     RCC->CR |= (uint32_t)0x00000001;
+    /* Select HSI as system clock source */
+    RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
     /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
     RCC->CFGR &= (uint32_t)0x08FFB80C;
     /* Reset HSEON, CSSON and PLLON bits */
@@ -332,18 +335,53 @@ static void cpu_core_init(enum __cpu_level level)
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
     /* PCLK = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
-     //Disable SysTick
+    
+    /* Disable SysTick */
     SysTick->CTRL = 0x00000000;
     SysTick->VAL  = 0x00000000;
     
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
-    DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
-    IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-    IWDG_SetPrescaler(IWDG_Prescaler_256);
-    IWDG_SetReload(40000 / 32);
-    IWDG_ReloadCounter();
-    IWDG_Enable();
+    /* Disable the RTC */
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    PWR_BackupAccessCmd(ENABLE);
+    RTC_ITConfig(RTC_IT_WUT, DISABLE);
+    RTC_WakeUpCmd(DISABLE);
+    RCC_RTCCLKCmd(DISABLE);
+    RCC_LSICmd(DISABLE);
+    PWR_BackupAccessCmd(DISABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
+    EXTI_ClearITPendingBit(EXTI_Line20);
+    EXTI_InitStruct.EXTI_Line = EXTI_Line20;
+    EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStruct.EXTI_LineCmd = DISABLE;
+    EXTI_Init(&EXTI_InitStruct);
+    NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStruct);
     
+    /* Reset All Peripheral */
+    GPIO_DeInit(GPIOA);
+    GPIO_DeInit(GPIOB);
+    GPIO_DeInit(GPIOC);
+    GPIO_DeInit(GPIOD);
+    GPIO_DeInit(GPIOE);
+    GPIO_DeInit(GPIOF);
+    SPI_I2S_DeInit(SPI1);
+    SPI_I2S_DeInit(SPI2);
+    ADC_DeInit(ADC1);
+    PWR_DeInit();
+    USART_DeInit(USART1);
+    USART_DeInit(USART2);
+    USART_DeInit(USART3);
+    USART_DeInit(USART4);
+    USART_DeInit(USART5);
+    USART_DeInit(USART6);
+    USART_DeInit(USART7);
+    USART_DeInit(USART8);
+    RTC_DeInit();
+    
+    /* Set All GPIO to Low Power Mode */
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
@@ -370,18 +408,14 @@ static void cpu_core_init(enum __cpu_level level)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
     
-    SPI_I2S_DeInit(SPI1);
-    SPI_I2S_DeInit(SPI2);
-    ADC_DeInit(ADC1);
-    PWR_DeInit();
-    USART_DeInit(USART1);
-    USART_DeInit(USART2);
-    USART_DeInit(USART3);
-    USART_DeInit(USART4);
-    USART_DeInit(USART5);
-    USART_DeInit(USART6);
-    USART_DeInit(USART7);
-    USART_DeInit(USART8);
+    /* Enable WDG */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
+    DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
+    IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+    IWDG_SetPrescaler(IWDG_Prescaler_256);
+    IWDG_SetReload(40000 / 32);
+    IWDG_ReloadCounter();
+    IWDG_Enable();
     
     if(level == CPU_NORMAL)
     {
@@ -454,42 +488,11 @@ static void cpu_core_init(enum __cpu_level level)
             }
         }
         
-        /* Enable the PWR clock */
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-        /* Enable access to RTC */
-        PWR_BackupAccessCmd(ENABLE);
         
-        /* Disable the LSI OSC */
-        RCC_LSICmd(DISABLE);
-        
-        /* Disable the RTC Wakeup Interrupt */
-        RTC_ITConfig(RTC_IT_WUT, DISABLE);
-        
-        /* Disable Wakeup Counter */
-        RTC_WakeUpCmd(DISABLE);
-        
-        /* Disable access to RTC */
-        PWR_BackupAccessCmd(DISABLE);
-        
-        /* Disable the PWR clock */
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
-        
-        /* EXTI configuration */
-        EXTI_ClearITPendingBit(EXTI_Line20);
-        EXTI_InitStruct.EXTI_Line = EXTI_Line20;
-        EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
-        EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
-        EXTI_InitStruct.EXTI_LineCmd = DISABLE;
-        EXTI_Init(&EXTI_InitStruct);
-        
-        /* Disable the RTC Wakeup Interrupt */
-        NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
-        NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
-        NVIC_InitStruct.NVIC_IRQChannelCmd = DISABLE;
-        NVIC_Init(&NVIC_InitStruct);
-        
+        /* Enable the SysTick */
+        /* Set SysTick Interrupt in every Millisecond */
         SysTick->CTRL = 0x00000000;
-        SysTick->LOAD = ((24000000 / 1000) - 1); /* Set SysTick Interrupt in every Millisecond */
+        SysTick->LOAD = ((24000000 / 1000) - 1);
         SysTick->VAL  = 0x00000000;
         NVIC_SetPriority(SysTick_IRQn, 3);
         SysTick->CTRL = 0x00000007;
@@ -498,10 +501,6 @@ static void cpu_core_init(enum __cpu_level level)
     }
     else
     {
-        /* Select HSI as system clock source */
-        RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-        RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
-        
         /* Enable the PWR clock */
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
         
