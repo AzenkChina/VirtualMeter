@@ -8,7 +8,11 @@
 #if !defined ( _WIN32 ) && !defined ( _WIN64 ) && !defined ( __linux )
 
 #include "vspi1.h"
+#include "delay.h"
+
+#if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -18,13 +22,6 @@ static enum __dev_status status = DEVICE_NOTINIT;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
-/**
-  * @brief  
-  */
-static void cs_delay(void)
-{
-}
 
 /**
   * @brief  
@@ -40,6 +37,7 @@ static enum __dev_status spi1_status(void)
   */
 static void spi1_init(enum __dev_state state)
 {
+#if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     SPI_InitTypeDef SPI_InitStruct;
     
@@ -84,7 +82,8 @@ static void spi1_init(enum __dev_state state)
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
     
     GPIO_Init(GPIOB, &GPIO_InitStruct);
-    
+#endif
+
     status = DEVICE_INIT;
 }
 
@@ -93,53 +92,31 @@ static void spi1_init(enum __dev_state state)
   */
 static void spi1_suspend(void)
 {
-    //...IO£¬¼Ä´æÆ÷£¬Ê±ÖÓµÈ¹Ø±Õ
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
+#if defined (DEMO_STM32F091)
     SPI_I2S_DeInit(SPI1);
-    
-    
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    
-    GPIO_Init(GPIOB, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOB, GPIO_Pin_3);
-    GPIO_SetBits(GPIOB, GPIO_Pin_4);
-    GPIO_SetBits(GPIOB, GPIO_Pin_5);
-    
-    
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOA, GPIO_Pin_8);
-    
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, DISABLE);
+#endif
+
     status = DEVICE_NOTINIT;
 }
 
 
 static uint8_t spi1_select(uint8_t cs)
 {
+#if defined (DEMO_STM32F091)
     GPIO_ResetBits(GPIOA, GPIO_Pin_8);
-    cs_delay();
-    
+    udelay(300);
+#endif
+
     return(0);
 }
 
 static uint8_t spi1_release(uint8_t cs)
 {
-    cs_delay();
+#if defined (DEMO_STM32F091)
+    udelay(300);
     GPIO_SetBits(GPIOA, GPIO_Pin_8);
+#endif
 
     return(0);
 }
@@ -160,6 +137,7 @@ static uint32_t spi1_freq_set(uint32_t rate)
   */
 static uint32_t spi1_read(uint32_t count, uint8_t * buffer)
 {
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -168,6 +146,7 @@ static uint32_t spi1_read(uint32_t count, uint8_t * buffer)
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -175,6 +154,7 @@ static uint32_t spi1_read(uint32_t count, uint8_t * buffer)
   */
 static uint32_t spi1_write(uint32_t count, const uint8_t *buffer)
 {
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -183,6 +163,7 @@ static uint32_t spi1_write(uint32_t count, const uint8_t *buffer)
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -190,6 +171,7 @@ static uint32_t spi1_write(uint32_t count, const uint8_t *buffer)
   */
 static uint32_t spi1_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t * rbuffer)
 {
+#if defined (DEMO_STM32F091)
     uint32_t i;
     
     for(i=0; i<count; i++)
@@ -198,6 +180,7 @@ static uint32_t spi1_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
     }
     
     return(count);
+#endif
 }
 
 /**
@@ -205,11 +188,13 @@ static uint32_t spi1_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
   */
 static uint32_t spi1_readchar(void)
 {
+#if defined (DEMO_STM32F091)
     uint8_t val;
     
     val = SPI_I2S_Send_ReceiveData(SPI1, 0xff);
     
     return((uint32_t)val);
+#endif
 }
 
 /**
@@ -217,9 +202,11 @@ static uint32_t spi1_readchar(void)
   */
 static uint32_t spi1_writechar(uint32_t ch)
 {
+#if defined (DEMO_STM32F091)
     SPI_I2S_Send_ReceiveData(SPI1, (uint8_t)ch);
     
     return(ch);
+#endif
 }
 
 /**
@@ -227,11 +214,13 @@ static uint32_t spi1_writechar(uint32_t ch)
   */
 static uint32_t spi1_readwritechar(uint32_t ch)
 {
+#if defined (DEMO_STM32F091)
     uint8_t val;
     
     val = SPI_I2S_Send_ReceiveData(SPI1, (uint8_t)ch);
     
     return((uint32_t)val);
+#endif
 }
 
 /**

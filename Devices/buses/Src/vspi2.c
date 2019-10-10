@@ -89,22 +89,8 @@ static void spi2_init(enum __dev_state state)
 static void spi2_suspend(void)
 {
 #if defined (DEMO_STM32F091)
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
     SPI_I2S_DeInit(SPI2);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    
-    GPIO_Init(GPIOB, &GPIO_InitStruct);
-    
-    GPIO_SetBits(GPIOB, GPIO_Pin_12);
-    GPIO_SetBits(GPIOB, GPIO_Pin_13);
-    GPIO_SetBits(GPIOB, GPIO_Pin_14);
-    GPIO_SetBits(GPIOB, GPIO_Pin_15);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, DISABLE);
 #endif
     
     status = DEVICE_SUSPENDED;

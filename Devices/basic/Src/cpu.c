@@ -8,16 +8,15 @@
 #include "string.h"
 #include "kernel.h"
 #include "cpu.h"
+#include "jiffy.h"
 #include "trace.h"
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
 #include <windows.h>
-#include "jiffy.h"
 #elif defined ( __linux )
 #include <pthread.h>
 #include <unistd.h>
 #include "stdlib.h"
-#include "jiffy.h"
 #else
 #if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
@@ -235,6 +234,41 @@ static void cpu_core_sleep(void)
 }
 
 /**
+  * @brief  内核空闲
+  */
+static void cpu_core_idle(uint16_t tick)
+{
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	if(cpu_level == CPU_NORMAL)
+	{
+#if defined ( __linux )
+		usleep(tick*1000);
+#else
+		Sleep(tick);
+#endif
+	}
+#else
+	
+#if defined (DEMO_STM32F091)
+	uint32_t timing = jiffy.value();
+	
+	if(cpu_level == CPU_NORMAL)
+	{
+		while(1)
+		{
+			PWR_EnterSleepMode(PWR_SLEEPEntry_WFI);
+			if(jiffy.after(timing) > tick)
+			{
+				return;
+			}
+		}
+	}
+#endif
+	
+#endif
+}
+
+/**
   * @brief  重置看门狗
   */
 static void watchdog_feed(void)
@@ -375,15 +409,14 @@ static void cpu_core_init(enum __cpu_level level)
     SysTick->VAL  = 0x00000000;
     
 	/* Disable the RTC Interrupt */
-    EXTI_ClearITPendingBit(EXTI_Line20);
     EXTI_InitStruct.EXTI_Line = EXTI_Line20;
     EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStruct.EXTI_LineCmd = DISABLE;
     EXTI_Init(&EXTI_InitStruct);
-    NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelCmd = DISABLE;
-    NVIC_Init(&NVIC_InitStruct);
+	EXTI_ClearITPendingBit(EXTI_Line20);
+	NVIC_DisableIRQ(RTC_IRQn);
+	NVIC_ClearPendingIRQ(RTC_IRQn);
     
     /* Disable the RTC */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
@@ -397,24 +430,13 @@ static void cpu_core_init(enum __cpu_level level)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
     
     /* Reset All Peripheral */
+	PWR_DeInit();
     GPIO_DeInit(GPIOA);
     GPIO_DeInit(GPIOB);
     GPIO_DeInit(GPIOC);
     GPIO_DeInit(GPIOD);
     GPIO_DeInit(GPIOE);
     GPIO_DeInit(GPIOF);
-    SPI_I2S_DeInit(SPI1);
-    SPI_I2S_DeInit(SPI2);
-    ADC_DeInit(ADC1);
-    PWR_DeInit();
-    USART_DeInit(USART1);
-    USART_DeInit(USART2);
-    USART_DeInit(USART3);
-    USART_DeInit(USART4);
-    USART_DeInit(USART5);
-    USART_DeInit(USART6);
-    USART_DeInit(USART7);
-    USART_DeInit(USART8);
     
     /* Set All GPIO to Low Power Mode */
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
@@ -540,7 +562,7 @@ static void cpu_core_init(enum __cpu_level level)
         
         /* Enable the RTC Wakeup Interrupt */
         NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
-        NVIC_InitStruct.NVIC_IRQChannelPriority = 0;
+        NVIC_InitStruct.NVIC_IRQChannelPriority = 3;
         NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStruct);
         
@@ -735,6 +757,7 @@ const struct __cpu cpu =
         .status         = cpu_core_status,
         .sleep          = cpu_core_sleep,
         .reset          = cpu_core_reset,
+		.idle			= cpu_core_idle,
     },
     .interrupt          =
     {

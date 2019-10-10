@@ -93,6 +93,7 @@ static void tasks_sched(enum __klevel level)
 {
     static enum __klevel level_before = SYSTEM_BOOT;
     static uint32_t timing = 0;
+	uint16_t relative = 0;
     uint8_t flush = 0;
     
     if(level != level_before)
@@ -114,13 +115,22 @@ static void tasks_sched(enum __klevel level)
                     level = level_back;
                 }
                 
-                if(level == SYSTEM_RUN)
+                if((level == SYSTEM_RUN) || (level == SYSTEM_WAKEUP))
                 {
                     cpu.core.init(CPU_NORMAL);
+					if(level == SYSTEM_RUN)
+					{
+						TRACE(TRACE_INFO, "System entered normal mode.");
+					}
+					else
+					{
+						TRACE(TRACE_INFO, "System entered wakeup mode.");
+					}
                 }
                 else
                 {
                     cpu.core.init(CPU_POWERSAVE);
+					TRACE(TRACE_INFO, "System entered sleep mode.");
                 }
                 
                 tasks.init();
@@ -139,8 +149,7 @@ static void tasks_sched(enum __klevel level)
             {
             	TRACE(TRACE_INFO, "System reseting.");
                 tasks.reset();
-                TRACE(TRACE_INFO, "System reset done.");
-                TRACE(TRACE_INFO, "Rebooting.");
+                TRACE(TRACE_INFO, "System reset done, now reboot.");
                 cpu.core.reset();
                 while(1);
                 break;
@@ -173,8 +182,10 @@ static void tasks_sched(enum __klevel level)
             default:
             	break;
         }
+		
+		relative = jiffy.after(begin);
         
-        consumption += jiffy.after(begin);
+        consumption += relative;
         calcu_loop += 1;
         if(calcu_loop >= KERNEL_LOOP_FREQ)
         {
@@ -182,18 +193,23 @@ static void tasks_sched(enum __klevel level)
             consumption = 0;
             calcu_loop = 0;
         }
+		
+        if((level == SYSTEM_WAKEUP) && (relative < PERIOD_RUNNING))
+		{
+			if(relative < PERIOD_RUNNING)
+			{
+				//cpu idle
+				cpu.core.idle((PERIOD_RUNNING - relative - 1));
+			}
+		}
     }
     
     //system sleep
     if(level == SYSTEM_SLEEP)
     {
-    	TRACE(TRACE_INFO, "Kernel Sleeped.");
-    	
     	cpu.watchdog.feed();
         //cpu sleep
         cpu.core.sleep();
-        
-        TRACE(TRACE_INFO, "Kernel heartbeat.");
     }
 }
 

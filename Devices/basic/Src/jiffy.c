@@ -104,9 +104,12 @@ void jitter_update(uint16_t val)
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 #endif
 
-    if(intr_hook && (hook_check = ((uint32_t)(~(uint32_t)(intr_hook)))))
+    if(intr_hook)
     {
-        intr_hook(val);
+        if(hook_check = ((uint32_t)(~(uint32_t)(intr_hook))))
+        {
+            intr_hook(val);
+        }
     }
 
 #if defined ( __GNUC__ )

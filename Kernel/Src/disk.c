@@ -66,6 +66,11 @@ static void disk_ctrl_start(void)
 	uint16_t loop;
     uint32_t eeprom_size = 0;
 	uint32_t flash_size = 0;
+	
+	if((system_status() != SYSTEM_RUN) && (system_status() != SYSTEM_WAKEUP))
+	{
+		return;
+	}
     
     if(system_status() == SYSTEM_RUN)
     {

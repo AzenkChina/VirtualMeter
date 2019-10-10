@@ -70,7 +70,8 @@ struct __cpu
         enum __cpu_level            (*status)(void); //处理器状态
         void                        (*sleep)(void); //休眠
         void                        (*reset)(void); //重启处理器
-        
+        void                        (*idle)(uint16_t tick); //空闲
+		
     }                               core;
     
     struct
