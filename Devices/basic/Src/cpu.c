@@ -467,6 +467,7 @@ static void cpu_core_init(enum __cpu_level level)
     
     /* Enable DBG */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
+    DBGMCU_Config(DBGMCU_STOP, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
 	/* Enable WDG */
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);

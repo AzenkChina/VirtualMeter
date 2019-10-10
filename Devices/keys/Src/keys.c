@@ -138,22 +138,22 @@ static void key_init(enum __dev_state state)
     //上翻按键
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_Init(GPIOA, &GPIO_InitStruct);
     
     //编程按键
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_15;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_Init(GPIOD, &GPIO_InitStruct);
     
     //上翻按键
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
     GPIO_Init(GPIOE, &GPIO_InitStruct);
     
-	status = DEVICE_INIT;
+    status = DEVICE_INIT;
 #endif
 
 #endif

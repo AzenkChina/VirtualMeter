@@ -27,7 +27,7 @@ struct __relay_param
 	uint32_t                before;//上一次的请求状态
     uint32_t                mask;//32个位，屏蔽16个触发源发出的32种触发请求
     
-    uint32_t				priority[RELAY_CONF_CONTENT][32];//优先级选择表
+    uint8_t                 priority[RELAY_CONF_CONTENT][32];//优先级选择表
     uint8_t                 selection;////当前生效的优先级
 };
 
@@ -41,7 +41,7 @@ struct __relay_runs
     uint32_t                requests;//对应16个触发请求，每两个位一组
 	uint32_t                before;//上一次的请求状态
     uint32_t                mask;//32个位，屏蔽16个触发源发出的32种触发请求
-    uint32_t				priority[32];//32个优先级，对应16个触发源
+    uint8_t                 priority[32];//32个优先级，对应16个触发源
     enum __relay_requests   reason;//当前动作的原因
     uint8_t                 flush;//状态待刷新
 };

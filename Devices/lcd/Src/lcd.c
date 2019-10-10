@@ -301,6 +301,7 @@ static enum __lcd_backlight lcd_backlight_open(void)
     
 #if defined (DEMO_STM32F091)
     GPIO_ResetBits(GPIOE, GPIO_Pin_13);
+    return(LCD_BACKLIGHT_ON);
 #endif
     
 #endif
@@ -318,6 +319,7 @@ static enum __lcd_backlight lcd_backlight_close(void)
     
 #if defined (DEMO_STM32F091)
     GPIO_SetBits(GPIOE, GPIO_Pin_13);
+    return(LCD_BACKLIGHT_OFF);
 #endif
     
 #endif
