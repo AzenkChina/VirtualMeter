@@ -2208,6 +2208,36 @@
       </file>
     </group>
     <group>
+      <name>buses</name>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\viic1.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\viic2.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\viic3.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vspi1.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vspi2.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vuart1.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vuart2.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vuart3.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Devices\buses\Src\vuart4.c</name>
+      </file>
+    </group>
+    <group>
       <name>buzzer</name>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\buzzer\Src\buzzer.c</name>
@@ -2215,12 +2245,6 @@
     </group>
     <group>
       <name>eeprom</name>
-      <group>
-        <name>low</name>
-        <file>
-          <name>$PROJ_DIR$\..\..\Devices\eeprom\Src\viic2.c</name>
-        </file>
-      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\eeprom\Src\eeprom.c</name>
       </file>
@@ -2233,12 +2257,6 @@
     </group>
     <group>
       <name>flash</name>
-      <group>
-        <name>low</name>
-        <file>
-          <name>$PROJ_DIR$\..\..\Devices\flash\Src\vspi2.c</name>
-        </file>
-      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\flash\Src\flash.c</name>
       </file>
@@ -2251,12 +2269,6 @@
     </group>
     <group>
       <name>lcd</name>
-      <group>
-        <name>low</name>
-        <file>
-          <name>$PROJ_DIR$\..\..\Devices\lcd\Src\viic3.c</name>
-        </file>
-      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\lcd\Src\lcd.c</name>
       </file>
@@ -2269,12 +2281,6 @@
     </group>
     <group>
       <name>metering</name>
-      <group>
-        <name>low</name>
-        <file>
-          <name>$PROJ_DIR$\..\..\Devices\metering\Src\vspi1.c</name>
-        </file>
-      </group>
       <file>
         <name>$PROJ_DIR$\..\..\Devices\metering\Src\meter.c</name>
       </file>
@@ -2287,12 +2293,6 @@
     </group>
     <group>
       <name>rtc</name>
-      <group>
-        <name>low</name>
-        <file>
-          <name>$PROJ_DIR$\..\..\Devices\rtc\Src\viic1.c</name>
-        </file>
-      </group>
       <group>
         <name>stubs</name>
         <file>
@@ -2331,33 +2331,12 @@
       </group>
       <group>
         <name>infrared</name>
-        <group>
-          <name>low</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart3.c</name>
-          </file>
-        </group>
       </group>
       <group>
         <name>module</name>
-        <group>
-          <name>low</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart4.c</name>
-          </file>
-        </group>
       </group>
       <group>
         <name>rs485</name>
-        <group>
-          <name>low</name>
-          <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart1.c</name>
-          </file>
-          <file>
-            <name>$PROJ_DIR$\..\..\Devices\serial\Src\vuart2.c</name>
-          </file>
-        </group>
         <file>
           <name>$PROJ_DIR$\..\..\Devices\serial\Src\rs485_1.c</name>
         </file>

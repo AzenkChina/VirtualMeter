@@ -30,7 +30,18 @@ struct __nvram_entry
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 static uint8_t nvpool[NVRAM_SIZE];
 #else
+
+#if defined ( __ICCARM__ )
 __no_init static uint8_t nvpool[NVRAM_SIZE];
+#elif defined ( __CC_ARM )
+__attribute__((zero_init)) static uint8_t nvpool[NVRAM_SIZE];
+#elif defined ( __GNUC__ )
+static uint8_t nvpool[NVRAM_SIZE] __attribute__ ((section ("noinit")));
+#else
+#error compiler not support.
+#endif
+
+
 #endif
 
 

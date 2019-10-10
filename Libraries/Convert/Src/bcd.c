@@ -35,7 +35,7 @@ uint8_t U2B8(uint8_t val)
   */
 uint16_t B2U16(uint16_t val)
 {
-    
+	return(B2U8((val>>8)&0xff) * 100 + B2U8(val & 0xff));
 }
 
 /**
@@ -43,7 +43,7 @@ uint16_t B2U16(uint16_t val)
   */
 uint16_t U2B16(uint16_t val)
 {
-    
+    return(U2B8((val / 100)) * 0x100 + U2B8(val % 100));
 }
 
 /**
@@ -51,7 +51,7 @@ uint16_t U2B16(uint16_t val)
   */
 uint32_t B2U32(uint32_t val)
 {
-    
+    return(((uint32_t)B2U16((val >> 16) & 0xffff)) * 10000 + (uint32_t)B2U16(val & 0xffff));
 }
 
 /**
@@ -59,5 +59,5 @@ uint32_t B2U32(uint32_t val)
   */
 uint32_t U2B32(uint32_t val)
 {
-    
+	return ((uint32_t)U2B16((val / 10000))) * 0x10000 + (uint32_t)U2B16(val % 10000);
 }

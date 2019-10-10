@@ -216,16 +216,24 @@ int main(void)
         {
             printf("Multi-instance is not allowed!\n");
             CloseHandle(hMutex);
+#if defined ( BUILD_DAEMON )
+            exit(0);
+#else
 			_getch();
             exit(0);
+#endif
         }
     }
     else
     {
         printf("Mutex create failed!\n");
         CloseHandle(hMutex);
+#if defined ( BUILD_DAEMON )
+        exit(0);
+#else
 		_getch();
         exit(0);
+#endif
     }
     
     if((argc > 1) && (strcmp(argv[1], "reboot") == 0))
