@@ -14,12 +14,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define __USE_64BIT_ENERGY__        //选择是否使用64位数据类型来存储电能
-//#define __USE_PRIMARY_ENERGY__      //选择是否使用一次侧数据而不用二次侧数据
 #define DEV_M			meter
 
 /* Private macro -------------------------------------------------------------*/
-#if defined ( __STORE_PRIMARY_ENERGY__ ) && !defined ( __USE_64BIT_ENERGY__ )
+#if defined ( __USE_PRIMARY_ENERGY__ ) && !defined ( __USE_64BIT_ENERGY__ )
 #define __USE_64BIT_ENERGY__        //当选择使用一次侧数据，则必须选择使用64位数据类型来存储电能
 #endif
 
