@@ -12,14 +12,19 @@
 #include "allocator_ctrl.h"
 #include "api.h"
 
+#if defined ( BUILD_DAEMON )
+#undef __TASKS_MONITOR
+#else
 #if defined ( __TASKS_MONITOR )
 #include "jiffy.h"
 #include "allocator.h"
 #endif
-
+#endif
 /** 在这里添加所有tasks的头文件 */
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+#if !defined ( BUILD_DAEMON )
 #include "task_console.h"
+#endif
 #endif
 #include "task_calendar.h"
 #include "task_comm.h"
@@ -69,7 +74,9 @@ static const struct __task_table task_tables[] =
     //轮询顺序（（1~254）越小优先级越高）
     //任务控制块
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+#if !defined ( BUILD_DAEMON )
 	{ {0xfe, 0xfe, 0xfe, 0xfe}, &task_console },
+#endif
 #endif
     
     /** 在这里添加所有tasks的结构体地址 */

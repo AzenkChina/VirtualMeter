@@ -153,32 +153,39 @@ static void meter_init(enum __dev_state state)
         CloseHandle(hThread);
 #endif
     }
+	
+	meter_callback= (void(*)(void *))0;
+	status = DEVICE_INIT;
 #else
 
 #if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    devspi.control.init(state);
-    
-    if(devspi.control.status() != DEVICE_INIT)
-    {
-        status = DEVICE_ERROR;
-        return;
-    }
-    
-    //PD12 教表参数/事件输出
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
+    if(state == DEVICE_NORMAL)
+	{
+		devspi.control.init(state);
+		
+		if(devspi.control.status() != DEVICE_INIT)
+		{
+			status = DEVICE_ERROR;
+			return;
+		}
+		
+		//PD12 教表参数/事件输出
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
+		
+		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
+		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+		GPIO_Init(GPIOD, &GPIO_InitStruct);
+		
+		status = DEVICE_INIT;
+	}
+	
+	meter_callback= (void(*)(void *))0;
 #endif
 
 #endif
-    
-    meter_callback= (void(*)(void *))0;
-    status = DEVICE_INIT;
 }
 
 /**

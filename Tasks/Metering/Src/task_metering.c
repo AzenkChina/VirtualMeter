@@ -372,6 +372,12 @@ static void metering_init(void)
         
         TRACE(TRACE_INFO, "Task metering initialized.");
 	}
+	else
+	{
+		//计量芯片的低功耗初始化类似于挂起，对正常电表来说并没有意义
+		//这样操作是为了使模拟表正常运行 
+		DEV_M.control.init(DEVICE_LOWPOWER); 
+	}
 }
 
 /**
