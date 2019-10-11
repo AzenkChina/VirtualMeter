@@ -193,35 +193,12 @@ static void cpu_core_sleep(void)
 #else
 
 #if defined (DEMO_STM32F091)
-    RTC_InitTypeDef RTC_InitStruct;
-    
     /* Enable the PWR clock */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     /* Allow access to RTC */
     PWR_BackupAccessCmd(ENABLE);
-    /* Enable the LSI OSC */
-    RCC_LSICmd(ENABLE);
-    /* Wait till LSI is ready */
-    while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
-    /* Select the RTC Clock Source */
-    RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
-    RTC_DeInit();
-    /* Calendar Configuration */
-    RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 10) = 1KHz*/
-    RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
-    RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
-    RTC_Init(&RTC_InitStruct);
-    /* Enable the RTC Clock */
-    RCC_RTCCLKCmd(ENABLE);
-    /* Wait for RTC APB registers synchronisation */
-    RTC_WaitForSynchro();
-    /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-    RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-    RTC_SetWakeUpCounter(0);
-    /* Enable the RTC Wakeup Interrupt */
-    RTC_ITConfig(RTC_IT_WUT, ENABLE);
-    /* Enable Wakeup Counter */
-    RTC_WakeUpCmd(ENABLE);
+    /* Clear flags */
+    RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
     /* Disable access to RTC */
     PWR_BackupAccessCmd(DISABLE);
     /* Disable the PWR clock */
@@ -362,8 +339,8 @@ static void cpu_core_init(enum __cpu_level level)
 
 #if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
-    NVIC_InitTypeDef NVIC_InitStruct;
     EXTI_InitTypeDef EXTI_InitStruct;
+    RTC_InitTypeDef RTC_InitStruct;
     
     enum __interrupt_status intrs = cpu_entr_status();
     
@@ -379,58 +356,35 @@ static void cpu_core_init(enum __cpu_level level)
     RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
 	/* Wait till HSI is used as system clock source */
 	while((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)RCC_CFGR_SWS_HSI);
-    /* Reset SW[1:0], HPRE[3:0], PPRE[2:0], ADCPRE, MCOSEL[2:0], MCOPRE[2:0] and PLLNODIV bits */
-    RCC->CFGR &= (uint32_t)0x08FFB80C;
-    /* Reset HSEON, CSSON and PLLON bits */
-    RCC->CR &= (uint32_t)0xFEF6FFFF;
-    /* Reset HSEBYP bit */
-    RCC->CR &= (uint32_t)0xFFFBFFFF;
-    /* Reset PLLSRC, PLLXTPRE and PLLMUL[3:0] bits */
-    RCC->CFGR &= (uint32_t)0xFFC0FFFF;
-    /* Reset PREDIV1[3:0] bits */
-    RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
-    /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits */
-    RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
-    /* Reset HSI14 bit */
-    RCC->CR2 &= (uint32_t)0xFFFFFFFE;
-    /* Reset HSI48 bit */
-    RCC->CR2 &= (uint32_t)0xFFFEFFFF;
-    /* Disable all interrupts */
-    RCC->CIR = 0x00000000;
     /* Disable Prefetch Buffer and Flash Latency */
     FLASH->ACR = 0x00000000;
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
     /* PCLK = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE_DIV1;
-    
+	/* Disable the all NVIC interrupts */
+    NVIC->ICER[0] = 0xffffffff;
+	/* Clear the all NVIC Pendings */
+    NVIC->ICPR[0] = 0xffffffff;
     /* Disable SysTick */
     SysTick->CTRL = 0x00000000;
     SysTick->VAL  = 0x00000000;
     
-	/* Disable the RTC Interrupt */
-    EXTI_InitStruct.EXTI_Line = EXTI_Line20;
-    EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStruct.EXTI_LineCmd = DISABLE;
-    EXTI_Init(&EXTI_InitStruct);
-	EXTI_ClearITPendingBit(EXTI_Line20);
-	NVIC_DisableIRQ(RTC_IRQn);
-	NVIC_ClearPendingIRQ(RTC_IRQn);
-    
     /* Disable the RTC */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     PWR_BackupAccessCmd(ENABLE);
+    RTC_DeInit();
     RCC_LSICmd(ENABLE);
     while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET);
     RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
-    RTC_DeInit();
-    PWR_BackupAccessCmd(DISABLE);
     RCC_RTCCLKCmd(DISABLE);
+    PWR_BackupAccessCmd(DISABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
     
     /* Reset All Peripheral */
+    RCC_DeInit();
 	PWR_DeInit();
+    EXTI_DeInit();
     GPIO_DeInit(GPIOA);
     GPIO_DeInit(GPIOB);
     GPIO_DeInit(GPIOC);
@@ -553,6 +507,33 @@ static void cpu_core_init(enum __cpu_level level)
     }
     else
     {
+        /* Enable the PWR clock */
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+        /* Allow access to RTC */
+        PWR_BackupAccessCmd(ENABLE);
+        /* Calendar Configuration */
+        RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 10) = 1KHz*/
+        RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
+        RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
+        RTC_Init(&RTC_InitStruct);
+        /* Enable the RTC Clock */
+        RCC_RTCCLKCmd(ENABLE);
+        /* Wait for RTC APB registers synchronisation */
+        RTC_WaitForSynchro();
+        /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
+        RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
+        RTC_SetWakeUpCounter(0);
+        /* Enable the RTC Wakeup Interrupt */
+        RTC_ITConfig(RTC_IT_WUT, ENABLE);
+        /* Enable Wakeup Counter */
+        RTC_WakeUpCmd(ENABLE);
+        /* Clear flags */
+        RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
+        /* Disable access to RTC */
+        PWR_BackupAccessCmd(DISABLE);
+        /* Disable the PWR clock */
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
+        
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
         EXTI_InitStruct.EXTI_Line = EXTI_Line20;
@@ -562,10 +543,8 @@ static void cpu_core_init(enum __cpu_level level)
         EXTI_Init(&EXTI_InitStruct);
         
         /* Enable the RTC Wakeup Interrupt */
-        NVIC_InitStruct.NVIC_IRQChannel = RTC_IRQn;
-        NVIC_InitStruct.NVIC_IRQChannelPriority = 3;
-        NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&NVIC_InitStruct);
+        NVIC_SetPriority(RTC_IRQn, 3);
+        NVIC_EnableIRQ(RTC_IRQn);
         
         cpu_level = CPU_POWERSAVE;
     }
