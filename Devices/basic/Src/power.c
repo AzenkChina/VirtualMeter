@@ -12,6 +12,7 @@
 #else
 
 #if defined (DEMO_STM32F091)
+#include "delay.h"
 #include "stm32f0xx.h"
 #endif
 
@@ -78,7 +79,7 @@ static enum __power_status power_check(void)
     ADC_Cmd(ADC1, ENABLE);
     
     
-    /* ADC1 regular Software Start Conv */ 
+    /* ADC1 regular Software Start Conv */
     ADC_StartOfConversion(ADC1);
     while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
     /* Get ADC1 converted data */
@@ -107,15 +108,23 @@ static enum __power_status power_check(void)
         Voltage[cnt] = Voltage[cnt] * Ref / 4096;
         Voltage[cnt] *= 3;
     }
-    ADC_DeInit(ADC1);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
     
     if((status_before == SUPPLY_BATTERY) && \
         (Voltage[0] > POWER_UP_VOL) && \
         (Voltage[1] > POWER_UP_VOL) && \
         (Voltage[2] > POWER_UP_VOL))
     {
-        status_before = SUPPLY_AC;
+        mdelay(10);
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        Voltage[0] = ADC_GetConversionValue(ADC1);
+        Voltage[0] = Voltage[0] * Ref / 4096;
+        Voltage[0] *= 3;
+        
+        if(Voltage[0] > POWER_UP_VOL)
+        {
+            status_before = SUPPLY_AC;
+        }
     }
     
     if((status_before == SUPPLY_AC) && \
@@ -123,8 +132,21 @@ static enum __power_status power_check(void)
         (Voltage[1] < POWER_DOWN_VOL) && \
         (Voltage[2] < POWER_DOWN_VOL))
     {
-        status_before = SUPPLY_BATTERY;
+        mdelay(10);
+        ADC_StartOfConversion(ADC1);
+        while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
+        Voltage[0] = ADC_GetConversionValue(ADC1);
+        Voltage[0] = Voltage[0] * Ref / 4096;
+        Voltage[0] *= 3;
+        
+        if(Voltage[0] < POWER_UP_VOL)
+        {
+            status_before = SUPPLY_BATTERY;
+        }
     }
+    
+    ADC_DeInit(ADC1);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, DISABLE);
     
     return(status_before);
 #endif

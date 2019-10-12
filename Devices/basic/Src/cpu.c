@@ -193,16 +193,12 @@ static void cpu_core_sleep(void)
 #else
 
 #if defined (DEMO_STM32F091)
-    /* Enable the PWR clock */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     /* Allow access to RTC */
     PWR_BackupAccessCmd(ENABLE);
     /* Clear flags */
     RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
     /* Disable access to RTC */
     PWR_BackupAccessCmd(DISABLE);
-    /* Disable the PWR clock */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
     
     PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 #endif
@@ -421,8 +417,8 @@ static void cpu_core_init(enum __cpu_level level)
     
     /* Enable DBG */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
-    DBGMCU_Config(DBGMCU_STOP, ENABLE);
     DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
+    
 	/* Enable WDG */
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
     IWDG_SetPrescaler(IWDG_Prescaler_256);
@@ -507,11 +503,21 @@ static void cpu_core_init(enum __cpu_level level)
     }
     else
     {
+        /* Disable DBG */
+        DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, DISABLE);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, DISABLE);
+        
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+        GPIO_InitStruct.GPIO_Pin = (GPIO_Pin_13 | GPIO_Pin_14);
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AN;
+        GPIO_Init(GPIOA, &GPIO_InitStruct);
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, DISABLE);
+        
         /* Enable the PWR clock */
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
         /* Allow access to RTC */
         PWR_BackupAccessCmd(ENABLE);
-        /* Calendar Configuration */
+        /* Clock Configuration */
         RTC_InitStruct.RTC_AsynchPrediv = (40 - 1); /* (40KHz / 10) = 1KHz*/
         RTC_InitStruct.RTC_SynchPrediv = (KERNEL_LOOP_SLEEPED - 1); /* Wake up every (KERNEL_LOOP_SLEEPED/1000) second */
         RTC_InitStruct.RTC_HourFormat = RTC_HourFormat_24;
@@ -531,8 +537,6 @@ static void cpu_core_init(enum __cpu_level level)
         RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
         /* Disable access to RTC */
         PWR_BackupAccessCmd(DISABLE);
-        /* Disable the PWR clock */
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
         
         /* EXTI configuration */
         EXTI_ClearITPendingBit(EXTI_Line20);
