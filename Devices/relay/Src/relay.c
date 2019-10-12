@@ -29,7 +29,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
-enum __switch_status relay_state = SWITCH_CLOSE;
+enum __switch_status relay_state = SWITCH_UNKNOWN;
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 static SOCKET sock = INVALID_SOCKET;
@@ -132,13 +132,14 @@ static void relay_init(enum __dev_state state)
     {
         RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
         
-        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7;
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
         GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
         GPIO_Init(GPIOC, &GPIO_InitStruct);
-        GPIO_SetBits(GPIOC, GPIO_Pin_8);
+        GPIO_SetBits(GPIOC, GPIO_Pin_7);
+        relay_state = SWITCH_OPEN;
     }
     
     status = DEVICE_INIT;
@@ -181,7 +182,7 @@ static enum __switch_status relay_get(void)
 #else
     
 #if defined (DEMO_STM32F091)
-    if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_8) == Bit_RESET)
+    if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7) == Bit_RESET)
     {
         return(SWITCH_CLOSE);
     }
@@ -204,12 +205,12 @@ static uint8_t relay_set(enum __switch_status status)
 #if defined (DEMO_STM32F091)
     if(status == SWITCH_CLOSE)
     {
-        GPIO_ResetBits(GPIOC, GPIO_Pin_8);
+        GPIO_ResetBits(GPIOC, GPIO_Pin_7);
         return(SWITCH_CLOSE);
     }
     else
     {
-        GPIO_SetBits(GPIOC, GPIO_Pin_8);
+        GPIO_SetBits(GPIOC, GPIO_Pin_7);
         return(SWITCH_OPEN);
     }
 #endif
