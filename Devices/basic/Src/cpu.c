@@ -196,7 +196,13 @@ static void cpu_core_sleep(void)
     /* Allow access to RTC */
     PWR_BackupAccessCmd(ENABLE);
     /* Clear flags */
-    RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
+    RTC_ClearFlag(RTC_FLAG_TAMP2F| \
+                    RTC_FLAG_TAMP1F| \
+                    RTC_FLAG_TSOVF| \
+                    RTC_FLAG_TSF| \
+                    RTC_FLAG_WUTF| \
+                    RTC_FLAG_ALRAF| \
+                    RTC_FLAG_RSF);
     /* Disable access to RTC */
     PWR_BackupAccessCmd(DISABLE);
     
@@ -337,6 +343,7 @@ static void cpu_core_init(enum __cpu_level level)
     GPIO_InitTypeDef GPIO_InitStruct;
     EXTI_InitTypeDef EXTI_InitStruct;
     RTC_InitTypeDef RTC_InitStruct;
+    __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
     
     enum __interrupt_status intrs = cpu_entr_status();
     
@@ -415,10 +422,6 @@ static void cpu_core_init(enum __cpu_level level)
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, DISABLE);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOF, DISABLE);
     
-    /* Enable DBG */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
-    DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
-    
 	/* Enable WDG */
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
     IWDG_SetPrescaler(IWDG_Prescaler_256);
@@ -429,9 +432,10 @@ static void cpu_core_init(enum __cpu_level level)
 	
     if(level == CPU_NORMAL)
     {
-        /* Configure the System clock frequency, AHB/APBx prescalers and Flash settings */
-        __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-        /* SYSCLK, HCLK, PCLK configuration ----------------------------------------*/
+        /* Enable DBG */
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
+        DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
+        
         /* Enable HSE */
         RCC->CR |= ((uint32_t)RCC_CR_HSEON);
 
@@ -534,7 +538,13 @@ static void cpu_core_init(enum __cpu_level level)
         /* Enable Wakeup Counter */
         RTC_WakeUpCmd(ENABLE);
         /* Clear flags */
-        RTC_ClearFlag(RTC_FLAG_TAMP2F|RTC_FLAG_TAMP1F|RTC_FLAG_TSOVF|RTC_FLAG_TSF|RTC_FLAG_WUTF|RTC_FLAG_ALRAF|RTC_FLAG_RSF);
+        RTC_ClearFlag(RTC_FLAG_TAMP2F| \
+                        RTC_FLAG_TAMP1F| \
+                        RTC_FLAG_TSOVF| \
+                        RTC_FLAG_TSF| \
+                        RTC_FLAG_WUTF| \
+                        RTC_FLAG_ALRAF| \
+                        RTC_FLAG_RSF);
         /* Disable access to RTC */
         PWR_BackupAccessCmd(DISABLE);
         

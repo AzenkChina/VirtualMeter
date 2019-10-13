@@ -27,7 +27,7 @@
 #define LCD_LABEL_SIGNAL            (11)//无线信号强度
 #define LCD_LABEL_COMM              (12)//通讯符号
 #define LCD_LABEL_WARN              (13)//报警符号
-#define LCD_LABEL_PHASE             (14)//功率象限
+#define LCD_LABEL_QUAD              (14)//功率象限
 #define LCD_LABEL_RATE              (15)//费率
 #define LCD_LABEL_BATRTC            (16)//RTC电池状态
 #define LCD_LABEL_BATBAK            (17)//抄表电池状态

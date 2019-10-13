@@ -1036,7 +1036,7 @@ static void display_loop(void)
         
         disp_runs.loop_record += KERNEL_PERIOD;
         
-        //全显完成之后才开始100ms的定时刷新
+        //全显完成之后才开始定时刷新
         if(disp_runs.counter.start >= disp_runs.time.start)
         {
             disp_runs.loop_flush += KERNEL_PERIOD;
@@ -1111,8 +1111,8 @@ static void display_loop(void)
             }
 		}
         
-        //100ms刷新主窗口的显示数据
-        if(disp_runs.loop_flush > 99)
+        //200ms刷新主窗口的显示数据
+        if(disp_runs.loop_flush > 199)
         {
             disp_runs.loop_flush = 0;
             flush_data();

@@ -98,12 +98,22 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
+    if((P.Input.MID == 0) || (P.Input.OID == 0xffffffff) || (*((uint8_t *)&right) == 0))
+    {
+        return(0);
+    }
+    
 	Func = CosemLoadAttribute(cosem_descriptor.classid, cosem_descriptor.index, MOTIV_GET);
     
-    if(Func)
+    if(!Func)
     {
-    	Func(&P);
+    	return(0);
 	}
+    
+    if(Func(&P) != OBJECT_NOERR)
+    {
+        return(0);
+    }
 	
 	*id = P.Input.MID;
 	
@@ -140,17 +150,24 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     desc.descriptor = cosem_descriptor;
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
+    if((P.Input.MID == 0) || (P.Input.OID == 0xffffffff) || (*((uint8_t *)&right) == 0))
+    {
+        return(0);
+    }
+    
 	Func = CosemLoadAttribute(cosem_descriptor.classid, cosem_descriptor.index, MOTIV_SET);
     
-    if(Func)
+    if(!Func)
     {
-    	if(Func(&P) == OBJECT_NOERR)
-        {
-            return(size);
-        }
+    	return(0);
 	}
     
-    return(0);
+    if(Func(&P) != OBJECT_NOERR)
+    {
+        return(0);
+    }
+    
+    return(size);
 }
 
 static uint16_t dlms_stream_in(uint8_t channel, const uint8_t *frame, uint16_t frame_length)

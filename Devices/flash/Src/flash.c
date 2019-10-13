@@ -47,19 +47,21 @@
 
 #if defined (DEMO_STM32F091)
 //Main Memory Page Read D2H
-#define AT45_CMD_RDPG          0xD2
+#define AT45_CMD_RDPG           0xD2
+//Main Memory Page to Buffer 1 Transfer
+#define AT45_CMD_RDTBF1         0x53
 //Buffer 1 Read 54H
-#define AT45_CMD_RDBF1         0x54
+#define AT45_CMD_RDBF1          0x54
 //Buffer 2 Read 56H
-#define AT45_CMD_RDBF2         0x56
+#define AT45_CMD_RDBF2          0x56
 //Page Erase 81H
-#define AT45_CMD_ERPG          0x81
+#define AT45_CMD_ERPG           0x81
 //Block Erase 50H
-#define AT45_CMD_ERBL          0x50
+#define AT45_CMD_ERBL           0x50
 //Sector Erase 7CH
-#define AT45_CMD_ERSE          0x7C
+#define AT45_CMD_ERSE           0x7C
 //Chip Erase C7H, 94H, 80H, 9AH
-#define AT45_CMD_ERIC          0xC7, 0x94, 0x80, 0x9A
+#define AT45_CMD_ERIC           0xC7, 0x94, 0x80, 0x9A
 //Buffer 1 Write 84H
 #define AT45_CMD_WRBF1          0x84
 //Buffer 2 Write 87H
@@ -395,9 +397,9 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
 #else
     
 #if defined (DEMO_STM32F091)
-	uint32_t addr_sent = 0;
+	uint32_t page = 0;
     uint8_t status;
-    uint8_t count_try = 50;
+    uint8_t timeout = 50;
     
     if(block >= FLASH_BLOCK_AMOUNT)
     {
@@ -414,35 +416,19 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
         return(0);
     }
     
-    devspi.select(0);
+    page = (block << 10);
+    page |= 0x00C00000;
     
-    addr_sent = (block << 10);
-    addr_sent |= 0x00C00000;
-    addr_sent += offset;
-    
-	//写入命令
-	devspi.octet.write(AT45_CMD_WRBF1);
-    
-	//写入地址
-	devspi.octet.write(0);
-	devspi.octet.write(0);
-	devspi.octet.write(0);
-    
-    devspi.write(size, (const uint8_t *)buffer);
-    
-	devspi.release(0);
-    
+    /** 第一步，读取整页到缓存中 */
     devspi.select(0);
     
 	//写入命令
-	devspi.octet.write(AT45_CMD_WREPBF1);
+	devspi.octet.write(AT45_CMD_RDTBF1);
     
 	//写入地址
-	devspi.octet.write(addr_sent>>16);
-	devspi.octet.write(addr_sent>>8);
-	devspi.octet.write(addr_sent);
-    
-    devspi.write(size, (const uint8_t *)buffer);
+	devspi.octet.write(page>>16);
+	devspi.octet.write(page>>8);
+	devspi.octet.write(page);
     
 	devspi.release(0);
     
@@ -451,14 +437,52 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
         devspi.select(0);
         devspi.octet.write(AT45_CMD_SR);
         status = devspi.octet.read();
-        count_try -= 1;
+        timeout -= 1;
         udelay(100);
         devspi.release(0);
     }
-    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && count_try);
+    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
     
+    /** 第二步，修改缓存内容 */
+    devspi.select(0);
     
-    if(((status&0x3c) != 0x34) || (!count_try))
+	//写入命令
+	devspi.octet.write(AT45_CMD_WRBF1);
+    
+	//写入地址
+	devspi.octet.write(0);
+	devspi.octet.write((uint8_t)(offset >> 8));
+	devspi.octet.write((uint8_t)(offset));
+    
+    devspi.write(size, (const uint8_t *)buffer);
+    
+	devspi.release(0);
+    
+    /** 第三步，从缓存中写入整页 */
+    devspi.select(0);
+    
+	//写入命令
+	devspi.octet.write(AT45_CMD_WREPBF1);
+    
+	//写入地址
+	devspi.octet.write(page>>16);
+	devspi.octet.write(page>>8);
+	devspi.octet.write(page);
+    
+	devspi.release(0);
+    
+    do
+    {
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        status = devspi.octet.read();
+        timeout -= 1;
+        udelay(100);
+        devspi.release(0);
+    }
+    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    
+    if(((status&0x3c) != 0x34) || (!timeout))
     {
         return(0);
     }

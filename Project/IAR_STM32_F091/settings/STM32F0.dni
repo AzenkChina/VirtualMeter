@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-1199879929
+Checksum=-688467239
 [CodeCoverage]
 Enabled=_ 0
 [Exceptions]
@@ -34,7 +34,7 @@ ShowSource=1
 Freq=10000000
 MultiCoreRunAll=1
 [stlink]
-stlinkserialNo=37447E1E
+stlinkserialNo=B1B83CF3
 stlinkfoundProbes=
 [SWOTraceHWSettings]
 OverrideDefaultClocks=0
@@ -60,10 +60,11 @@ Fmt0=uint8_t[129]	4	0
 Fmt1=uint8_t[12]	4	0
 Fmt2=uint8_t[16]	4	0
 Fmt3=uint8_t[17]	4	0
-Fmt4=uint8_t[67]	4	0
-Fmt5=uint8_t[7]	4	0
-Fmt6=unsigned char[16]	4	0
-Fmt7=unsigned char[64]	4	0
+Fmt4=uint8_t[32]	4	0
+Fmt5=uint8_t[67]	4	0
+Fmt6=uint8_t[7]	4	0
+Fmt7=unsigned char[16]	4	0
+Fmt8=unsigned char[64]	4	0
 [watch_formats]
 Fmt0={W}42:tim	3	0
 [Trace2]

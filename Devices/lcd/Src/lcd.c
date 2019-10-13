@@ -15,8 +15,28 @@
 #include "string.h"
 #include "stm32f0xx.h"
 #include "viic3.h"
+#include "delay.h"
 #endif
 
+#endif
+
+/* Private define ------------------------------------------------------------*/
+#if defined (DEMO_STM32F091)
+#define deviic      viic3
+#define GDRAM_SIZE  35
+#endif
+
+/* Private macro -------------------------------------------------------------*/
+#if defined (DEMO_STM32F091)
+#define LCD_ADDR                0x3E
+
+#define LCD_SOFTRST				0xf7 //显示开启状态下软件复位
+#define LCD_MODSET_ON			0xf5 //显示开启状态下的模式设置
+#define LCD_MODSET_OFF			0xf4 //显示关闭状态下的模式设置
+#define LCD_DISCTL				0xec //显示控制命令字
+#define LCD_EVRSET				0xc0 //电子可调电阻设置寄存器值设置
+#define LCD_ADSET				0x00 //缓冲区地址设置命令字
+#define LCD_INIT				((LCD_SOFTRST << 24)|(LCD_DISCTL<<16)|((LCD_EVRSET|0xc0)<<8)|LCD_ADSET) //初始化
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,26 +101,19 @@ struct __win_lcd_message
         
     }                           backlight;
 };
-#endif
-/* Private define ------------------------------------------------------------*/
+#else
+
 #if defined (DEMO_STM32F091)
-#define deviic      viic3
+struct __lcd_params
+{
+    uint8_t gdram[GDRAM_SIZE];
+    uint8_t blink[LCD_MAX_LABELS / 8 + 1];
+    uint8_t flush;
+};
 #endif
 
-/* Private macro -------------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
-#define LCD_ADDR                0x1F
-
-#define LCD_SOFTRST				0xef //显示开启状态下软件复位
-#define LCD_MODSET_ON			0xaf //显示开启状态下的模式设置
-#define LCD_MODSET_OFF			0x2f //显示关闭状态下的模式设置
-#define LCD_DISCTL				0x37 //显示控制命令字
-#define LCD_EVRSET				0x03 //电子可调电阻设置寄存器值设置
-#define LCD_ADSET				0x00 //缓冲区地址设置命令字
-#define LCD_INIT				((LCD_SOFTRST << 24)|(LCD_DISCTL<<16)|((LCD_EVRSET|0xc0)<<8)|LCD_ADSET) //初始化
 #endif
 
-/* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
 
@@ -111,7 +124,7 @@ static struct __win_lcd_message lcd_message;
 #else
 
 #if defined (DEMO_STM32F091)
-static uint8_t disp_buff[32] = {0};
+static struct __lcd_params params;
 #endif
 
 #endif
@@ -135,7 +148,7 @@ static void lcd_init(enum __dev_state state)
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     memset(&lcd_message, 0, sizeof(lcd_message));
     
-    lcd_message.global = LCD_GLO_SHOW_ALL;
+    lcd_message.global = LCD_GLO_SHOW_NONE;
     lcd_message.backlight = LCD_BKL_NONE;
 
 	sock = emitter.open(50001, &src);
@@ -178,9 +191,11 @@ static void lcd_init(enum __dev_state state)
     GPIO_Init(GPIOE, &GPIO_InitStruct);
 	
     GPIO_SetBits(GPIOE, GPIO_Pin_14);
-	
+    
 	//init
-	deviic.bus.write(LCD_ADDR, LCD_INIT, 4, 0, 0);
+    udelay(200);
+    memset(&params, 0, sizeof(params));
+	deviic.bus.write(LCD_ADDR, LCD_INIT, 4, sizeof(params.gdram), params.gdram);
 	
 	//enable display
 	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
@@ -245,7 +260,27 @@ static void lcd_runner(uint16_t msecond)
 		}
     }
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    static uint16_t update = 0;
+    
+    if((update + msecond) > 199)
+    {
+        if(params.flush)
+        {
+            deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
+            deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+            params.flush = 0;
+        }
+        
+        update = 0;
+    }
+    else
+    {
+        update += msecond;
+    }
+#endif
+    
 #endif
 }
 
@@ -259,9 +294,9 @@ static void lcd_show_none(void)
 #else
 	
 #if defined (DEMO_STM32F091)
-	memset(disp_buff, 0, sizeof(disp_buff));
+	memset(params.gdram, 0, sizeof(params.gdram));
 	//write data
-	deviic.bus.write(LCD_ADDR, 0, 1, sizeof(disp_buff), disp_buff);
+	deviic.bus.write(LCD_ADDR, 0, 1, sizeof(params.gdram), params.gdram);
 	//enable display
 	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
 #endif
@@ -279,9 +314,9 @@ static void lcd_show_all(void)
 #else
 	
 #if defined (DEMO_STM32F091)
-	memset(disp_buff, 0xff, sizeof(disp_buff));
+	memset(params.gdram, 0xff, sizeof(params.gdram));
 	//write data
-	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(disp_buff), disp_buff);
+	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
 	//enable display
 	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
 #endif
@@ -528,7 +563,221 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
 	lcd_message.label[channel].status = LCD_LAB_SHOW_ON;
 	lcd_message.label[channel].value = state;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    uint8_t gdram[GDRAM_SIZE];
+    
+    if(channel >= LCD_MAX_LABELS)
+    {
+        return;
+    }
+    
+    params.blink[channel / 8] &= ~(1 << (channel & 8));
+    
+    memcpy(gdram, params.gdram, sizeof(gdram));
+    
+    switch(channel)
+    {
+        case LCD_LABEL_U1:
+        {
+            gdram[29] |= 0x20;
+            break;
+        }
+        case LCD_LABEL_U2:
+        {
+            gdram[28] |= 0x20;
+            break;
+        }
+        case LCD_LABEL_U3:
+        {
+            gdram[27] |= 0x20;
+            break;
+        }
+        case LCD_LABEL_I1:
+        {
+            if(state)
+            {
+                gdram[18] |= 0x60;
+            }
+            else
+            {
+                gdram[18] |= 0x04;
+            }
+            break;
+        }
+		case LCD_LABEL_I2:
+        {
+            if(state)
+            {
+                gdram[26] |= 0x60;
+            }
+            else
+            {
+                gdram[26] |= 0x40;
+            }
+            break;
+        }
+		case LCD_LABEL_I3:
+        {
+            if(state)
+            {
+                gdram[25] |= 0x20;
+                gdram[26] |= 0x80;
+            }
+            else
+            {
+                gdram[25] |= 0x20;
+            }
+            break;
+        }
+		case LCD_LABEL_L1:
+        {
+            gdram[2] |= 0x04;
+            break;
+        }
+		case LCD_LABEL_L2:
+        {
+            gdram[32] |= 0x08;
+            break;
+        }
+		case LCD_LABEL_L3:
+        {
+            gdram[32] |= 0x04;
+            break;
+        }
+		case LCD_LABEL_LN:
+        {
+            gdram[32] |= 0x02;
+            break;
+        }
+		case LCD_LABEL_PF:
+        {
+            gdram[31] |= 0x04;
+            break;
+        }
+		case LCD_LABEL_SIGNAL:
+        {
+            if(state < 20)
+            {
+                gdram[24] |= 0x20;
+            }
+            else if(state < 40)
+            {
+                gdram[24] |= 0x28;
+            }
+            else if(state < 60)
+            {
+                gdram[24] |= 0x28;
+                gdram[23] |= 0x08;
+            }
+            else if(state < 80)
+            {
+                gdram[24] |= 0x28;
+                gdram[23] |= 0x28;
+            }
+            else if(state < 100)
+            {
+                gdram[24] |= 0x28;
+                gdram[23] |= 0x28;
+                gdram[22] |= 0x20;
+            }
+            break;
+        }
+		case LCD_LABEL_COMM:
+        {
+            gdram[21] &= ~0xe0;
+            gdram[21] |= 0x60;
+            break;
+        }
+		case LCD_LABEL_QUAD:
+        {
+            gdram[22] &= ~0xc0;
+            gdram[23] &= ~0x40;
+            gdram[24] &= ~0xc0;
+            switch(state)
+            {
+                case 1:
+                {
+                    gdram[22] |= 0x80;
+                    break;
+                }
+                case 2:
+                {
+                    gdram[24] |= 0x80;
+                    break;
+                }
+                case 3:
+                {
+                    gdram[24] |= 0x40;
+                    break;
+                }
+                case 4:
+                {
+                    gdram[22] |= 0x40;
+                    break;
+                }
+            }
+            break;
+        }
+		case LCD_LABEL_RATE:
+        {
+            gdram[1] &= ~0x0c;
+            gdram[2] &= ~0x0a;
+            switch(state)
+            {
+                case 1:
+                {
+                    gdram[1] |= 0x08;
+                    break;
+                }
+                case 2:
+                {
+                    gdram[2] |= 0x08;
+                    break;
+                }
+                case 3:
+                {
+                    gdram[1] |= 0x04;
+                    break;
+                }
+                case 4:
+                {
+                    gdram[2] |= 0x02;
+                    break;
+                }
+            }
+            break;
+        }
+		case LCD_LABEL_BATRTC:
+        {
+            gdram[26] |= 0x80;
+            break;
+        }
+		case LCD_LABEL_BATBAK:
+        {
+            gdram[25] |= 0x80;
+            break;
+        }
+		case LCD_LABEL_DATE:
+        {
+            gdram[29] |= 0x10;
+            break;
+        }
+		case LCD_LABEL_TIM:
+        {
+            gdram[31] |= 0x08;
+            break;
+        }
+    }
+    
+    if(memcmp(gdram, params.gdram, sizeof(gdram)))
+    {
+        memcpy(params.gdram, gdram, sizeof(gdram));
+        params.flush = 0xff;
+    }
+    
+#endif
+    
 #endif
 }
 
@@ -545,7 +794,132 @@ static void lcd_label_off(uint8_t channel)
     lcd_message.global = LCD_GLO_NONE_OPTION;
 	lcd_message.label[channel].status = LCD_LAB_SHOW_OFF;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    uint8_t gdram[GDRAM_SIZE];
+    
+    if(channel >= LCD_MAX_LABELS)
+    {
+        return;
+    }
+    
+    params.blink[channel / 8] &= ~(1 << (channel & 8));
+    
+    memcpy(gdram, params.gdram, sizeof(gdram));
+    
+    switch(channel)
+    {
+        case LCD_LABEL_U1:
+        {
+            gdram[29] &= ~0x20;
+            break;
+        }
+        case LCD_LABEL_U2:
+        {
+            gdram[28] &= ~0x20;
+            break;
+        }
+        case LCD_LABEL_U3:
+        {
+            gdram[27] &= ~0x20;
+            break;
+        }
+        case LCD_LABEL_I1:
+        {
+			gdram[18] &= ~0x60;
+            break;
+        }
+		case LCD_LABEL_I2:
+        {
+			gdram[26] &= ~0x60;
+            break;
+        }
+		case LCD_LABEL_I3:
+        {
+			gdram[25] &= ~0x20;
+			gdram[26] &= ~0x80;
+            break;
+        }
+		case LCD_LABEL_L1:
+        {
+            gdram[2] &= ~0x04;
+            break;
+        }
+		case LCD_LABEL_L2:
+        {
+            gdram[32] &= ~0x08;
+            break;
+        }
+		case LCD_LABEL_L3:
+        {
+            gdram[32] &= ~0x04;
+            break;
+        }
+		case LCD_LABEL_LN:
+        {
+            gdram[32] &= ~0x02;
+            break;
+        }
+		case LCD_LABEL_PF:
+        {
+            gdram[31] &= ~0x04;
+            break;
+        }
+		case LCD_LABEL_SIGNAL:
+        {
+			gdram[24] &= ~0x28;
+			gdram[23] &= ~0x28;
+			gdram[22] &= ~0x20;
+            break;
+        }
+		case LCD_LABEL_COMM:
+        {
+            gdram[21] &= ~0xe0;
+            break;
+        }
+		case LCD_LABEL_QUAD:
+        {
+            gdram[22] &= ~0xc0;
+            gdram[23] &= ~0x40;
+            gdram[24] &= ~0xc0;
+            break;
+        }
+		case LCD_LABEL_RATE:
+        {
+            gdram[1] &= ~0x0c;
+            gdram[2] &= ~0x0a;
+            break;
+        }
+		case LCD_LABEL_BATRTC:
+        {
+            gdram[26] &= ~0x80;
+            break;
+        }
+		case LCD_LABEL_BATBAK:
+        {
+            gdram[25] &= ~0x80;
+            break;
+        }
+		case LCD_LABEL_DATE:
+        {
+            gdram[29] &= ~0x10;
+            break;
+        }
+		case LCD_LABEL_TIM:
+        {
+            gdram[31] &= ~0x08;
+            break;
+        }
+    }
+    
+    if(memcmp(gdram, params.gdram, sizeof(gdram)))
+    {
+        memcpy(params.gdram, gdram, sizeof(gdram));
+        params.flush = 0xff;
+    }
+    
+#endif
+    
 #endif
 }
 
@@ -562,7 +936,16 @@ static void lcd_label_flash(uint8_t channel)
     lcd_message.global = LCD_GLO_NONE_OPTION;
 	lcd_message.label[channel].status = LCD_LAB_SHOW_FLASH;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    if(channel >= LCD_MAX_LABELS)
+    {
+        return;
+    }
+    
+    params.blink[channel / 8] |= (1 << (channel & 8));
+#endif
+    
 #endif
 }
 
