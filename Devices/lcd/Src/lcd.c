@@ -108,6 +108,8 @@ struct __lcd_params
 {
     uint8_t gdram[GDRAM_SIZE];
     uint8_t blink[LCD_MAX_LABELS / 8 + 1];
+	uint16_t counter;
+	uint8_t flash;
     uint8_t flush;
 };
 #endif
@@ -130,6 +132,9 @@ static struct __lcd_params params;
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
+static void lcd_label_on(uint8_t channel, uint8_t state);
+static void lcd_label_off(uint8_t channel);
+
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -262,23 +267,50 @@ static void lcd_runner(uint16_t msecond)
 #else
     
 #if defined (DEMO_STM32F091)
-    static uint16_t update = 0;
-    
-    if((update + msecond) > 199)
+	uint8_t labels;
+	
+	if(status != DEVICE_INIT)
+	{
+		return;
+	}
+	
+    if((params.counter + msecond) > 999)
     {
-        if(params.flush)
-        {
-            deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
-            deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
-            params.flush = 0;
-        }
-        
-        update = 0;
+		for(labels=0; labels<LCD_MAX_LABELS; labels++)
+		{
+			if(params.blink[labels/8] & (1<<(labels%8)))
+			{
+				if(params.flash)
+				{
+					lcd_label_on(labels, 0);
+				}
+				else
+				{
+					lcd_label_off(labels);
+				}
+			}
+		}
+		
+		if(params.flash)
+		{
+			params.flash = 0;
+		}
+		else
+		{
+			params.flash = 0xff;
+		}
+		
+		params.counter = 0;
     }
-    else
-    {
-        update += msecond;
-    }
+	
+	params.counter += msecond;
+	
+	if(params.flush)
+	{
+		deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
+		deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+		params.flush = 0;
+	}
 #endif
     
 #endif
@@ -295,6 +327,7 @@ static void lcd_show_none(void)
 	
 #if defined (DEMO_STM32F091)
 	memset(params.gdram, 0, sizeof(params.gdram));
+	memset(params.blink, 0, sizeof(params.blink));
 	//write data
 	deviic.bus.write(LCD_ADDR, 0, 1, sizeof(params.gdram), params.gdram);
 	//enable display
@@ -315,6 +348,7 @@ static void lcd_show_all(void)
 	
 #if defined (DEMO_STM32F091)
 	memset(params.gdram, 0xff, sizeof(params.gdram));
+	memset(params.blink, 0, sizeof(params.blink));
 	//write data
 	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
 	//enable display
@@ -574,7 +608,10 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
-    memcpy(gdram, params.gdram, sizeof(gdram));
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
     
     switch(channel)
     {
@@ -770,11 +807,14 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
         }
     }
     
-    if(memcmp(gdram, params.gdram, sizeof(gdram)))
-    {
-        memcpy(params.gdram, gdram, sizeof(gdram));
-        params.flush = 0xff;
-    }
+	if(!params.flush)
+	{
+		if(memcmp(gdram, params.gdram, sizeof(gdram)))
+		{
+			memcpy(params.gdram, gdram, sizeof(gdram));
+			params.flush = 0xff;
+		}
+	}
     
 #endif
     
@@ -805,7 +845,10 @@ static void lcd_label_off(uint8_t channel)
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
-    memcpy(gdram, params.gdram, sizeof(gdram));
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
     
     switch(channel)
     {
@@ -912,11 +955,14 @@ static void lcd_label_off(uint8_t channel)
         }
     }
     
-    if(memcmp(gdram, params.gdram, sizeof(gdram)))
-    {
-        memcpy(params.gdram, gdram, sizeof(gdram));
-        params.flush = 0xff;
-    }
+	if(!params.flush)
+	{
+		if(memcmp(gdram, params.gdram, sizeof(gdram)))
+		{
+			memcpy(params.gdram, gdram, sizeof(gdram));
+			params.flush = 0xff;
+		}
+	}
     
 #endif
     
