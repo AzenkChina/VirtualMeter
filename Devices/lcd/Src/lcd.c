@@ -457,6 +457,13 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 #else
     
 #if defined (DEMO_STM32F091)
+	uint8_t gdram[GDRAM_SIZE];
+	
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
+
     if(channel == LCD_WINDOW_MAIN)
     {
         params.gdram[19] &= ~0x02;//M
@@ -648,6 +655,14 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
         }
     }
+	
+    if(!params.flush)
+    {
+        if(memcmp(gdram, params.gdram, sizeof(gdram)))
+        {
+            params.flush = 0xff;
+        }
+    }
 #endif
     
 #endif
@@ -802,7 +817,10 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
-    memcpy(gdram, params.gdram, sizeof(gdram));
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
     
     switch(channel)
     {
@@ -1035,7 +1053,10 @@ static void lcd_label_off(uint8_t channel)
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
-    memcpy(gdram, params.gdram, sizeof(gdram));
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
     
     switch(channel)
     {
