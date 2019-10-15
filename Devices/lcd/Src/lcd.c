@@ -108,6 +108,12 @@ struct __lcd_params
 {
     uint8_t gdram[GDRAM_SIZE];
     uint8_t blink[LCD_MAX_LABELS / 8 + 1];
+    enum
+    {
+        LCD_SHOW_NORMAL = 0,
+        LCD_SHOW_ALL = 0x0F,
+        LCD_SHOW_NONE = 0xF0,
+    } global;
 	uint16_t counter;
 	uint8_t flash;
     uint8_t flush;
@@ -326,12 +332,7 @@ static void lcd_show_none(void)
 #else
 	
 #if defined (DEMO_STM32F091)
-	memset(params.gdram, 0, sizeof(params.gdram));
-	memset(params.blink, 0, sizeof(params.blink));
-	//write data
-	deviic.bus.write(LCD_ADDR, 0, 1, sizeof(params.gdram), params.gdram);
-	//enable display
-	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+    params.global = LCD_SHOW_NONE;
 #endif
 
 #endif
@@ -347,12 +348,7 @@ static void lcd_show_all(void)
 #else
 	
 #if defined (DEMO_STM32F091)
-	memset(params.gdram, 0xff, sizeof(params.gdram));
-	memset(params.blink, 0, sizeof(params.blink));
-	//write data
-	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(params.gdram), params.gdram);
-	//enable display
-	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+    params.global = LCD_SHOW_ALL;
 #endif
 	
 #endif
@@ -466,191 +462,244 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 
     if(channel == LCD_WINDOW_MAIN)
     {
-        params.gdram[19] &= ~0x02;//M
-        params.gdram[20] &= ~0x02;//K
-        params.gdram[24] &= ~0x02;//V
-        params.gdram[25] &= ~0x02;//V
-        params.gdram[23] &= ~0x02;//A
-        params.gdram[25] &= ~0x02;//H
+        //负号处理
+        if(val < 0)
+        {
+            params.gdram[2] |= 0x01;
+        }
+        else
+        {
+            params.gdram[2] &= ~0x01;
+        }
         
-        params.gdram[18] &= ~0x01;//M
-        params.gdram[19] &= ~0x01;//K
-        params.gdram[20] &= ~0x01;//Var
-        params.gdram[24] &= ~0x01;//H
+        //小数点处理
+        params.gdram[15] &= ~0x01;
+        params.gdram[13] &= ~0x01;
+        params.gdram[11] &= ~0x01;
+        params.gdram[10] &= ~0x01;
+        params.gdram[8] &= ~0x01;
+        params.gdram[6] &= ~0x01;
+        params.gdram[4] &= ~0x01;
         
-        params.gdram[23] &= ~0x04;//Hz
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[15] |= 0x01;
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[13] |= 0x01;
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[11] |= 0x01;
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[10] |= 0x01;
+                break;
+            }
+            case LCD_DOT_5:
+            {
+                params.gdram[8] |= 0x01;
+                break;
+            }
+            case LCD_DOT_6:
+            {
+                params.gdram[6] |= 0x01;
+                break;
+            }
+            case LCD_DOT_7:
+            {
+                params.gdram[4] |= 0x01;
+                break;
+            }
+        }
         
+        
+        //单位处理
+        params.gdram[18] &= ~0x02;//M
+        params.gdram[19] &= ~0x02;//K
+        params.gdram[20] &= ~0x06;//VV
+        params.gdram[20] &= ~0x08;//A
+        params.gdram[21] &= ~0x08;//H
+        
+        params.gdram[17] &= ~0x01;//M
+        params.gdram[18] &= ~0x01;//K
+        params.gdram[19] &= ~0x01;//var
+        params.gdram[20] &= ~0x01;//H
+        
+        params.gdram[18] &= ~0x04;
+        params.gdram[19] &= ~0x04;//x1000
+        params.gdram[24] &= ~0x08;//Hz
         
         switch(unit)
         {
             case LCD_UNIT_V: 
             {
-                params.gdram[24] |= 0x02;
+                params.gdram[20] |= 0x04;
                 break;
             }
             case LCD_UNIT_KV: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x04;
                 break;
             }
             case LCD_UNIT_MV: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x04;
                 break;
             }
             case LCD_UNIT_A: 
             {
-                params.gdram[23] |= 0x02;
+                params.gdram[20] |= 0x08;
                 break;
             }
             case LCD_UNIT_KA: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[23] |= 0x02;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x08;
                 break;
             }
             case LCD_UNIT_MA: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[23] |= 0x02;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x08;
                 break;
             }
             case LCD_UNIT_W: 
             {
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[20] |= 0x06;
                 break;
             }
             case LCD_UNIT_KW: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
                 break;
             }
             case LCD_UNIT_MW: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
                 break;
             }
             case LCD_UNIT_VAR: 
             {
-                params.gdram[20] |= 0x01;
+                params.gdram[19] |= 0x01;
                 break;
             }
             case LCD_UNIT_KVAR: 
             {
+                params.gdram[18] |= 0x01;
                 params.gdram[19] |= 0x01;
-                params.gdram[20] |= 0x01;
                 break;
             }
             case LCD_UNIT_MVAR: 
             {
-                params.gdram[18] |= 0x01;
-                params.gdram[20] |= 0x01;
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
                 break;
             }
             case LCD_UNIT_VA: 
             {
-                params.gdram[23] |= 0x02;
-                params.gdram[24] |= 0x02;
+                params.gdram[20] |= 0x0c;
                 break;
             }
             case LCD_UNIT_KVA: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[25] |= 0x02;
-                params.gdram[23] |= 0x02;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
                 break;
             }
             case LCD_UNIT_MVA: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[25] |= 0x02;
-                params.gdram[23] |= 0x02;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
                 break;
             }
             case LCD_UNIT_WH: 
             {
-                params.gdram[23] |= 0x01;
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_KWH: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[23] |= 0x01;
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_MWH: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[23] |= 0x01;
-                params.gdram[24] |= 0x02;
-                params.gdram[25] |= 0x02;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_VARH: 
             {
+                params.gdram[19] |= 0x01;
                 params.gdram[20] |= 0x01;
-                params.gdram[24] |= 0x01;
                 break;
             }
             case LCD_UNIT_KVARH: 
             {
+                params.gdram[18] |= 0x01;
                 params.gdram[19] |= 0x01;
                 params.gdram[20] |= 0x01;
-                params.gdram[24] |= 0x01;
                 break;
             }
             case LCD_UNIT_MVARH: 
             {
-                params.gdram[18] |= 0x01;
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
                 params.gdram[20] |= 0x01;
-                params.gdram[24] |= 0x01;
                 break;
             }
             case LCD_UNIT_VAH: 
             {
-                params.gdram[23] |= 0x03;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_KVAH: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[25] |= 0x02;
-                params.gdram[23] |= 0x03;
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_MVAH: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[25] |= 0x02;
-                params.gdram[23] |= 0x03;
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
                 break;
             }
             case LCD_UNIT_HZ: 
             {
-                params.gdram[23] |= 0x04;
+                params.gdram[24] |= 0x08;
                 break;
             }
             case LCD_UNIT_KHZ: 
             {
-                params.gdram[20] |= 0x02;
-                params.gdram[23] |= 0x04;
+                params.gdram[18] |= 0x04;
+                params.gdram[19] |= 0x04;
+                params.gdram[24] |= 0x08;
                 break;
             }
             case LCD_UNIT_MHZ: 
             {
-                params.gdram[19] |= 0x02;
-                params.gdram[23] |= 0x04;
+                params.gdram[18] |= 0x02;
+                params.gdram[24] |= 0x08;
                 break;
             }
         }
@@ -826,28 +875,28 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
     {
         case LCD_LABEL_U1:
         {
-            params.gdram[29] |= 0x20;
+            params.gdram[16] |= 0x40;
             break;
         }
         case LCD_LABEL_U2:
         {
-            params.gdram[28] |= 0x20;
+            params.gdram[17] |= 0x40;
             break;
         }
         case LCD_LABEL_U3:
         {
-            params.gdram[27] |= 0x20;
+            params.gdram[17] |= 0x20;
             break;
         }
         case LCD_LABEL_I1:
         {
             if(state)
             {
-                params.gdram[18] |= 0x60;
+                params.gdram[25] |= 0x60;
             }
             else
             {
-                params.gdram[18] |= 0x04;
+                params.gdram[25] |= 0x20;
             }
             break;
         }
@@ -855,11 +904,11 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
         {
             if(state)
             {
-                params.gdram[26] |= 0x60;
+                params.gdram[24] |= 0x60;
             }
             else
             {
-                params.gdram[26] |= 0x40;
+                params.gdram[24] |= 0x20;
             }
             break;
         }
@@ -867,99 +916,107 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
         {
             if(state)
             {
-                params.gdram[25] |= 0x20;
-                params.gdram[26] |= 0x80;
+                params.gdram[23] |= 0xc0;
             }
             else
             {
-                params.gdram[25] |= 0x20;
+                params.gdram[23] |= 0x40;
             }
             break;
         }
 		case LCD_LABEL_L1:
         {
-            params.gdram[2] |= 0x04;
+            params.gdram[30] |= 0x08;
             break;
         }
 		case LCD_LABEL_L2:
         {
-            params.gdram[32] |= 0x08;
+            params.gdram[30] |= 0x04;
             break;
         }
 		case LCD_LABEL_L3:
         {
-            params.gdram[32] |= 0x04;
+            params.gdram[30] |= 0x02;
             break;
         }
 		case LCD_LABEL_LN:
         {
-            params.gdram[32] |= 0x02;
+            params.gdram[30] |= 0x01;
             break;
         }
 		case LCD_LABEL_PF:
         {
-            params.gdram[31] |= 0x04;
+            params.gdram[29] |= 0x01;
             break;
         }
 		case LCD_LABEL_SIGNAL:
         {
+            params.gdram[18] &= ~0x81;
+            params.gdram[24] &= ~0x10;
+            params.gdram[25] &= ~0x81;
+            
             if(state < 20)
             {
-                params.gdram[24] |= 0x20;
+                params.gdram[18] |= 0x10;
             }
             else if(state < 40)
             {
-                params.gdram[24] |= 0x28;
+                params.gdram[18] |= 0x10;
+                params.gdram[18] |= 0x08;
             }
             else if(state < 60)
             {
-                params.gdram[24] |= 0x28;
-                params.gdram[23] |= 0x08;
+                params.gdram[18] |= 0x10;
+                params.gdram[18] |= 0x08;
+                params.gdram[25] |= 0x08;
             }
             else if(state < 80)
             {
-                params.gdram[24] |= 0x28;
-                params.gdram[23] |= 0x28;
+                params.gdram[18] |= 0x10;
+                params.gdram[18] |= 0x08;
+                params.gdram[25] |= 0x08;
+                params.gdram[25] |= 0x10;
             }
             else if(state < 100)
             {
-                params.gdram[24] |= 0x28;
-                params.gdram[23] |= 0x28;
-                params.gdram[22] |= 0x20;
+                params.gdram[18] |= 0x10;
+                params.gdram[18] |= 0x08;
+                params.gdram[25] |= 0x08;
+                params.gdram[25] |= 0x10;
+                params.gdram[24] |= 0x10;
             }
             break;
         }
 		case LCD_LABEL_COMM:
         {
-            params.gdram[21] &= ~0xe0;
-            params.gdram[21] |= 0x60;
+            params.gdram[23] |= 0x30;
             break;
         }
 		case LCD_LABEL_QUAD:
         {
+            params.gdram[21] &= ~0xe0;
             params.gdram[22] &= ~0xc0;
-            params.gdram[23] &= ~0x40;
-            params.gdram[24] &= ~0xc0;
+            params.gdram[21] |= 0x40;
             switch(state)
             {
                 case 1:
                 {
-                    params.gdram[22] |= 0x80;
+                    params.gdram[21] |= 0x80;
                     break;
                 }
                 case 2:
                 {
-                    params.gdram[24] |= 0x80;
+                    params.gdram[22] |= 0x80;
                     break;
                 }
                 case 3:
                 {
-                    params.gdram[24] |= 0x40;
+                    params.gdram[22] |= 0x40;
                     break;
                 }
                 case 4:
                 {
-                    params.gdram[22] |= 0x40;
+                    params.gdram[21] |= 0x20;
                     break;
                 }
             }
@@ -968,7 +1025,7 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
 		case LCD_LABEL_RATE:
         {
             params.gdram[1] &= ~0x0c;
-            params.gdram[2] &= ~0x0a;
+            params.gdram[2] &= ~0x0c;
             switch(state)
             {
                 case 1:
@@ -988,7 +1045,7 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
                 }
                 case 4:
                 {
-                    params.gdram[2] |= 0x02;
+                    params.gdram[2] |= 0x04;
                     break;
                 }
             }
@@ -996,22 +1053,22 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
         }
 		case LCD_LABEL_BATRTC:
         {
-            params.gdram[26] |= 0x80;
+            params.gdram[16] |= 0x10;
             break;
         }
 		case LCD_LABEL_BATBAK:
         {
-            params.gdram[25] |= 0x80;
+            params.gdram[17] |= 0x10;
             break;
         }
 		case LCD_LABEL_DATE:
         {
-            params.gdram[29] |= 0x10;
+            params.gdram[26] |= 0x10;
             break;
         }
 		case LCD_LABEL_TIM:
         {
-            params.gdram[31] |= 0x08;
+            params.gdram[28] |= 0x08;
             break;
         }
     }
@@ -1062,103 +1119,101 @@ static void lcd_label_off(uint8_t channel)
     {
         case LCD_LABEL_U1:
         {
-            params.gdram[29] &= ~0x20;
+            params.gdram[16] &= ~0x40;
             break;
         }
         case LCD_LABEL_U2:
         {
-            params.gdram[28] &= ~0x20;
+            params.gdram[17] &= ~0x40;
             break;
         }
         case LCD_LABEL_U3:
         {
-            params.gdram[27] &= ~0x20;
+            params.gdram[17] &= ~0x20;
             break;
         }
         case LCD_LABEL_I1:
         {
-			params.gdram[18] &= ~0x60;
+            params.gdram[25] &= ~0x60;
             break;
         }
 		case LCD_LABEL_I2:
         {
-			params.gdram[26] &= ~0x60;
+            params.gdram[24] &= ~0x60;
             break;
         }
 		case LCD_LABEL_I3:
         {
-			params.gdram[25] &= ~0x20;
-			params.gdram[26] &= ~0x80;
+            params.gdram[23] &= ~0xc0;
             break;
         }
 		case LCD_LABEL_L1:
         {
-            params.gdram[2] &= ~0x04;
+            params.gdram[30] &= ~0x08;
             break;
         }
 		case LCD_LABEL_L2:
         {
-            params.gdram[32] &= ~0x08;
+            params.gdram[30] &= ~0x04;
             break;
         }
 		case LCD_LABEL_L3:
         {
-            params.gdram[32] &= ~0x04;
+            params.gdram[30] &= ~0x02;
             break;
         }
 		case LCD_LABEL_LN:
         {
-            params.gdram[32] &= ~0x02;
+            params.gdram[30] &= ~0x01;
             break;
         }
 		case LCD_LABEL_PF:
         {
-            params.gdram[31] &= ~0x04;
+            params.gdram[29] &= ~0x01;
             break;
         }
 		case LCD_LABEL_SIGNAL:
         {
-			params.gdram[24] &= ~0x28;
-			params.gdram[23] &= ~0x28;
-			params.gdram[22] &= ~0x20;
+            params.gdram[18] &= ~0x81;
+            params.gdram[24] &= ~0x10;
+            params.gdram[25] &= ~0x81;
             break;
         }
 		case LCD_LABEL_COMM:
         {
-            params.gdram[21] &= ~0xe0;
+            params.gdram[23] &= ~0x30;
             break;
         }
 		case LCD_LABEL_QUAD:
         {
+            params.gdram[21] &= ~0xe0;
             params.gdram[22] &= ~0xc0;
-            params.gdram[23] &= ~0x40;
-            params.gdram[24] &= ~0xc0;
             break;
         }
 		case LCD_LABEL_RATE:
         {
             params.gdram[1] &= ~0x0c;
-            params.gdram[2] &= ~0x0a;
+            params.gdram[2] &= ~0x0c;
             break;
         }
 		case LCD_LABEL_BATRTC:
         {
-            params.gdram[26] &= ~0x80;
+            params.gdram[16] &= ~0x10;
             break;
         }
 		case LCD_LABEL_BATBAK:
         {
-            params.gdram[25] &= ~0x80;
+            params.gdram[17] &= ~0x10;
             break;
         }
 		case LCD_LABEL_DATE:
         {
-            params.gdram[29] &= ~0x10;
+            params.gdram[26] &= ~0x10;
             break;
         }
 		case LCD_LABEL_TIM:
         {
-            params.gdram[31] &= ~0x08;
+            params.gdram[28] &= ~0x08;
             break;
         }
     }
