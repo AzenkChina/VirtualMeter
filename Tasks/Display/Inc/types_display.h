@@ -6,11 +6,10 @@
 #include "stdint.h"
 
 /* Exported macro ------------------------------------------------------------*/
-#define DISP_CHANNEL_AMOUNT         ((uint8_t)3) //显示列表个数
-
-#define DISP_CHANNEL_AUTO           ((uint8_t)0) //循显列表
-#define DISP_CHANNEL_KEY            ((uint8_t)1) //键先列表
-#define DISP_CHANNEL_DEBUG          ((uint8_t)2) //调试列表
+//参照 config_display.h 中的显示列表配置
+#define DISP_SCROLL				((uint8_t)0) //循显列表
+#define DISP_ALTERNATE			((uint8_t)1) //键先列表
+#define DISP_DEBUG				((uint8_t)2) //调试列表
 
 /* Exported types ------------------------------------------------------------*/
 /**

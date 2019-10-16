@@ -28,8 +28,6 @@ struct __port_entry
 
 
 /* Private define ------------------------------------------------------------*/
-#define BUFF_SIZE			((uint16_t)(256))
-
 /* Private variables ---------------------------------------------------------*/
 static enum __task_status status = TASK_NOTINIT;
 
@@ -241,7 +239,7 @@ static void comm_init(void)
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
-        buff = heap.salloc(NAME_COMM, (PORT_AMOUNT*2 + 1)*BUFF_SIZE);
+        buff = heap.salloc(NAME_COMM, (PORT_AMOUNT*2 + 1)*COMM_CONF_BUFF);
         
         if(!buff)
         {
@@ -254,8 +252,8 @@ static void comm_init(void)
     	{
     		port_table[cnt].serial->control.init(DEVICE_NORMAL);
     		port_table[cnt].serial->timeout.set(50);
-    		port_table[cnt].serial->rxbuff.set((buff+BUFF_SIZE*(1+cnt*2+0)), BUFF_SIZE);
-    		port_table[cnt].serial->txbuff.set((buff+BUFF_SIZE*(1+cnt*2+1)), BUFF_SIZE);
+    		port_table[cnt].serial->rxbuff.set((buff+COMM_CONF_BUFF*(1+cnt*2+0)), COMM_CONF_BUFF);
+    		port_table[cnt].serial->txbuff.set((buff+COMM_CONF_BUFF*(1+cnt*2+1)), COMM_CONF_BUFF);
     	}
 	    
 	    TRACE(TRACE_INFO, "Task comm initialized.");
@@ -293,7 +291,7 @@ static void comm_loop(void)
 	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
 	{
 		//从总线读取
-		length = port_table[cnt_port].serial->read(buff, BUFF_SIZE);
+		length = port_table[cnt_port].serial->read(buff, COMM_CONF_BUFF);
         
 	    if(length)
 	    {

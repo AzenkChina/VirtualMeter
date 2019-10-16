@@ -22,8 +22,6 @@ struct __timed_entry
 };
 
 /* Private define ------------------------------------------------------------*/
-#define TIMD_ENTRY_MAX                (16) //最大定时任务个数
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __task_status status = TASK_NOTINIT;
@@ -48,7 +46,7 @@ static enum __timd_status timed_create(const struct __timed_conf *conf)
         return(TIMD_CONFLICT);
     }
 	
-    for(cnt=0; cnt<TIMD_ENTRY_MAX; cnt++)
+    for(cnt=0; cnt<TIMD_CONF_ENTRY_MAX; cnt++)
     {
         if(entries[cnt].conf.callback == conf->callback)
         {
@@ -56,7 +54,7 @@ static enum __timd_status timed_create(const struct __timed_conf *conf)
         }
     }
     
-    for(cnt=0; cnt<TIMD_ENTRY_MAX; cnt++)
+    for(cnt=0; cnt<TIMD_CONF_ENTRY_MAX; cnt++)
     {
         if(entries[cnt].conf.callback)
         {
@@ -90,7 +88,7 @@ static enum __timd_status timed_query(const struct __timed_conf *conf)
         return(TIMD_CONFLICT);
     }
 	
-    for(cnt=0; cnt<TIMD_ENTRY_MAX; cnt++)
+    for(cnt=0; cnt<TIMD_CONF_ENTRY_MAX; cnt++)
     {
         if(!entries[cnt].conf.callback)
         {
@@ -133,7 +131,7 @@ static enum __timd_status timed_remove(const struct __timed_conf *conf)
         return(TIMD_CONFLICT);
     }
 	
-    for(cnt=0; cnt<TIMD_ENTRY_MAX; cnt++)
+    for(cnt=0; cnt<TIMD_CONF_ENTRY_MAX; cnt++)
     {
         if(!entries[cnt].conf.callback)
         {
@@ -161,7 +159,7 @@ static enum __timd_status timed_empty(void)
         return(TIMD_CONFLICT);
     }
     
-    heap.set((void *)entries, 0, (sizeof(struct __timed_entry)*TIMD_ENTRY_MAX));
+    heap.set((void *)entries, 0, (sizeof(struct __timed_entry)*TIMD_CONF_ENTRY_MAX));
     
     return(TIMD_SUCCESS);
 }
@@ -192,14 +190,14 @@ static void timed_init(void)
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
-        entries = heap.salloc(NAME_TIMED, sizeof(struct __timed_entry)*TIMD_ENTRY_MAX);
+        entries = heap.salloc(NAME_TIMED, sizeof(struct __timed_entry)*TIMD_CONF_ENTRY_MAX);
         if(!entries)
         {
             status = TASK_ERROR;
             return;
         }
         
-        heap.set((void *)entries, 0, (sizeof(struct __timed_entry)*TIMD_ENTRY_MAX));
+        heap.set((void *)entries, 0, (sizeof(struct __timed_entry)*TIMD_CONF_ENTRY_MAX));
         
         status = TASK_INIT;
         
@@ -227,7 +225,7 @@ static void timed_loop(void)
             return;
         }
         
-	    for(cnt=0; cnt<TIMD_ENTRY_MAX; cnt++)
+	    for(cnt=0; cnt<TIMD_CONF_ENTRY_MAX; cnt++)
 	    {
 	        if(!entries[cnt].conf.callback)
 	        {

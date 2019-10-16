@@ -18,8 +18,6 @@
 #include "string.h"
 
 /* Private typedef -----------------------------------------------------------*/
-#define AMOUNT_LIST_MAX         ((uint8_t)(128))
-
 /**
   * @brief  数据项标识
   */
@@ -38,7 +36,7 @@ struct __disp_list
 	uint8_t					amount;
     
     //每个显示列表最多支持128个数据项
-	struct __disp_entry		entry[AMOUNT_LIST_MAX];
+	struct __disp_entry		entry[DISP_CONF_AMOUNT_IN_LIST];
 };
 
 /**
@@ -108,7 +106,7 @@ struct __disp_param
     //计量数据小数点位数参数
     struct __disp_dot       dots;
     //显示数据项列表
-	struct __disp_list		list[DISP_CHANNEL_AMOUNT];
+	struct __disp_list		list[DISP_CONF_CHANNEL_AMOUNT];
 };
 
 /**
@@ -405,12 +403,12 @@ static uint8_t display_change(uint8_t channel)
 {
 	uint32_t offset;
     
-    if(channel >= DISP_CHANNEL_AMOUNT)
+    if(channel >= DISP_CONF_CHANNEL_AMOUNT)
     {
         return(disp_runs.channel);
     }
     
-    if(disp_runs.channel != DISP_CHANNEL_KEY)
+    if(disp_runs.channel != DISP_CONF_CHANNEL_ALTERNATE)
     {
 		disp_runs.last_channel = disp_runs.channel;
 	}
@@ -451,7 +449,7 @@ static uint8_t display_list_show_next(void)
 	disp_runs.counter.scroll = 0;
     
     //如果是键显并且当前系统状态为正常运行状态，打开背光
-    if((disp_runs.channel == DISP_CHANNEL_KEY) && (system_status() == SYSTEM_RUN))
+    if((disp_runs.channel == DISP_CONF_CHANNEL_ALTERNATE) && (system_status() == SYSTEM_RUN))
     {
         lcd.backlight.open();
         disp_runs.counter.backlight = disp_runs.time.backlight;
@@ -500,7 +498,7 @@ static uint8_t display_list_show_last(void)
     
 	disp_runs.counter.scroll = 0;
     
-    if((disp_runs.channel == DISP_CHANNEL_KEY) && (system_status() == SYSTEM_RUN))
+    if((disp_runs.channel == DISP_CONF_CHANNEL_ALTERNATE) && (system_status() == SYSTEM_RUN))
     {
         lcd.backlight.open();
         disp_runs.counter.backlight = disp_runs.time.backlight;
@@ -543,7 +541,7 @@ static uint8_t display_list_show_index(uint8_t val)
     
 	disp_runs.counter.scroll = 0;
     
-    if((disp_runs.channel == DISP_CHANNEL_KEY) && (system_status() == SYSTEM_RUN))
+    if((disp_runs.channel == DISP_CONF_CHANNEL_ALTERNATE) && (system_status() == SYSTEM_RUN))
     {
         lcd.backlight.open();
         disp_runs.counter.backlight = disp_runs.time.backlight;
@@ -773,7 +771,7 @@ static uint16_t display_config_list_write(uint8_t channel, void *id)
 	uint32_t offset;
     uint8_t amount = 0;
     
-    if(channel >= DISP_CHANNEL_AMOUNT)
+    if(channel >= DISP_CONF_CHANNEL_AMOUNT)
     {
         return(0);
     }
@@ -786,7 +784,7 @@ static uint16_t display_config_list_write(uint8_t channel, void *id)
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
 	file.read("display", offset, sizeof(amount), &amount);
     
-    if(amount >= AMOUNT_LIST_MAX)
+    if(amount >= DISP_CONF_AMOUNT_IN_LIST)
     {
         return(16);
     }
@@ -812,7 +810,7 @@ static uint16_t display_config_list_read(uint8_t channel, uint16_t index, void *
 	uint32_t offset;
     uint8_t amount = 0;
     
-    if(channel >= DISP_CHANNEL_AMOUNT)
+    if(channel >= DISP_CONF_CHANNEL_AMOUNT)
     {
         return(0);
     }
@@ -841,7 +839,7 @@ static uint8_t display_config_list_amount(uint8_t channel)
 	uint32_t offset;
     uint8_t amount = 0;
     
-    if(channel >= DISP_CHANNEL_AMOUNT)
+    if(channel >= DISP_CONF_CHANNEL_AMOUNT)
     {
         return(0);
     }
@@ -857,7 +855,7 @@ static uint8_t display_config_list_clean(uint8_t channel)
 	uint32_t offset;
     uint8_t amount = 0;
     
-    if(channel >= DISP_CHANNEL_AMOUNT)
+    if(channel >= DISP_CONF_CHANNEL_AMOUNT)
     {
         return(0);
     }
@@ -989,8 +987,8 @@ static void display_init(void)
     {
         heap.set(&disp_runs, 0, sizeof(disp_runs));
         
-        disp_runs.channel = DISP_CHANNEL_AUTO;
-        disp_runs.last_channel = DISP_CHANNEL_AUTO;
+        disp_runs.channel = DISP_CONF_CHANNEL_SCROLL;
+        disp_runs.last_channel = DISP_CONF_CHANNEL_SCROLL;
         
         offset = STRUCT_OFFSET(struct __disp_param, dots);
         file.read("display", offset, sizeof(disp_runs.dots), &disp_runs.dots);
@@ -1004,7 +1002,7 @@ static void display_init(void)
 		offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
 		file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
         
-        if(disp_runs.amount > AMOUNT_LIST_MAX)
+        if(disp_runs.amount > DISP_CONF_AMOUNT_IN_LIST)
         {
             disp_runs.amount = 0;
         }
@@ -1072,7 +1070,7 @@ static void display_loop(void)
             }
             
             //非键显下，自动滚屏
-            if((disp_runs.channel == DISP_CHANNEL_AUTO) || (disp_runs.channel == DISP_CHANNEL_DEBUG))
+            if((disp_runs.channel == DISP_CONF_CHANNEL_SCROLL) || (disp_runs.channel == DISP_CONF_CHANNEL_DEBUG))
             {
                 //如果当前在上电全显状态，则不再往下处理
                 if(disp_runs.counter.start < disp_runs.time.start)
@@ -1097,7 +1095,7 @@ static void display_loop(void)
                 }
             }
             //键显下，滚屏时间到达之后切回之前的显示列表
-            else if(disp_runs.channel == DISP_CHANNEL_KEY)
+            else if(disp_runs.channel == DISP_CONF_CHANNEL_ALTERNATE)
             {
                 disp_runs.counter.scroll += 1;
                 
@@ -1187,45 +1185,45 @@ static void display_reset(void)
         file.write("display", offset, sizeof(val), &val);
         
         val = 6;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].amount);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].amount);
         file.write("display", offset, sizeof(val), &val);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].amount);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].amount);
         file.write("display", offset, sizeof(val), &val);
         
         descriptor[4] = 32;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[0]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[0]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[0]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[0]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 52;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[1]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[1]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[1]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[1]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 72;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[2]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[2]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[2]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[2]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 31;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[3]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[3]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[3]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[3]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 51;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[4]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[4]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[4]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[4]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 71;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_AUTO].entry[5]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[5]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CHANNEL_KEY].entry[5]);
+        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[5]);
         file.write("display", offset, sizeof(descriptor), &descriptor);
     }
 #endif // #if defined ( MAKE_RUN_FOR_DEBUG )

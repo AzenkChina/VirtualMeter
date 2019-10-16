@@ -67,9 +67,9 @@ static void key_changed(uint16_t id, enum __key_status status)
         }
         
         //短按上键或者下键，当前显示列表不是键显列表，则切换到键显列表
-        if(display->channel() != DISP_CHANNEL_KEY)
+        if(display->channel() != DISP_ALTERNATE)
         {
-            display->change(DISP_CHANNEL_KEY);
+            display->change(DISP_ALTERNATE);
             return;
         }
         
