@@ -1018,6 +1018,8 @@ static void display_init(void)
             lcd.control.init(DEVICE_LOWPOWER);
         }
         
+        lcd.show.all();
+        
         status = TASK_INIT;
     }
 }

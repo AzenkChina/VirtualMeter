@@ -252,7 +252,7 @@ static const struct __protocol_registrable protocol =
 static void protocol_init(void)
 {
 	//只有正常上电状态下才运行，其它状态下不运行
-    if(system_status() == SYSTEM_RUN)
+    if((system_status() == SYSTEM_RUN) || (system_status() == SYSTEM_WAKEUP))
     {
     	//初始化所有协议栈
     	proto_init();

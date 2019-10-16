@@ -366,8 +366,6 @@ static void metering_init(void)
     {
         DEV_M.control.init(DEVICE_NORMAL); 
         
-        status = TASK_INIT;
-        
         TRACE(TRACE_INFO, "Task metering initialized.");
 	}
 	else
@@ -376,6 +374,8 @@ static void metering_init(void)
 		//这样操作是为了使模拟表正常运行 
 		DEV_M.control.init(DEVICE_LOWPOWER); 
 	}
+    
+    status = TASK_INIT;
 }
 
 /**

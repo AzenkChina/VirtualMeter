@@ -447,7 +447,11 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_BIN;
 	lcd_message.windows[channel].value.bin = val;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -814,7 +818,11 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_HEX;
 	lcd_message.windows[channel].value.hex = val;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -833,7 +841,11 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DATE;
 	lcd_message.windows[channel].value.date = val;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -861,7 +873,11 @@ static uint8_t window_show_msg(uint8_t channel, const char *msg)
 		return((uint8_t)strlen(msg));
 	}
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -881,7 +897,11 @@ static void window_show_none(uint8_t channel)
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = 0;
 #else
-	
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -901,7 +921,11 @@ static void window_show_all(uint8_t channel)
 	lcd_message.windows[channel].type = LCD_WIN_SHOW_DEC;
 	lcd_message.windows[channel].value.dec = 88888888;
 #else
-
+    
+#if defined (DEMO_STM32F091)
+    params.global = LCD_SHOW_NORMAL;
+#endif
+    
 #endif
 }
 
@@ -946,6 +970,8 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
     {
         return;
     }
+    
+    params.global = LCD_SHOW_NORMAL;
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
@@ -1154,6 +1180,31 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
             params.gdram[28] |= 0x08;
             break;
         }
+		case LCD_LABEL_PRIM:
+        {
+            params.gdram[31] |= 0x08;
+            break;
+        }
+		case LCD_LABEL_SECOND:
+        {
+            params.gdram[31] |= 0x04;
+            break;
+        }
+		case LCD_LABEL_NET:
+        {
+            params.gdram[32] |= 0x08;
+            break;
+        }
+		case LCD_LABEL_AUX:
+        {
+            params.gdram[32] |= 0x04;
+            break;
+        }
+		case LCD_LABEL_PULSE:
+        {
+            params.gdram[22] |= 0x20;
+            break;
+        }
     }
     
     if(!params.flush)
@@ -1190,6 +1241,8 @@ static void lcd_label_off(uint8_t channel)
     {
         return;
     }
+    
+    params.global = LCD_SHOW_NORMAL;
     
     params.blink[channel / 8] &= ~(1 << (channel & 8));
     
@@ -1299,6 +1352,31 @@ static void lcd_label_off(uint8_t channel)
             params.gdram[28] &= ~0x08;
             break;
         }
+		case LCD_LABEL_PRIM:
+        {
+            params.gdram[31] &= ~0x08;
+            break;
+        }
+		case LCD_LABEL_SECOND:
+        {
+            params.gdram[31] &= ~0x04;
+            break;
+        }
+		case LCD_LABEL_NET:
+        {
+            params.gdram[32] &= ~0x08;
+            break;
+        }
+		case LCD_LABEL_AUX:
+        {
+            params.gdram[32] &= ~0x04;
+            break;
+        }
+		case LCD_LABEL_PULSE:
+        {
+            params.gdram[22] &= ~0x20;
+            break;
+        }
     }
     
     if(!params.flush)
@@ -1333,6 +1411,8 @@ static void lcd_label_flash(uint8_t channel)
     {
         return;
     }
+    
+    params.global = LCD_SHOW_NORMAL;
     
     params.blink[channel / 8] |= (1 << (channel & 8));
 #endif

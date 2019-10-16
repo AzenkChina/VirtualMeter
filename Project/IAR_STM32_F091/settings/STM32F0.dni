@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-688467239
+Checksum=-1501248519
 [CodeCoverage]
 Enabled=_ 0
 [Exceptions]
@@ -113,7 +113,9 @@ ShowTiming=1
 mode=0
 [Breakpoints2]
 Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Protocols\proto_xmodem\Src\proto_xmodem.c}.342.5" 0 0 1 "" 0 "" 0
-Count=1
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Display\Src\task_display.c}.1096.21" 0 0 1 "" 0 "" 0
+Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Display\Src\task_display.c}.471.5" 0 0 1 "" 0 "" 0
+Count=3
 [Aliases]
 Count=0
 SuppressDialog=0
