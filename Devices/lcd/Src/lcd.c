@@ -280,6 +280,11 @@ static void lcd_runner(uint16_t msecond)
 		return;
 	}
 	
+	if(params.global != LCD_SHOW_NORMAL)
+	{
+		return;
+	}
+	
     if((params.counter + msecond) > 999)
     {
 		for(labels=0; labels<LCD_MAX_LABELS; labels++)
@@ -332,6 +337,11 @@ static void lcd_show_none(void)
 #else
 	
 #if defined (DEMO_STM32F091)
+	uint8_t gdram[GDRAM_SIZE];
+	
+	memset(gdram, 0, sizeof(gdram));
+	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(gdram), gdram);
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
     params.global = LCD_SHOW_NONE;
 #endif
 
@@ -348,6 +358,12 @@ static void lcd_show_all(void)
 #else
 	
 #if defined (DEMO_STM32F091)
+	uint8_t gdram[GDRAM_SIZE];
+	
+	memset(gdram, 0xff, sizeof(gdram));
+	deviic.bus.write(LCD_ADDR, 0, 1,  sizeof(gdram), gdram);
+	deviic.bus.write(LCD_ADDR, LCD_MODSET_ON, 1, 0, 0);
+	
     params.global = LCD_SHOW_ALL;
 #endif
 	
@@ -454,6 +470,13 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
     
 #if defined (DEMO_STM32F091)
 	uint8_t gdram[GDRAM_SIZE];
+	
+	if(channel > LCD_MAX_WINDOWS)
+	{
+		return;
+	}
+	
+	params.global = LCD_SHOW_NORMAL;
 	
 	if(!params.flush)
 	{
@@ -704,6 +727,66 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
         }
     }
+	else if(channel == LCD_WINDOW_SUB)
+	{
+        //负号处理
+        if(val < 0)
+        {
+            //...
+        }
+        else
+        {
+            //...
+        }
+		
+        //小数点处理
+        params.gdram[2] &= ~0x10;
+        params.gdram[4] &= ~0x10;
+        params.gdram[6] &= ~0x10;
+        params.gdram[31] &= ~0x10;
+        params.gdram[8] &= ~0x10;
+        params.gdram[10] &= ~0x10;
+        params.gdram[11] &= ~0x10;
+        
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[2] |= 0x10;
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[31] |= 0x10;
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[4] |= 0x10;
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[6] |= 0x10;
+                break;
+            }
+            case LCD_DOT_5:
+            {
+                params.gdram[8] |= 0x10;
+                break;
+            }
+            case LCD_DOT_6:
+            {
+                params.gdram[29] |= 0x10;
+                break;
+            }
+            case LCD_DOT_7:
+            {
+                params.gdram[27] |= 0x10;
+                break;
+            }
+        }
+	}
 	
     if(!params.flush)
     {
