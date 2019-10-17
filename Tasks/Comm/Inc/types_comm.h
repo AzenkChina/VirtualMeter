@@ -8,13 +8,22 @@
 
 /* Exported types ------------------------------------------------------------*/
 /**
-  * @brief	端口类型 
+  * @brief	端口类型
   */
 enum __port_type
 {
-    PORT_485 = 0,
-    PORT_INFRARED,
-    PORT_MODULE,
+	PORT_TCP = 0,
+	PORT_UDP = 1,
+	PORT_FTP = 2,
+	PORT_SMTP = 3,
+	PORT_SMS = 4,
+	PORT_HDLC = 5,
+	PORT_MBUS = 6,
+	PORT_ZIGBEE = 7,
+
+	PORT_GPRS = 200,
+	PORT_PLC = 201,
+	PORT_GPRS_PLC = 202,
 };
 
 /**

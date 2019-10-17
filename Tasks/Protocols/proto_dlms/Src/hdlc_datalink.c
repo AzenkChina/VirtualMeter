@@ -13,20 +13,21 @@
 #include "hdlc_datalink.h"
 #include "dlms_utilities.h"
 #include "dlms_association.h"
+#include "types_comm.h"
 
 /* Private define ------------------------------------------------------------*/
 //HDLC配置参数
 
 //服务端地址长度，取值：1, 2, 4
-#define HDLC_CONFIG_ADDR_LENGTH         2
+#define HDLC_CONFIG_ADDR_LENGTH         		2
 
 //有效荷载长度
-#define HDLC_CONFIG_INFO_LEN_MIN        ((uint16_t)(64)) // >=32
-#define HDLC_CONFIG_INFO_LEN_DEFAULT    ((uint16_t)(128))
-#define HDLC_CONFIG_INFO_LEN_MAX        ((uint16_t)(220)) // >=128
+#define HDLC_CONFIG_INFO_LEN_MIN        		((uint16_t)(64)) // >=32
+#define HDLC_CONFIG_INFO_LEN_DEFAULT    		((uint16_t)(128))
+#define HDLC_CONFIG_INFO_LEN_MAX        		((uint16_t)(220)) // >=128
 
 //支持的通道数
-#define HDLC_CONFIG_MAX_CHANNEL         ((uint8_t)(4))
+#define HDLC_CONFIG_MAX_CHANNEL         		((uint8_t)(4))
 
 //定义外部接口
 //应用层请求（session, info, length, buffer, max buffer length, filled buffer length）
@@ -129,6 +130,16 @@ struct __hdlc_info_send
 /**	
   * @brief 
   */
+struct __hdlc_info_unconfirmed
+{
+    uint16_t length; //数据长度
+	uint16_t sent; //已发送数据
+    uint8_t *data; //数据
+};
+
+/**	
+  * @brief 
+  */
 struct __hdlc_link
 {
     uint8_t sss; //发送帧计数
@@ -150,6 +161,7 @@ struct __hdlc_link
     uint16_t logic_address; //逻辑地址
     struct __hdlc_info_send send; //information帧发送数据结构
     struct __hdlc_info_recv recv; //information帧接收数据结构（多包需要在链路层组包）
+	struct __hdlc_info_unconfirmed unconfirmed; //UI消息数据结构
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -616,6 +628,11 @@ static enum __hdlc_errors link_setup(struct __hdlc_link *link)
     {
         heap.free(link->send.data);
     }
+	
+    if(link->unconfirmed.data)
+    {
+        heap.free(link->unconfirmed.data);
+    }
     
     heap.set((void*)link, 0, sizeof(struct __hdlc_link));
     
@@ -681,6 +698,11 @@ static enum __hdlc_errors link_cleanup(struct __hdlc_link *link)
     if(link->send.data)
     {
         heap.free(link->send.data);
+    }
+	
+    if(link->unconfirmed.data)
+    {
+        heap.free(link->unconfirmed.data);
     }
     
     if(link->link_status != LINK_DISCONNECTED)
@@ -1578,7 +1600,7 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
     struct __hdlc_frame_desc frame_desc;
     enum __hdlc_errors hdlc_errors;
     
-    if(channel > HDLC_CONFIG_MAX_CHANNEL)
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
     {
         return(0);
     }
@@ -1678,7 +1700,7 @@ uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
 {
     uint16_t segment_length;
     
-    if(channel > HDLC_CONFIG_MAX_CHANNEL)
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
     {
         return(0);
     }
@@ -1701,4 +1723,123 @@ uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
         memcpy(frame, hdlc_links[channel].send.segment.data, length);
         return(length);
     }
+}
+
+/**
+ * @ Pending UI frames can be sent on the following conditions:
+ * @ 
+ * @ a) When an MA-DATA.request service primitive with frame_type 
+ * @ I-COMPLETE, I-FIRST-FRAGMENT, I-FRAGMENT, or I-LAST-FRAGMENT 
+ * @ is received. The pending UI frame(s) shall be sent out just 
+ * @ before the last I frame, which shall contain the closing 
+ * @ Final=TRUE bit of the transmission;
+ * @ 
+ * @ b) In receipt of a RR frame with P=1. If the server MAC layer 
+ * @ has no pending I or UI frame when a RR frame is received, 
+ * @ normally it shall respond with another RR frame, just to give 
+ * @ back the “right to talk” to the HDLC primary station. When 
+ * @ there is a pending UI frame, this UI frame shall be sent out 
+ * @ before the normal response frame.
+ * @ 
+ * @ c) In receipt of a UI frame with P=1 and with zero length 
+ * @ information field (empty UI frame). The receipt of this 
+ * @ frame shall make the server data link layer send out all 
+ * @ pending UI frames. The last UI frame shall be sent out with 
+ * @ F=TRUE.
+ **/
+
+/**
+  * @brief 获取一个已经建立HDLC连接的通道
+  * @param  
+  * @retval 
+  */
+uint8_t hdlc_get_linked_channel(void)
+{
+    uint8_t cnt;
+	struct __comm *comm = api("task_comm");
+	
+	if(!comm)
+	{
+		return(0xff);
+	}
+	
+    for(cnt=0; cnt<HDLC_CONFIG_MAX_CHANNEL; cnt++)
+    {
+        if(hdlc_links[cnt].link_status == LINK_CONNECTED)
+        {
+			if(comm->attrib.type(cnt) != PORT_HDLC)
+			{
+				continue;
+			}
+			
+            return(cnt);
+        }
+    }
+    
+    return(0xff);
+}
+
+/**
+  * @brief 从指定通道发送UI数据
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_send_info(uint8_t channel, const uint8_t *frame, uint16_t length)
+{
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
+    {
+        return(0);
+    }
+	
+	
+    if(hdlc_links[channel].link_status != LINK_CONNECTED)
+    {
+        return(0);
+    }
+    
+    if(hdlc_links[channel].unconfirmed.data)
+    {
+        return(0);
+    }
+    
+    if(length > HDLC_CONFIG_APPL_MTU())
+    {
+        return(0);
+    }
+    
+    hdlc_links[channel].unconfirmed.data = heap.salloc(NAME_PROTOCOL, length);
+    if(!hdlc_links[channel].unconfirmed.data)
+    {
+        return(0);
+    }
+    
+    heap.copy(hdlc_links[channel].unconfirmed.data, frame, length);
+    
+    return(length);
+}
+
+/**
+  * @brief 获取UI数据发送结果
+  * @param  
+  * @retval 
+  */
+bool hdlc_send_result(uint8_t channel)
+{
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
+    {
+        return(true);
+    }
+    
+    if(!hdlc_links[channel].unconfirmed.data)
+    {
+        return(true);
+    }
+    
+    if((hdlc_links[channel].unconfirmed.length) && \
+        (hdlc_links[channel].unconfirmed.sent != hdlc_links[channel].unconfirmed.length))
+    {
+        return(false);
+    }
+    
+    return(true);
 }

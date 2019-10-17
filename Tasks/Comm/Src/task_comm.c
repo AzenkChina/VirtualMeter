@@ -37,8 +37,8 @@ static enum __task_status status = TASK_NOTINIT;
 static const struct __port_entry port_table[] = 
 {
 	/** 端口类型 端口结构体指针 */
-	{PORT_485, &rs485_1},
-	{PORT_485, &rs485_2},
+	{PORT_HDLC, &rs485_1},
+	{PORT_HDLC, &rs485_2},
 };
 
 /* Private macro -------------------------------------------------------------*/
