@@ -133,6 +133,27 @@ static struct __win_lcd_message lcd_message;
 
 #if defined (DEMO_STM32F091)
 static struct __lcd_params params;
+
+static const uint8_t digitals[] = 
+{
+    0x3f,0x06,0x5b,0x4f,//0 1 2 3
+    0x66,0x6d,0x7d,0x07,//4 5 6 7
+    0x7f,0x6f,0x77,0x7c,//8 9 a b
+    0x39,0x5e,0x79,0x71,//c d e f
+};
+
+static const uint8_t matrix_main[8][7] = 
+{
+    {139, 138, 137, 128, 129, 131, 130},//右 1
+    {123, 122, 121, 112, 113, 115, 114},//2
+    {107, 106, 105,  96,  97,  99,  98},//3
+    {90,   90,  89, 216, 217, 219, 218},//4
+    {83,   82,  81,  72,  73,  75,  74},//5
+    {67,   66,  65,  56,  57,  59,  58},//6
+    {51,   50,  49,  40,  41,  43,  42},//7
+    {35,   34,  33,  24,  25,  27,  26},//8
+};
+
 #endif
 
 #endif
@@ -473,6 +494,8 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 #else
     
 #if defined (DEMO_STM32F091)
+    uint8_t tubes, bits, effect;
+    uint8_t number[8];
 	uint8_t gdram[GDRAM_SIZE];
 	
 	if(channel > LCD_MAX_WINDOWS)
@@ -493,6 +516,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
         if(val < 0)
         {
             params.gdram[2] |= 0x01;
+            val = -val;
         }
         else
         {
@@ -547,6 +571,60 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
         }
         
+        //数字处理
+        memset(number, 0, sizeof(number));
+        for(tubes=0; tubes<8; tubes++)
+        {
+            number[tubes] = val % 10;
+            val = val / 10;
+            
+            if(val == 0)
+            {
+                break;
+            }
+        }
+        
+        effect = 8;
+        
+        for(tubes=0; tubes<8; tubes++)
+        {
+            if(number[7 - tubes] == 0)
+            {
+                effect = 7 - tubes;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        if(effect == 0)
+        {
+            effect = 1;
+        }
+        
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                }
+                else
+                {
+                    params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
+                }
+            }
+        }
         
         //单位处理
         params.gdram[18] &= ~0x02;//M

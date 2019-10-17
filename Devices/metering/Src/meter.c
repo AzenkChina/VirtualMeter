@@ -466,7 +466,13 @@ static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
     
     return((count & 0xffff));
 #else
-    return(0);
+    
+#if defined (DEMO_STM32F091)
+    int32_t *result = (int32_t *)buffer;
+    *result = 0;
+    return(1);
+#endif
+    
 #endif
 }
 
