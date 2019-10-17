@@ -16,7 +16,7 @@
 
 
 
-#define LCD_MAX_LABELS              (16)//label数量
+#define LCD_MAX_LABELS              (18)//label数量
 
 #define LCD_LABEL_U1                (0)//符号 U1
 #define LCD_LABEL_U2                (1)//符号 U2
@@ -34,6 +34,8 @@
 #define LCD_LABEL_WARN              (13)//报警符号
 #define LCD_LABEL_QUAD              (14)//功率象限
 #define LCD_LABEL_RATE              (15)//费率
+#define LCD_LABEL_DATE              (16)//日期
+#define LCD_LABEL_TIM               (17)//时间
 
 #else
 
@@ -63,11 +65,11 @@
 #define LCD_LABEL_WARN              (13)//报警符号
 #define LCD_LABEL_QUAD              (14)//功率象限
 #define LCD_LABEL_RATE              (15)//费率
+#define LCD_LABEL_DATE              (16)//日期
+#define LCD_LABEL_TIM               (17)//时间
 
 //以上 LABEL 为基础 LABEL
 
-#define LCD_LABEL_DATE              (16)//日期
-#define LCD_LABEL_TIM               (17)//时间
 #define LCD_LABEL_SIGNAL            (18)//无线信号强度
 #define LCD_LABEL_BATRTC            (19)//RTC电池状态
 #define LCD_LABEL_BATBAK            (20)//抄表电池状态

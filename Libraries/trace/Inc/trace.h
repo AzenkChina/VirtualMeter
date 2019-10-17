@@ -18,8 +18,17 @@ enum __trace_level
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
+/**
+  * @brief  使用 __USE_TRACE 和 __USE_ASSERT 两个宏来配置是否启用日志功能
+  */
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #define __USE_TRACE             //是否使用TRACE功能
 #define __USE_ASSERT            //是否使用ASSERT功能
+#else
+
+//在这里编写是否启用这两个宏
+
+#endif
 
 /* Exported function prototypes ----------------------------------------------*/
 #if defined ( __USE_TRACE )
