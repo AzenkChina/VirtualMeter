@@ -132,6 +132,7 @@ struct __hdlc_info_send
   */
 struct __hdlc_info_unconfirmed
 {
+    uint8_t talk; //可以发送标志
     uint16_t length; //数据长度
 	uint16_t sent; //已发送数据
     uint8_t *data; //数据
@@ -1237,6 +1238,8 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     link->send.segment.length = frame_encode;
     link->send.segment.confirming = frame_encode;
     
+    link->unconfirmed.talk = 1;
+    
     return(HDLC_NO_ERR);
 }
 
@@ -1283,6 +1286,11 @@ static enum __hdlc_errors request_rr(struct __hdlc_link *link, \
     //判断是否有未发送完成的数据
     if(link->send.filled <= link->send.sent)
     {
+        if(hdlc_desc->poll)
+        {
+            link->unconfirmed.talk = 1;
+        }
+        
         //RR
         return(encode_rr(hdlc_desc, link));
     }
@@ -1431,6 +1439,11 @@ static enum __hdlc_errors request_rnr(struct __hdlc_link *link, \
 static enum __hdlc_errors request_ui(struct __hdlc_link *link, \
                            const struct __hdlc_frame_desc *hdlc_desc)
 {
+    if((hdlc_desc->length_info == 0) && (hdlc_desc->poll))
+    {
+        link->unconfirmed.talk = 0xff;
+    }
+    
     return(HDLC_NO_ERR);
 }
 
@@ -1444,6 +1457,77 @@ static enum __hdlc_errors request_unknown(struct __hdlc_link *link, \
 {
     return(encode_frmr(hdlc_desc, link, FRMR_OPCODE));
 }
+
+/**
+  * @brief 返回 UI 帧
+  * @param  
+  * @retval 
+  */
+static uint16_t response_ui(struct __hdlc_link *link, \
+                           uint8_t *frame, uint16_t length)
+{
+    uint16_t frame_encode = 0;
+    uint16_t info_length = 0;
+    
+    //组包返回的数据
+    *(frame + frame_encode) = 0x7e;
+    frame_encode += 1;
+    
+    //添加帧类型域以及 Segment 标记位
+    *(frame + frame_encode) = 0xA0;
+    frame_encode += 1;
+    
+    //保留帧长度域
+    frame_encode += 1;
+    
+    //添加目的地址
+    frame_encode += fill_client_address(link->client_address, (frame + frame_encode));
+    
+    //添加源地址
+    frame_encode += fill_server_address(link->device_address, link->logic_address, HDLC_CONFIG_ADDR_LENGTH, (frame + frame_encode));
+    
+    //控制域
+    if((link->unconfirmed.length - link->unconfirmed.sent) > HDLC_CONFIG_INFO_LEN_DEFAULT)
+    {
+        *(frame + frame_encode) = 0x03;
+        info_length = HDLC_CONFIG_INFO_LEN_DEFAULT;
+    }
+    else
+    {
+        *(frame + frame_encode) = 0x13;
+        info_length = link->unconfirmed.length;
+    }
+    
+    frame_encode += 1;
+    
+    //保留帧头校验 HCS
+    frame_encode += 2;
+    
+    *(frame + frame_encode + 0) = 0xE6;
+    *(frame + frame_encode + 1) = 0xE7;
+    *(frame + frame_encode + 2) = 0x00;
+    frame_encode += 3;
+    
+    //应用层数据
+    frame_encode += heap.copy((frame + frame_encode), &link->unconfirmed.data[link->unconfirmed.sent], info_length);
+    link->unconfirmed.sent += info_length;
+    
+    //添加帧长度域
+    *(frame + 2) = (6 + HDLC_CONFIG_ADDR_LENGTH + 3 + info_length + 2);
+    
+    //帧头校验 HCS
+    add_check((frame + 1), (HDLC_CONFIG_ADDR_LENGTH + 4), (frame + HDLC_CONFIG_ADDR_LENGTH + 5));
+    
+    //帧校验 FCS
+    frame_encode += add_check((frame + 1), (6 + HDLC_CONFIG_ADDR_LENGTH + 3 + info_length), (frame + 6 + HDLC_CONFIG_ADDR_LENGTH + 3 + info_length + 1));
+    
+    //组包返回的数据
+    *(frame + 6 + HDLC_CONFIG_ADDR_LENGTH + 3 + info_length + 3) = 0x7e;
+    
+    return(6 + HDLC_CONFIG_ADDR_LENGTH + 3 + info_length + 2 + 2);
+}
+
+
 
 
 
@@ -1591,6 +1675,110 @@ uint16_t hdlc_get_max_info_length(void)
 }
 
 /**
+  * @brief 获取一个已经建立HDLC连接的通道
+  * @param  
+  * @retval 
+  */
+uint8_t hdlc_get_linked_channel(void)
+{
+    uint8_t cnt;
+	struct __comm *comm = api("task_comm");
+	
+	if(!comm)
+	{
+		return(0xff);
+	}
+	
+    for(cnt=0; cnt<HDLC_CONFIG_MAX_CHANNEL; cnt++)
+    {
+        if(hdlc_links[cnt].link_status == LINK_CONNECTED)
+        {
+			if(comm->attrib.type(cnt) != PORT_HDLC)
+			{
+				continue;
+			}
+			
+            return(cnt);
+        }
+    }
+    
+    return(0xff);
+}
+
+/**
+  * @brief 从指定通道发送UI数据
+  * @param  
+  * @retval 
+  */
+uint16_t hdlc_send_info(uint8_t channel, const uint8_t *frame, uint16_t length)
+{
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
+    {
+        return(0);
+    }
+	
+    if(hdlc_links[channel].link_status != LINK_CONNECTED)
+    {
+        return(0);
+    }
+    
+    if((hdlc_links[channel].unconfirmed.length) && \
+        (hdlc_links[channel].unconfirmed.length != hdlc_links[channel].unconfirmed.sent))
+    {
+        return(0);
+    }
+    
+    if(length > HDLC_CONFIG_APPL_MTU())
+    {
+        return(0);
+    }
+    
+    if(hdlc_links[channel].unconfirmed.data)
+    {
+        heap.free(hdlc_links[channel].unconfirmed.data);
+    }
+    
+    hdlc_links[channel].unconfirmed.data = heap.salloc(NAME_PROTOCOL, length);
+    if(!hdlc_links[channel].unconfirmed.data)
+    {
+        return(0);
+    }
+    
+    heap.copy(hdlc_links[channel].unconfirmed.data, frame, length);
+    hdlc_links[channel].unconfirmed.length = length;
+    hdlc_links[channel].unconfirmed.sent = 0;
+    hdlc_links[channel].unconfirmed.talk = 0;
+    
+    return(length);
+}
+
+/**
+  * @brief 获取UI数据发送结果
+  * @param  
+  * @retval 
+  */
+bool hdlc_send_result(uint8_t channel)
+{
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
+    {
+        return(true);
+    }
+    
+    if(!hdlc_links[channel].unconfirmed.data)
+    {
+        return(true);
+    }
+    
+    if((!hdlc_links[channel].unconfirmed.length) || \
+        (hdlc_links[channel].unconfirmed.length == hdlc_links[channel].unconfirmed.sent))
+    {
+        return(true);
+    }
+    
+    return(false);
+}
+
+/**
   * @brief 链路数据请求
   * @param  
   * @retval 
@@ -1637,6 +1825,10 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
             if(hdlc_links[channel].link_status == LINK_CONNECTED)
             {
                 hdlc_errors = request_info(&hdlc_links[channel], &frame_desc);
+                if(!frame_desc.poll)
+                {
+                    hdlc_links[channel].send.segment.length = 0;
+                }
             }
         }
         else
@@ -1652,12 +1844,20 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
                 if(hdlc_links[channel].link_status == LINK_CONNECTED)
                 {
                     hdlc_errors = request_rr(&hdlc_links[channel], &frame_desc);
+                    if(!frame_desc.poll)
+                    {
+                        hdlc_links[channel].send.segment.length = 0;
+                    }
                 }
             }
             else if((*(frame_desc.ctrl) & 0xef) == 0x03)
             {
                 //UI Frame Received
                 hdlc_errors = request_ui(&hdlc_links[channel], &frame_desc);
+                if(!frame_desc.poll)
+                {
+                    hdlc_links[channel].send.segment.length = 0;
+                }
             }
             else if((*(frame_desc.ctrl) & 0xef) == 0x43)
             {
@@ -1692,40 +1892,6 @@ uint16_t hdlc_request(uint8_t channel, const uint8_t *frame, uint16_t length)
 }
 
 /**
-  * @brief 链路数据响应
-  * @param  
-  * @retval 
-  */
-uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
-{
-    uint16_t segment_length;
-    
-    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
-    {
-        return(0);
-    }
-    
-    if(!hdlc_links[channel].send.segment.length)
-    {
-        return(0);
-    }
-    
-    segment_length = hdlc_links[channel].send.segment.length;
-    hdlc_links[channel].send.segment.length = 0;
-    
-    if(segment_length <= length)
-    {
-        memcpy(frame, hdlc_links[channel].send.segment.data, segment_length);
-        return(segment_length);
-    }
-    else
-    {
-        memcpy(frame, hdlc_links[channel].send.segment.data, length);
-        return(length);
-    }
-}
-
-/**
  * @ Pending UI frames can be sent on the following conditions:
  * @ 
  * @ a) When an MA-DATA.request service primitive with frame_type 
@@ -1749,97 +1915,48 @@ uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
  **/
 
 /**
-  * @brief 获取一个已经建立HDLC连接的通道
+  * @brief 链路数据响应
   * @param  
   * @retval 
   */
-uint8_t hdlc_get_linked_channel(void)
+uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
 {
-    uint8_t cnt;
-	struct __comm *comm = api("task_comm");
-	
-	if(!comm)
-	{
-		return(0xff);
-	}
-	
-    for(cnt=0; cnt<HDLC_CONFIG_MAX_CHANNEL; cnt++)
+    uint16_t segment_length;
+    
+    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
     {
-        if(hdlc_links[cnt].link_status == LINK_CONNECTED)
+        return(0);
+    }
+    
+    if(hdlc_links[channel].unconfirmed.talk)
+    {
+        hdlc_links[channel].unconfirmed.talk -= 1;
+        
+        if((hdlc_links[channel].unconfirmed.length) && \
+            (hdlc_links[channel].unconfirmed.length != hdlc_links[channel].unconfirmed.sent))
         {
-			if(comm->attrib.type(cnt) != PORT_HDLC)
-			{
-				continue;
-			}
-			
-            return(cnt);
+            return(response_ui(&hdlc_links[channel], frame, length));
         }
     }
     
-    return(0xff);
+    if(!hdlc_links[channel].send.segment.length)
+    {
+        return(0);
+    }
+    
+    segment_length = hdlc_links[channel].send.segment.length;
+    hdlc_links[channel].send.segment.length = 0;
+    
+    if(segment_length <= length)
+    {
+        memcpy(frame, hdlc_links[channel].send.segment.data, segment_length);
+        return(segment_length);
+    }
+    else
+    {
+        memcpy(frame, hdlc_links[channel].send.segment.data, length);
+        return(length);
+    }
 }
 
-/**
-  * @brief 从指定通道发送UI数据
-  * @param  
-  * @retval 
-  */
-uint16_t hdlc_send_info(uint8_t channel, const uint8_t *frame, uint16_t length)
-{
-    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
-    {
-        return(0);
-    }
-	
-	
-    if(hdlc_links[channel].link_status != LINK_CONNECTED)
-    {
-        return(0);
-    }
-    
-    if(hdlc_links[channel].unconfirmed.data)
-    {
-        return(0);
-    }
-    
-    if(length > HDLC_CONFIG_APPL_MTU())
-    {
-        return(0);
-    }
-    
-    hdlc_links[channel].unconfirmed.data = heap.salloc(NAME_PROTOCOL, length);
-    if(!hdlc_links[channel].unconfirmed.data)
-    {
-        return(0);
-    }
-    
-    heap.copy(hdlc_links[channel].unconfirmed.data, frame, length);
-    
-    return(length);
-}
 
-/**
-  * @brief 获取UI数据发送结果
-  * @param  
-  * @retval 
-  */
-bool hdlc_send_result(uint8_t channel)
-{
-    if(channel >= HDLC_CONFIG_MAX_CHANNEL)
-    {
-        return(true);
-    }
-    
-    if(!hdlc_links[channel].unconfirmed.data)
-    {
-        return(true);
-    }
-    
-    if((hdlc_links[channel].unconfirmed.length) && \
-        (hdlc_links[channel].unconfirmed.sent != hdlc_links[channel].unconfirmed.length))
-    {
-        return(false);
-    }
-    
-    return(true);
-}
