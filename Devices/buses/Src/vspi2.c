@@ -138,7 +138,14 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
     
     for(i=0; i<count; i++)
     {
-        buffer[i] = SPI_I2S_Send_ReceiveData(SPI2, 0xff);
+        /* Loop while DR register in not emplty */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+        /* Send byte through the SPI2 peripheral */
+        SPI_SendData8(SPI2, 0xff);
+        /* Wait to receive a byte */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+        /* Return the byte read from the SPI bus */
+        buffer[i] = SPI_ReceiveData8(SPI2);
     }
     
     return(count);
@@ -155,7 +162,14 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
     
     for(i=0; i<count; i++)
     {
-        SPI_I2S_Send_ReceiveData(SPI2, buffer[i]);
+        /* Loop while DR register in not emplty */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+        /* Send byte through the SPI2 peripheral */
+        SPI_SendData8(SPI2, buffer[i]);
+        /* Wait to receive a byte */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+        /* Return the byte read from the SPI bus */
+        SPI_ReceiveData8(SPI2);
     }
     
     return(count);
@@ -172,7 +186,14 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
     
     for(i=0; i<count; i++)
     {
-        rbuffer[i] = SPI_I2S_Send_ReceiveData(SPI2, wbuffer[i]);
+        /* Loop while DR register in not emplty */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+        /* Send byte through the SPI2 peripheral */
+        SPI_SendData8(SPI2, wbuffer[i]);
+        /* Wait to receive a byte */
+        while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+        /* Return the byte read from the SPI bus */
+        rbuffer[i] = SPI_ReceiveData8(SPI2);
     }
     
     return(count);
@@ -185,11 +206,14 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
 static uint32_t spi2_readchar(void)
 {
 #if defined (DEMO_STM32F091)
-    uint8_t val;
-    
-    val = SPI_I2S_Send_ReceiveData(SPI2, 0xff);
-    
-    return((uint32_t)val);
+    /* Loop while DR register in not emplty */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+    /* Send byte through the SPI2 peripheral */
+    SPI_SendData8(SPI2, 0xff);
+    /* Wait to receive a byte */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+    /* Return the byte read from the SPI bus */
+    return(SPI_ReceiveData8(SPI2));
 #endif
 }
 
@@ -199,8 +223,14 @@ static uint32_t spi2_readchar(void)
 static uint32_t spi2_writechar(uint32_t ch)
 {
 #if defined (DEMO_STM32F091)
-    SPI_I2S_Send_ReceiveData(SPI2, (uint8_t)ch);
-    
+    /* Loop while DR register in not emplty */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+    /* Send byte through the SPI2 peripheral */
+    SPI_SendData8(SPI2, ch);
+    /* Wait to receive a byte */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+    /* Return the byte read from the SPI bus */
+    SPI_ReceiveData8(SPI2);
     return(ch);
 #endif
 }
@@ -211,11 +241,14 @@ static uint32_t spi2_writechar(uint32_t ch)
 static uint32_t spi2_readwritechar(uint32_t ch)
 {
 #if defined (DEMO_STM32F091)
-    uint8_t val;
-    
-    val = (uint8_t)SPI_I2S_Send_ReceiveData(SPI2, ch);
-    
-    return((uint32_t)val);
+    /* Loop while DR register in not emplty */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+    /* Send byte through the SPI2 peripheral */
+    SPI_SendData8(SPI2, ch);
+    /* Wait to receive a byte */
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+    /* Return the byte read from the SPI bus */
+    return(SPI_ReceiveData8(SPI2));
 #endif
 }
 

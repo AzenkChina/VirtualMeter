@@ -1316,27 +1316,6 @@ ITStatus SPI_I2S_GetITStatus(SPI_TypeDef* SPIx, uint8_t SPI_I2S_IT)
 }
 
 /**
-* @brief  Sends a byte through the SPI interface and return the byte received
-*   from the SPI bus.
-* @param  byte: byte to send.
-* @retval The value of the received byte.
-*/
-uint16_t SPI_I2S_Send_ReceiveData(SPI_TypeDef* SPIx, uint16_t Data)
-{
-	/* Loop while DR register in not emplty */
-	while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_TXE) == RESET);
-
-	/* Send byte through the SPI1 peripheral */
-	SPI_SendData8(SPIx, Data);
-
-	/* Wait to receive a byte */
-	while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET);
-
-	/* Return the byte read from the SPI bus */
-	return SPI_ReceiveData8(SPIx);
-}
-
-/**
   * @}
   */
 

@@ -570,7 +570,6 @@ uint16_t SPI_GetReceptionFIFOStatus(SPI_TypeDef* SPIx);
 FlagStatus SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG);
 void SPI_I2S_ClearFlag(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG);
 ITStatus SPI_I2S_GetITStatus(SPI_TypeDef* SPIx, uint8_t SPI_I2S_IT);
-uint16_t SPI_I2S_Send_ReceiveData(SPI_TypeDef* SPIx, uint16_t Data);
 
 #ifdef __cplusplus
 }

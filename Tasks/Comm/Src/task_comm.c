@@ -287,6 +287,9 @@ static void comm_loop(void)
 		port_table[cnt_port].serial->runner(KERNEL_PERIOD);
 	}
     
+    //获取协议栈接口
+    api_stream = (struct __protocol *)api("task_protocol");
+    
     //从总线读取数据帧
 	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
 	{
@@ -295,14 +298,18 @@ static void comm_loop(void)
         
 	    if(length)
 	    {
-            api_stream = (struct __protocol *)api("task_protocol");
-            
+            //数据发送到协议栈
             if(api_stream)
             {
                 api_stream->stream.in(cnt_port, buff, length);
             }
 		}
 	}
+    
+    if(!api_stream)
+    {
+        return;
+    }
     
     //往总线写入数据帧
 	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
@@ -321,14 +328,7 @@ static void comm_loop(void)
             continue;
         }
         
-        //轮询注册的协议栈，检查是否有数据要从此端口发送
-        api_stream = (struct __protocol *)api("task_protocol");
-        
-        if(!api_stream)
-        {
-            continue;
-        }
-        
+        //从协议栈读取数据
         length = api_stream->stream.out(cnt_port, pbuff, pbuff_length);
         
         if(length)
@@ -336,7 +336,7 @@ static void comm_loop(void)
             port_table[cnt_port].serial->write(length);
         }
 	}
-	    
+    
     status = TASK_RUN;
 }
 

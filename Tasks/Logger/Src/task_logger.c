@@ -16,16 +16,50 @@
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  获取指定的事件的状态
+  */
+static enum __event_status logger_event_status(enum __event_id id)
+{
+    return(EVES_END);
+}
+
+/**
+  * @brief  获取指定的事件发生次数
+  */
+static uint32_t logger_event_amount(enum __event_id id)
+{
+    return(0);
+}
+
+/**
+  * @brief  清除指定的事件发生次数
+  */
+static uint32_t logger_event_clear(enum __event_id id)
+{
+    return(0);
+}
+
 /**
   * @brief  
   */
 static const struct __logger logger = 
 {
-    .record             = (void *)0,
-    .get                = (void *)0,
-    .amount             = (void *)0,
-    .clear              = (void *)0,
+    .status     = logger_event_status,
+    .amount     = logger_event_amount,
+    .clear      = logger_event_clear,
 };
+
+
+
+/**
+  * @brief  事件记录器
+  */
+void __log_trrgger(enum __event_id id)
+{
+    
+}
 
 
 
