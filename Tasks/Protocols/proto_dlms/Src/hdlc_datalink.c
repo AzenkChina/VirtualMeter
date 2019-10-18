@@ -1928,6 +1928,27 @@ uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
         return(0);
     }
     
+    if(hdlc_links[channel].link_status == LINK_DISCONNECTED)
+    {
+        if(hdlc_links[channel].unconfirmed.talk)
+        {
+            hdlc_links[channel].unconfirmed.talk = 0;
+        }
+        
+        if(hdlc_links[channel].unconfirmed.length)
+        {
+            hdlc_links[channel].unconfirmed.length = 0;
+        }
+        
+        if(hdlc_links[channel].unconfirmed.data)
+        {
+            heap.free(hdlc_links[channel].unconfirmed.data);
+            hdlc_links[channel].unconfirmed.data = (uint8_t *)0;
+        }
+        
+        return(0);
+    }
+    
     if(hdlc_links[channel].unconfirmed.talk)
     {
         hdlc_links[channel].unconfirmed.talk -= 1;

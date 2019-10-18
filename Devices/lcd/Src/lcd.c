@@ -134,24 +134,66 @@ static struct __win_lcd_message lcd_message;
 #if defined (DEMO_STM32F091)
 static struct __lcd_params params;
 
+/**
+  * @ 数码管段位排序如下：
+  * @
+  * @     a
+  * @   -----
+  * @  |     |
+  * @  |f    |b
+  * @  |  g  |
+  * @   -----
+  * @  |     |
+  * @  |e    |c
+  * @  |  d  |
+  * @   ----- .dp
+  * @
+  */
+
+/**
+  * @brief  共阴数码管取模
+  */
 static const uint8_t digitals[] = 
 {
     0x3f,0x06,0x5b,0x4f,//0 1 2 3
     0x66,0x6d,0x7d,0x07,//4 5 6 7
     0x7f,0x6f,0x77,0x7c,//8 9 a b
     0x39,0x5e,0x79,0x71,//c d e f
+	0x76,0x74,0x38,0x54,//H h L n
+	0x37,0x5C,0x73,0x50,//N o P r
+	0x78,0x3E,0x40,     //t U -
 };
 
+/**
+  * @brief  主数码管阵列在显示缓冲中的bit编码表
+  */
 static const uint8_t matrix_main[8][7] = 
 {
+	// a    b    c    d    e    f    g
     {139, 138, 137, 128, 129, 131, 130},//右 1
-    {123, 122, 121, 112, 113, 115, 114},//2
-    {107, 106, 105,  96,  97,  99,  98},//3
-    {90,   90,  89, 216, 217, 219, 218},//4
-    {83,   82,  81,  72,  73,  75,  74},//5
-    {67,   66,  65,  56,  57,  59,  58},//6
-    {51,   50,  49,  40,  41,  43,  42},//7
-    {35,   34,  33,  24,  25,  27,  26},//8
+    {123, 122, 121, 112, 113, 115, 114},//右 2
+    {107, 106, 105,  96,  97,  99,  98},//右 3
+    {90,   90,  89, 216, 217, 219, 218},//右 4
+    {83,   82,  81,  72,  73,  75,  74},//右 5
+    {67,   66,  65,  56,  57,  59,  58},//右 6
+    {51,   50,  49,  40,  41,  43,  42},//右 7
+    {35,   34,  33,  24,  25,  27,  26},//右 8
+};
+
+/**
+  * @brief  副数码管阵列在显示缓冲中的bit编码表
+  */
+static const uint8_t matrix_sub[8][7] = 
+{
+	// a    b    c    d    e    f    g
+    {139, 138, 137, 128, 129, 131, 130},//右 1
+    {123, 122, 121, 112, 113, 115, 114},//右 2
+    {107, 106, 105,  96,  97,  99,  98},//右 3
+    {90,   90,  89, 216, 217, 219, 218},//右 4
+    {83,   82,  81,  72,  73,  75,  74},//右 5
+    {67,   66,  65,  56,  57,  59,  58},//右 6
+    {51,   50,  49,  40,  41,  43,  42},//右 7
+    {35,   34,  33,  24,  25,  27,  26},//右 8
 };
 
 #endif
@@ -494,7 +536,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 #else
     
 #if defined (DEMO_STM32F091)
-    uint8_t tubes, bits, effect;
+    uint8_t tubes, bits, effect, minus;
     uint8_t number[8];
 	uint8_t gdram[GDRAM_SIZE];
 	
@@ -509,20 +551,52 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 	{
 		memcpy(gdram, params.gdram, sizeof(gdram));
 	}
+	
+	//负数处理
+	if(val < 0)
+	{
+		minus = 0xff;
+		val = -val;
+	}
+	else
+	{
+		minus = 0;
+	}
+	
+	//数字处理
+	memset(number, 0, sizeof(number));
+	for(tubes=0; tubes<8; tubes++)
+	{
+		number[tubes] = val % 10;
+		val = val / 10;
+		
+		if(val == 0)
+		{
+			break;
+		}
+	}
+	
+	effect = 8;
+	
+	for(tubes=0; tubes<8; tubes++)
+	{
+		if(number[7 - tubes] == 0)
+		{
+			effect = 7 - tubes;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if(effect == 0)
+	{
+		effect = 1;
+	}
 
     if(channel == LCD_WINDOW_MAIN)
     {
-        //负号处理
-        if(val < 0)
-        {
-            params.gdram[2] |= 0x01;
-            val = -val;
-        }
-        else
-        {
-            params.gdram[2] &= ~0x01;
-        }
-        
         //小数点处理
         params.gdram[15] &= ~0x01;
         params.gdram[13] &= ~0x01;
@@ -537,72 +611,69 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             case LCD_DOT_1:
             {
                 params.gdram[15] |= 0x01;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
                 break;
             }
             case LCD_DOT_2:
             {
                 params.gdram[13] |= 0x01;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
                 break;
             }
             case LCD_DOT_3:
             {
                 params.gdram[11] |= 0x01;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
                 break;
             }
             case LCD_DOT_4:
             {
                 params.gdram[10] |= 0x01;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
                 break;
             }
             case LCD_DOT_5:
             {
                 params.gdram[8] |= 0x01;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
                 break;
             }
             case LCD_DOT_6:
             {
                 params.gdram[6] |= 0x01;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
                 break;
             }
             case LCD_DOT_7:
             {
                 params.gdram[4] |= 0x01;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
                 break;
             }
         }
         
         //数字处理
-        memset(number, 0, sizeof(number));
-        for(tubes=0; tubes<8; tubes++)
-        {
-            number[tubes] = val % 10;
-            val = val / 10;
-            
-            if(val == 0)
-            {
-                break;
-            }
-        }
-        
-        effect = 8;
-        
-        for(tubes=0; tubes<8; tubes++)
-        {
-            if(number[7 - tubes] == 0)
-            {
-                effect = 7 - tubes;
-            }
-            else
-            {
-                break;
-            }
-        }
-        
-        if(effect == 0)
-        {
-            effect = 1;
-        }
-        
         for(tubes=0; tubes<8; tubes++)
         {
             for(bits=0; bits<8; bits++)
@@ -619,11 +690,17 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
                 {
                     params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
                 }
-                else
-                {
-                    params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
-                }
             }
+        }
+		
+		//负号处理
+        if(minus)
+        {
+            params.gdram[2] |= 0x01;
+        }
+        else
+        {
+            params.gdram[2] &= ~0x01;
         }
         
         //单位处理
@@ -811,16 +888,6 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
     }
 	else if(channel == LCD_WINDOW_SUB)
 	{
-        //负号处理
-        if(val < 0)
-        {
-            //...
-        }
-        else
-        {
-            //...
-        }
-		
         //小数点处理
         params.gdram[2] &= ~0x10;
         params.gdram[4] &= ~0x10;
@@ -835,38 +902,96 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             case LCD_DOT_1:
             {
                 params.gdram[2] |= 0x10;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
                 break;
             }
             case LCD_DOT_2:
             {
                 params.gdram[31] |= 0x10;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
                 break;
             }
             case LCD_DOT_3:
             {
                 params.gdram[4] |= 0x10;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
                 break;
             }
             case LCD_DOT_4:
             {
                 params.gdram[6] |= 0x10;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
                 break;
             }
             case LCD_DOT_5:
             {
                 params.gdram[8] |= 0x10;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
                 break;
             }
             case LCD_DOT_6:
             {
                 params.gdram[29] |= 0x10;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
                 break;
             }
             case LCD_DOT_7:
             {
                 params.gdram[27] |= 0x10;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
                 break;
             }
+        }
+		
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_sub[tubes][bits] / 8] &= ~(1 << (matrix_sub[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                }
+            }
+        }
+		
+		//负号处理
+        if(minus)
+        {
+            params.gdram[2] |= 0x01;
+        }
+        else
+        {
+            params.gdram[2] &= ~0x01;
         }
 	}
 	
@@ -954,6 +1079,7 @@ static uint8_t window_show_msg(uint8_t channel, const char *msg)
     
 #if defined (DEMO_STM32F091)
     params.global = LCD_SHOW_NORMAL;
+    return(0);
 #endif
     
 #endif
