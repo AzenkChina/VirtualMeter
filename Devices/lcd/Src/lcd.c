@@ -5,6 +5,7 @@
  **/
 
 /* Includes ------------------------------------------------------------------*/
+#include "time.h"
 #include "lcd.h"
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
@@ -37,6 +38,20 @@
 #define LCD_EVRSET				0xc0 //电子可调电阻设置寄存器值设置
 #define LCD_ADSET				0x00 //缓冲区地址设置命令字
 #define LCD_INIT				((LCD_SOFTRST << 24)|(LCD_DISCTL<<16)|((LCD_EVRSET|0xc0)<<8)|LCD_ADSET) //初始化
+
+//digitals 数组中的特殊字符
+#define DIGIT_H                 16
+#define DIGIT_h                 17
+#define DIGIT_L                 18
+#define DIGIT_n                 19
+#define DIGIT_N                 20
+#define DIGIT_o                 21
+#define DIGIT_P                 22
+#define DIGIT_r                 23
+#define DIGIT_t                 24
+#define DIGIT_U                 25
+#define DIGIT__                 26
+
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
@@ -167,13 +182,13 @@ static const uint8_t digitals[] =
 /**
   * @brief  主数码管阵列在显示缓冲中的bit编码表
   */
-static const uint8_t matrix_main[8][7] = 
+static const uint16_t matrix_main[8][7] = 
 {
 	// a    b    c    d    e    f    g
     {139, 138, 137, 128, 129, 131, 130},//右 1
     {123, 122, 121, 112, 113, 115, 114},//右 2
     {107, 106, 105,  96,  97,  99,  98},//右 3
-    {90,   90,  89, 216, 217, 219, 218},//右 4
+    {91,   90,  89, 216, 217, 219, 218},//右 4
     {83,   82,  81,  72,  73,  75,  74},//右 5
     {67,   66,  65,  56,  57,  59,  58},//右 6
     {51,   50,  49,  40,  41,  43,  42},//右 7
@@ -183,17 +198,17 @@ static const uint8_t matrix_main[8][7] =
 /**
   * @brief  副数码管阵列在显示缓冲中的bit编码表
   */
-static const uint8_t matrix_sub[8][7] = 
+static const uint16_t matrix_sub[8][7] = 
 {
 	// a    b    c    d    e    f    g
-    {139, 138, 137, 128, 129, 131, 130},//右 1
-    {123, 122, 121, 112, 113, 115, 114},//右 2
-    {107, 106, 105,  96,  97,  99,  98},//右 3
-    {90,   90,  89, 216, 217, 219, 218},//右 4
-    {83,   82,  81,  72,  73,  75,  74},//右 5
-    {67,   66,  65,  56,  57,  59,  58},//右 6
-    {51,   50,  49,  40,  41,  43,  42},//右 7
-    {35,   34,  33,  24,  25,  27,  26},//右 8
+    {103, 102, 101,  92,  93,  95,  94},//右 1
+    {223, 222, 221, 228, 229, 231, 230},//右 2
+    {239, 238, 237, 244, 245, 246, 247},//右 3
+    {71,   70,  69,  60,  61,  63,  62},//右 4
+    {55,   54,  53,  44,  45,  47,  46},//右 5
+    {39,   38,  37,  28,  29,  31,  30},//右 6
+    {255, 254, 253, 260, 261, 262, 263},//右 7
+    {23,   22,  21,  12,  13,  15,  14},//右 8
 };
 
 #endif
@@ -512,7 +527,450 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
 #else
     
 #if defined (DEMO_STM32F091)
-    params.global = LCD_SHOW_NORMAL;
+    uint8_t tubes, bits, effect;
+    uint8_t number[8];
+	uint8_t gdram[GDRAM_SIZE];
+	
+	if(channel > LCD_MAX_WINDOWS)
+	{
+		return;
+	}
+	
+	params.global = LCD_SHOW_NORMAL;
+	
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
+	
+	//数字处理
+	memset(number, 0, sizeof(number));
+	for(tubes=0; tubes<8; tubes++)
+	{
+		number[tubes] = val % 2;
+		val = val / 2;
+		
+		if(val == 0)
+		{
+			break;
+		}
+	}
+	
+	effect = 8;
+	
+	for(tubes=0; tubes<8; tubes++)
+	{
+		if(number[7 - tubes] == 0)
+		{
+			effect = 7 - tubes;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if(effect == 0)
+	{
+		effect = 1;
+	}
+
+    if(channel == LCD_WINDOW_MAIN)
+    {
+        //小数点处理
+        params.gdram[28] &= ~0x04;//冒号1
+        params.gdram[26] &= ~0x08;//冒号2
+        
+        params.gdram[15] &= ~0x01;
+        params.gdram[13] &= ~0x01;
+        params.gdram[11] &= ~0x01;
+        params.gdram[10] &= ~0x01;
+        params.gdram[8] &= ~0x01;
+        params.gdram[6] &= ~0x01;
+        params.gdram[4] &= ~0x01;
+        
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[15] |= 0x01;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[13] |= 0x01;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[11] |= 0x01;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[10] |= 0x01;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
+                break;
+            }
+            case LCD_DOT_5:
+            {
+                params.gdram[8] |= 0x01;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
+                break;
+            }
+            case LCD_DOT_6:
+            {
+                params.gdram[6] |= 0x01;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
+                break;
+            }
+            case LCD_DOT_7:
+            {
+                params.gdram[4] |= 0x01;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
+                break;
+            }
+        }
+        
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                }
+            }
+        }
+		
+		//负号处理
+        params.gdram[2] &= ~0x01;
+        
+        //单位处理
+        params.gdram[18] &= ~0x02;//M
+        params.gdram[19] &= ~0x02;//K
+        params.gdram[20] &= ~0x06;//VV
+        params.gdram[20] &= ~0x08;//A
+        params.gdram[21] &= ~0x08;//H
+        
+        params.gdram[17] &= ~0x01;//M
+        params.gdram[18] &= ~0x01;//K
+        params.gdram[19] &= ~0x01;//var
+        params.gdram[20] &= ~0x01;//H
+        
+        params.gdram[18] &= ~0x04;
+        params.gdram[19] &= ~0x04;//x1000
+        params.gdram[24] &= ~0x08;//Hz
+        
+        switch(unit)
+        {
+            case LCD_UNIT_V: 
+            {
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_KV: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_MV: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_A: 
+            {
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KA: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MA: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_W: 
+            {
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_KW: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_MW: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_VAR: 
+            {
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_KVAR: 
+            {
+                params.gdram[18] |= 0x01;
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_MVAR: 
+            {
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_VA: 
+            {
+                params.gdram[20] |= 0x0c;
+                break;
+            }
+            case LCD_UNIT_KVA: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                break;
+            }
+            case LCD_UNIT_MVA: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                break;
+            }
+            case LCD_UNIT_WH: 
+            {
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KWH: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MWH: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_VARH: 
+            {
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_KVARH: 
+            {
+                params.gdram[18] |= 0x01;
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_MVARH: 
+            {
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_VAH: 
+            {
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KVAH: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MVAH: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_HZ: 
+            {
+                params.gdram[24] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KHZ: 
+            {
+                params.gdram[18] |= 0x04;
+                params.gdram[19] |= 0x04;
+                params.gdram[24] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MHZ: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[24] |= 0x08;
+                break;
+            }
+        }
+        
+        //符号处理
+        params.gdram[2] &= ~0x01;
+    }
+	else if(channel == LCD_WINDOW_SUB)
+	{
+        //小数点处理
+        params.gdram[11] &= ~0x10;
+        params.gdram[10] &= ~0x10;
+        params.gdram[8] &= ~0x10;
+        params.gdram[31] &= ~0x10;
+        params.gdram[6] &= ~0x10;
+        params.gdram[4] &= ~0x10;
+        params.gdram[2] &= ~0x10;
+        
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[27] |= 0x10;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[29] |= 0x10;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[8] |= 0x10;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[6] |= 0x10;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
+                break;
+            }
+            case LCD_DOT_5:
+            {
+				params.gdram[4] |= 0x10;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
+                break;
+            }
+            case LCD_DOT_6:
+            {
+				params.gdram[31] |= 0x10;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
+                break;
+            }
+            case LCD_DOT_7:
+            {
+				params.gdram[2] |= 0x10;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
+                break;
+            }
+        }
+		
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_sub[tubes][bits] / 8] &= ~(1 << (matrix_sub[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                }
+            }
+        }
+	}
+	
+    if(!params.flush)
+    {
+        if(memcmp(gdram, params.gdram, sizeof(gdram)))
+        {
+            params.flush = 0xff;
+        }
+    }
 #endif
     
 #endif
@@ -598,6 +1056,9 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
     if(channel == LCD_WINDOW_MAIN)
     {
         //小数点处理
+        params.gdram[28] &= ~0x04;//冒号1
+        params.gdram[26] &= ~0x08;//冒号2
+        
         params.gdram[15] &= ~0x01;
         params.gdram[13] &= ~0x01;
         params.gdram[11] &= ~0x01;
@@ -889,19 +1350,19 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 	else if(channel == LCD_WINDOW_SUB)
 	{
         //小数点处理
-        params.gdram[2] &= ~0x10;
-        params.gdram[4] &= ~0x10;
-        params.gdram[6] &= ~0x10;
-        params.gdram[31] &= ~0x10;
-        params.gdram[8] &= ~0x10;
-        params.gdram[10] &= ~0x10;
         params.gdram[11] &= ~0x10;
+        params.gdram[10] &= ~0x10;
+        params.gdram[8] &= ~0x10;
+        params.gdram[31] &= ~0x10;
+        params.gdram[6] &= ~0x10;
+        params.gdram[4] &= ~0x10;
+        params.gdram[2] &= ~0x10;
         
         switch(dot)
         {
             case LCD_DOT_1:
             {
-                params.gdram[2] |= 0x10;
+                params.gdram[27] |= 0x10;
 				if(effect < 2)
 				{
 					effect = 2;
@@ -910,7 +1371,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
             case LCD_DOT_2:
             {
-                params.gdram[31] |= 0x10;
+                params.gdram[29] |= 0x10;
 				if(effect < 3)
 				{
 					effect = 3;
@@ -919,7 +1380,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
             case LCD_DOT_3:
             {
-                params.gdram[4] |= 0x10;
+                params.gdram[8] |= 0x10;
 				if(effect < 4)
 				{
 					effect = 4;
@@ -937,7 +1398,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
             case LCD_DOT_5:
             {
-                params.gdram[8] |= 0x10;
+				params.gdram[4] |= 0x10;
 				if(effect < 6)
 				{
 					effect = 6;
@@ -946,7 +1407,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
             case LCD_DOT_6:
             {
-                params.gdram[29] |= 0x10;
+				params.gdram[31] |= 0x10;
 				if(effect < 7)
 				{
 					effect = 7;
@@ -955,7 +1416,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
             }
             case LCD_DOT_7:
             {
-                params.gdram[27] |= 0x10;
+				params.gdram[2] |= 0x10;
 				if(effect < 8)
 				{
 					effect = 8;
@@ -982,16 +1443,6 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
                     params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
                 }
             }
-        }
-		
-		//负号处理
-        if(minus)
-        {
-            params.gdram[2] |= 0x01;
-        }
-        else
-        {
-            params.gdram[2] &= ~0x01;
         }
 	}
 	
@@ -1023,7 +1474,447 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
 #else
     
 #if defined (DEMO_STM32F091)
-    params.global = LCD_SHOW_NORMAL;
+    uint8_t tubes, bits, effect;
+    uint8_t number[8];
+	uint8_t gdram[GDRAM_SIZE];
+	
+	if(channel > LCD_MAX_WINDOWS)
+	{
+		return;
+	}
+	
+	params.global = LCD_SHOW_NORMAL;
+	
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
+	
+	//数字处理
+	memset(number, 0, sizeof(number));
+	for(tubes=0; tubes<8; tubes++)
+	{
+		number[tubes] = val % 16;
+		val = val / 16;
+		
+		if(val == 0)
+		{
+			break;
+		}
+	}
+	
+	effect = 8;
+	
+	for(tubes=0; tubes<8; tubes++)
+	{
+		if(number[7 - tubes] == 0)
+		{
+			effect = 7 - tubes;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if(effect == 0)
+	{
+		effect = 1;
+	}
+
+    if(channel == LCD_WINDOW_MAIN)
+    {
+        //小数点处理
+        params.gdram[28] &= ~0x04;//冒号1
+        params.gdram[26] &= ~0x08;//冒号2
+        
+        params.gdram[15] &= ~0x01;
+        params.gdram[13] &= ~0x01;
+        params.gdram[11] &= ~0x01;
+        params.gdram[10] &= ~0x01;
+        params.gdram[8] &= ~0x01;
+        params.gdram[6] &= ~0x01;
+        params.gdram[4] &= ~0x01;
+        
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[15] |= 0x01;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[13] |= 0x01;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[11] |= 0x01;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[10] |= 0x01;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
+                break;
+            }
+            case LCD_DOT_5:
+            {
+                params.gdram[8] |= 0x01;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
+                break;
+            }
+            case LCD_DOT_6:
+            {
+                params.gdram[6] |= 0x01;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
+                break;
+            }
+            case LCD_DOT_7:
+            {
+                params.gdram[4] |= 0x01;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
+                break;
+            }
+        }
+        
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                }
+            }
+        }
+        
+        //单位处理
+        params.gdram[18] &= ~0x02;//M
+        params.gdram[19] &= ~0x02;//K
+        params.gdram[20] &= ~0x06;//VV
+        params.gdram[20] &= ~0x08;//A
+        params.gdram[21] &= ~0x08;//H
+        
+        params.gdram[17] &= ~0x01;//M
+        params.gdram[18] &= ~0x01;//K
+        params.gdram[19] &= ~0x01;//var
+        params.gdram[20] &= ~0x01;//H
+        
+        params.gdram[18] &= ~0x04;
+        params.gdram[19] &= ~0x04;//x1000
+        params.gdram[24] &= ~0x08;//Hz
+        
+        switch(unit)
+        {
+            case LCD_UNIT_V: 
+            {
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_KV: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_MV: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x04;
+                break;
+            }
+            case LCD_UNIT_A: 
+            {
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KA: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MA: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_W: 
+            {
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_KW: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_MW: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
+                break;
+            }
+            case LCD_UNIT_VAR: 
+            {
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_KVAR: 
+            {
+                params.gdram[18] |= 0x01;
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_MVAR: 
+            {
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_VA: 
+            {
+                params.gdram[20] |= 0x0c;
+                break;
+            }
+            case LCD_UNIT_KVA: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                break;
+            }
+            case LCD_UNIT_MVA: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                break;
+            }
+            case LCD_UNIT_WH: 
+            {
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KWH: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MWH: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x06;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_VARH: 
+            {
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_KVARH: 
+            {
+                params.gdram[18] |= 0x01;
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_MVARH: 
+            {
+                params.gdram[17] |= 0x01;
+                params.gdram[19] |= 0x01;
+                params.gdram[20] |= 0x01;
+                break;
+            }
+            case LCD_UNIT_VAH: 
+            {
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KVAH: 
+            {
+                params.gdram[19] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MVAH: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[20] |= 0x0a;
+                params.gdram[21] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_HZ: 
+            {
+                params.gdram[24] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_KHZ: 
+            {
+                params.gdram[18] |= 0x04;
+                params.gdram[19] |= 0x04;
+                params.gdram[24] |= 0x08;
+                break;
+            }
+            case LCD_UNIT_MHZ: 
+            {
+                params.gdram[18] |= 0x02;
+                params.gdram[24] |= 0x08;
+                break;
+            }
+        }
+        
+        //符号处理
+        params.gdram[2] &= ~0x01;
+    }
+	else if(channel == LCD_WINDOW_SUB)
+	{
+        //小数点处理
+        params.gdram[11] &= ~0x10;
+        params.gdram[10] &= ~0x10;
+        params.gdram[8] &= ~0x10;
+        params.gdram[31] &= ~0x10;
+        params.gdram[6] &= ~0x10;
+        params.gdram[4] &= ~0x10;
+        params.gdram[2] &= ~0x10;
+        
+        switch(dot)
+        {
+            case LCD_DOT_1:
+            {
+                params.gdram[27] |= 0x10;
+				if(effect < 2)
+				{
+					effect = 2;
+				}
+                break;
+            }
+            case LCD_DOT_2:
+            {
+                params.gdram[29] |= 0x10;
+				if(effect < 3)
+				{
+					effect = 3;
+				}
+                break;
+            }
+            case LCD_DOT_3:
+            {
+                params.gdram[8] |= 0x10;
+				if(effect < 4)
+				{
+					effect = 4;
+				}
+                break;
+            }
+            case LCD_DOT_4:
+            {
+                params.gdram[6] |= 0x10;
+				if(effect < 5)
+				{
+					effect = 5;
+				}
+                break;
+            }
+            case LCD_DOT_5:
+            {
+				params.gdram[4] |= 0x10;
+				if(effect < 6)
+				{
+					effect = 6;
+				}
+                break;
+            }
+            case LCD_DOT_6:
+            {
+				params.gdram[31] |= 0x10;
+				if(effect < 7)
+				{
+					effect = 7;
+				}
+                break;
+            }
+            case LCD_DOT_7:
+            {
+				params.gdram[2] |= 0x10;
+				if(effect < 8)
+				{
+					effect = 8;
+				}
+                break;
+            }
+        }
+		
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_sub[tubes][bits] / 8] &= ~(1 << (matrix_sub[tubes][bits] % 8));
+            }
+        }
+        
+        for(tubes=0; tubes<effect; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                if((digitals[number[tubes]] >> bits) & 0x01)
+                {
+                    params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                }
+            }
+        }
+	}
+	
+    if(!params.flush)
+    {
+        if(memcmp(gdram, params.gdram, sizeof(gdram)))
+        {
+            params.flush = 0xff;
+        }
+    }
 #endif
     
 #endif
@@ -1046,7 +1937,453 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
 #else
     
 #if defined (DEMO_STM32F091)
-    params.global = LCD_SHOW_NORMAL;
+    uint8_t tubes, bits;
+	uint8_t gdram[GDRAM_SIZE];
+    time_t stamp;
+    struct tm *tim;
+    uint8_t length_year = 0xff;
+    uint8_t index_year = 0xff;
+    uint8_t index_mon = 0xff;
+    uint8_t index_day = 0xff;
+    uint8_t index_hour = 0xff;
+    uint8_t index_min = 0xff;
+    uint8_t index_sec = 0xff;
+    uint16_t number;
+	
+	if(channel > LCD_MAX_WINDOWS)
+	{
+		return;
+	}
+	
+	params.global = LCD_SHOW_NORMAL;
+	
+	if(!params.flush)
+	{
+		memcpy(gdram, params.gdram, sizeof(gdram));
+	}
+    
+    stamp = (time_t)val;
+    tim = gmtime(&stamp);
+    
+    switch(theme)
+    {
+        case LCD_DATE_YYMMDD:
+        {
+            length_year = 4;
+            index_year = 4, 
+            index_mon = 2;
+            index_day = 0;
+            break;
+        }
+        case LCD_DATE_DDMMYY:
+        {
+            length_year = 4;
+            index_year = 0, 
+            index_mon = 4;
+            index_day = 6;
+            break;
+        }
+        case LCD_DATE_MMDDYY:
+        {
+            length_year = 4;
+            index_year = 0, 
+            index_mon = 6;
+            index_day = 4;
+            break;
+        }
+        case LCD_DATE_hhmmss:
+        {
+            index_hour = 4;
+            index_min = 2;
+            index_sec = 0;
+            break;
+        }
+        case LCD_DATE_ssmmhh:
+        {
+            index_hour = 0;
+            index_min = 2;
+            index_sec = 4;
+            break;
+        }
+        case LCD_DATE_mmsshh:
+        {
+            index_hour = 0;
+            index_min = 4;
+            index_sec = 2;
+            break;
+        }
+        case LCD_DATE_MMDDhhmm:
+        {
+            index_mon = 6;
+            index_day = 4;
+            index_hour = 2;
+            index_min = 0;
+            break;
+        }
+        case LCD_DATE_DDMMhhmm:
+        {
+            index_mon = 4;
+            index_day = 6;
+            index_hour = 2;
+            index_min = 0;
+            break;
+        }
+        case LCD_DATE_MMDDmmhh:
+        {
+            index_mon = 6;
+            index_day = 4;
+            index_hour = 0;
+            index_min = 2;
+            break;
+        }
+        case LCD_DATE_DDMMmmhh:
+        {
+            index_mon = 4;
+            index_day = 6;
+            index_hour = 0;
+            index_min = 2;
+            break;
+        }
+    }
+    
+    if(channel == LCD_WINDOW_MAIN)
+    {
+        //小数点处理
+        params.gdram[28] &= ~0x04;//冒号1
+        params.gdram[26] &= ~0x08;//冒号2
+        params.gdram[28] &= ~0x08;//TIME
+        params.gdram[26] &= ~0x10;//DATE
+        
+        params.gdram[15] &= ~0x01;
+        params.gdram[13] &= ~0x01;
+        params.gdram[11] &= ~0x01;
+        params.gdram[10] &= ~0x01;
+        params.gdram[8] &= ~0x01;
+        params.gdram[6] &= ~0x01;
+        params.gdram[4] &= ~0x01;
+        
+        //单位处理
+        params.gdram[18] &= ~0x02;//M
+        params.gdram[19] &= ~0x02;//K
+        params.gdram[20] &= ~0x06;//VV
+        params.gdram[20] &= ~0x08;//A
+        params.gdram[21] &= ~0x08;//H
+        
+        params.gdram[17] &= ~0x01;//M
+        params.gdram[18] &= ~0x01;//K
+        params.gdram[19] &= ~0x01;//var
+        params.gdram[20] &= ~0x01;//H
+        
+        params.gdram[18] &= ~0x04;
+        params.gdram[19] &= ~0x04;//x1000
+        params.gdram[24] &= ~0x08;//Hz
+        
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
+            }
+        }
+        
+        //时间处理
+        if(index_year < 7)
+        {
+            number = tim->tm_year + 1900;
+            for(tubes=index_year; tubes<(index_year + length_year); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_mon < 7)
+        {
+            number = tim->tm_mon + 1;
+            for(tubes=index_mon; tubes<(index_mon + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_day < 7)
+        {
+            number = tim->tm_mday;
+            for(tubes=index_day; tubes<(index_day + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_hour < 7)
+        {
+            number = tim->tm_hour;
+            for(tubes=index_hour; tubes<(index_hour + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_min < 7)
+        {
+            number = tim->tm_min;
+            for(tubes=index_min; tubes<(index_min + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_sec < 7)
+        {
+            number = tim->tm_sec;
+            for(tubes=index_sec; tubes<(index_sec + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        //符号处理
+        params.gdram[2] &= ~0x01;
+        
+        switch(theme)
+        {
+            case LCD_DATE_YYMMDD:
+            {
+                params.gdram[13] |= 0x01;//2
+                params.gdram[10] |= 0x01;//4
+                break;
+            }
+            case LCD_DATE_DDMMYY:
+            case LCD_DATE_MMDDYY:
+            {
+                params.gdram[10] |= 0x01;//4
+                params.gdram[6] |= 0x01;//6
+                break;
+            }
+            case LCD_DATE_hhmmss:
+            case LCD_DATE_ssmmhh:
+            case LCD_DATE_mmsshh:
+            {
+                params.gdram[13] |= 0x01;//2
+                params.gdram[10] |= 0x01;//4
+                params.gdram[28] |= 0x04;//冒号1
+                params.gdram[26] |= 0x08;//冒号2
+                break;
+            }
+            case LCD_DATE_MMDDhhmm:
+            case LCD_DATE_DDMMhhmm:
+            case LCD_DATE_MMDDmmhh:
+            case LCD_DATE_DDMMmmhh:
+            {
+                params.gdram[13] |= 0x01;//2
+                params.gdram[10] |= 0x01;//4
+                params.gdram[6] |= 0x01;//6
+                break;
+            }
+        }
+    }
+	else if(channel == LCD_WINDOW_SUB)
+	{
+        //小数点处理
+        params.gdram[11] &= ~0x10;
+        params.gdram[10] &= ~0x10;
+        params.gdram[8] &= ~0x10;
+        params.gdram[31] &= ~0x10;
+        params.gdram[6] &= ~0x10;
+        params.gdram[4] &= ~0x10;
+        params.gdram[2] &= ~0x10;
+		
+        //数字处理
+        for(tubes=0; tubes<8; tubes++)
+        {
+            for(bits=0; bits<8; bits++)
+            {
+                params.gdram[matrix_sub[tubes][bits] / 8] &= ~(1 << (matrix_sub[tubes][bits] % 8));
+            }
+        }
+        
+        //时间处理
+        if(index_year < 7)
+        {
+            number = tim->tm_year + 1900;
+            for(tubes=index_year; tubes<(index_year + length_year); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_mon < 7)
+        {
+            number = tim->tm_mon + 1;
+            for(tubes=index_mon; tubes<(index_mon + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_day < 7)
+        {
+            number = tim->tm_mday;
+            for(tubes=index_day; tubes<(index_day + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_hour < 7)
+        {
+            number = tim->tm_hour;
+            for(tubes=index_hour; tubes<(index_hour + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_min < 7)
+        {
+            number = tim->tm_min;
+            for(tubes=index_min; tubes<(index_min + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        if(index_sec < 7)
+        {
+            number = tim->tm_sec;
+            for(tubes=index_sec; tubes<(index_sec + 2); tubes++)
+            {
+                for(bits=0; bits<8; bits++)
+                {
+                    if((digitals[number % 10] >> bits) & 0x01)
+                    {
+                        params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
+                    }
+                }
+                number = number / 10;
+            }
+        }
+        
+        switch(theme)
+        {
+            case LCD_DATE_YYMMDD:
+            {
+                params.gdram[29] |= 0x10;//2
+                params.gdram[6] |= 0x10;//4
+                break;
+            }
+            case LCD_DATE_DDMMYY:
+            case LCD_DATE_MMDDYY:
+            {
+                params.gdram[6] |= 0x10;//4
+				params.gdram[31] |= 0x10;//6
+                break;
+            }
+            case LCD_DATE_hhmmss:
+            case LCD_DATE_ssmmhh:
+            case LCD_DATE_mmsshh:
+            {
+                params.gdram[29] |= 0x10;//2
+                params.gdram[6] |= 0x10;//4
+                break;
+            }
+            case LCD_DATE_MMDDhhmm:
+            case LCD_DATE_DDMMhhmm:
+            case LCD_DATE_MMDDmmhh:
+            case LCD_DATE_DDMMmmhh:
+            {
+                params.gdram[29] |= 0x10;//2
+                params.gdram[6] |= 0x10;//4
+				params.gdram[31] |= 0x10;//6
+                break;
+            }
+        }
+	}
+	
+    if(!params.flush)
+    {
+        if(memcmp(gdram, params.gdram, sizeof(gdram)))
+        {
+            params.flush = 0xff;
+        }
+    }
 #endif
     
 #endif
