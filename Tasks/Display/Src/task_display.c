@@ -356,7 +356,7 @@ static void select_data(uint32_t mid, uint8_t *data)
                 break;
             case FMT_ASCII: //×Ö·û´®¸ñÊ½
             case FMT_STR:
-                lcd.window.show.msg(LCD_WINDOW_MAIN, (const char *)(data+2));
+                lcd.window.show.msg(LCD_WINDOW_MAIN, 7, (const char *)(data+2));
                 break;
             default:
                 lcd.window.show.dec(LCD_WINDOW_MAIN, container.i32_t, LCD_DOT_NONE, LCD_UNIT_NONE);

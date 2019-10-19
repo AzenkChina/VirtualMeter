@@ -691,7 +691,7 @@ struct __lcd
             
             void					(*date)(uint8_t channel, uint64_t val, enum __lcd_date_format fmt); //写数据
             
-            uint8_t					(*msg)(uint8_t channel, const char *msg); //写数据
+            uint8_t					(*msg)(uint8_t channel, uint8_t from, const char *msg); //写数据
             
             void                    (*none)(uint8_t channel); //写数据
             void                    (*all)(uint8_t channel); //写数据
