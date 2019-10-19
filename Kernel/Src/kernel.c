@@ -276,39 +276,11 @@ int main(void)
     char mypid[16];
     
 #if defined ( BUILD_DAEMON )
-	pid_t pid;
-    
-	pid = fork();
-    
-	if(pid == -1)
+	if(daemon(0, 0) < 0)
 	{
 		printf("Daemon start faild.\n");
 		exit(1);
 	}
-	else if(pid)
-	{
-		exit(0);
-	}
-    
-	if(setsid() == -1)
-	{
-		printf("Daemon start faild.\n");
-		exit(1);
-	}
-    
-	pid = fork();
-    
-	if(pid == -1)
-	{
-		printf("Daemon start faild.\n");
-		exit(1);
-	}
-	else if(pid)
-	{
-		exit(0);
-	}
-	
-	umask(0);
 #endif
     
     fd = open(lock, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
