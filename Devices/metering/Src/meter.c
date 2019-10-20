@@ -19,6 +19,7 @@
 
 #if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
+#include "delay.h"
 #include "vspi1.h"
 #endif
 
@@ -178,6 +179,57 @@ static void meter_init(enum __dev_state state)
 		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
 		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
 		GPIO_Init(GPIOD, &GPIO_InitStruct);
+        
+		//PC5 Power
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+		
+		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5;
+		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+		GPIO_Init(GPIOC, &GPIO_InitStruct);
+        GPIO_ResetBits(GPIOC, GPIO_Pin_5);
+        
+        mdelay(10);
+        
+		//PE15 Reset
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+		
+		GPIO_InitStruct.GPIO_Pin = GPIO_Pin_15;
+		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+		GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+		GPIO_Init(GPIOE, &GPIO_InitStruct);
+        
+        GPIO_ResetBits(GPIOE, GPIO_Pin_15);
+        mdelay(1);
+        GPIO_SetBits(GPIOE, GPIO_Pin_15);
+        mdelay(10);
+        
+        //...
+        uint8_t i;
+        
+        //1
+        devspi.select(0);
+        devspi.octet.write(0x80 + 1);
+        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 16));
+        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 8));
+        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 0));
+        devspi.release(0);
+        udelay(100);
+        
+        //2
+        devspi.select(0);
+        devspi.octet.write(0x80 + 2);
+        devspi.octet.write(0);
+        devspi.octet.write(0);
+        devspi.octet.write(0);
+        devspi.release(0);
+        udelay(100);
+        
+        //...
 		
 		status = DEVICE_INIT;
 	}
@@ -355,6 +407,8 @@ static uint8_t meter_cmd_translate(enum __metering_meta id)
             result = 0x1C;
             break;
     }
+    
+    return(result);
 }
 #endif
 
@@ -469,7 +523,20 @@ static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
     
 #if defined (DEMO_STM32F091)
     int32_t *result = (int32_t *)buffer;
-    *result = 0;
+    uint32_t val;
+    uint8_t id = meter_cmd_translate((enum __metering_meta)addr);
+    
+    devspi.select(0);
+    devspi.octet.write(id);
+    udelay(10);
+    val = devspi.octet.read();
+    val <<= 8;
+    val += devspi.octet.read();
+    val <<= 8;
+    val += devspi.octet.read();
+    devspi.release(0);
+    
+    *result = val;
     return(1);
 #endif
     

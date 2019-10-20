@@ -1111,8 +1111,8 @@ static void display_loop(void)
             }
 		}
         
-        //200ms刷新主窗口的显示数据
-        if(disp_runs.loop_flush > 199)
+        //333ms刷新主窗口的显示数据
+        if(disp_runs.loop_flush > 333)
         {
             disp_runs.loop_flush = 0;
             flush_data();

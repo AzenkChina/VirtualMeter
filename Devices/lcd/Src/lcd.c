@@ -865,7 +865,7 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
         }
         
         //符号处理
-        params.gdram[2] &= ~0x01;
+        params.gdram[32] &= ~0x02;
     }
 	else if(channel == LCD_WINDOW_SUB)
 	{
@@ -1159,11 +1159,11 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 		//负号处理
         if(minus)
         {
-            params.gdram[2] |= 0x01;
+            params.gdram[32] |= 0x02;
         }
         else
         {
-            params.gdram[2] &= ~0x01;
+            params.gdram[32] &= ~0x02;
         }
         
         //单位处理
@@ -1809,7 +1809,7 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
         }
         
         //符号处理
-        params.gdram[2] &= ~0x01;
+        params.gdram[32] &= ~0x02;
     }
 	else if(channel == LCD_WINDOW_SUB)
 	{
@@ -2187,7 +2187,7 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
         }
         
         //符号处理
-        params.gdram[2] &= ~0x01;
+        params.gdram[32] &= ~0x02;
         
         switch(theme)
         {
@@ -2494,7 +2494,7 @@ static uint8_t window_show_msg(uint8_t channel, uint8_t from, const char *msg)
         params.gdram[24] &= ~0x08;//Hz
         
         //符号处理
-        params.gdram[2] &= ~0x01;
+        params.gdram[32] &= ~0x02;
         
         //数字处理
         index = 0;
@@ -2948,7 +2948,7 @@ static void window_show_none(uint8_t channel)
         params.gdram[24] &= ~0x08;//Hz
         
         //符号处理
-        params.gdram[2] &= ~0x01;
+        params.gdram[32] &= ~0x02;
     }
 	else if(channel == LCD_WINDOW_SUB)
 	{
@@ -3056,7 +3056,7 @@ static void window_show_all(uint8_t channel)
         params.gdram[24] |= 0x08;//Hz
         
         //符号处理
-        params.gdram[2] |= 0x01;
+        params.gdram[32] |= 0x02;
     }
 	else if(channel == LCD_WINDOW_SUB)
 	{
