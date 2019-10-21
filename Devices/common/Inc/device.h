@@ -12,6 +12,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "string.h"
+#include "stdbool.h"
 #include "device_lowlevel.h"
 
 /* Exported types ------------------------------------------------------------*/
@@ -208,14 +210,14 @@ struct __serial
     struct __device_ctrl            control;
     
     void                            (*runner)(uint16_t msecond); //输入上次调用与本次调用之间的间隔时间，单位毫秒
-    uint16_t                        (*read)(uint8_t *buffer, uint16_t size); //读一帧数据
+    uint16_t                        (*read)(uint16_t size, uint8_t *buffer); //读一帧数据
     uint16_t                        (*write)(uint16_t count); //写一帧数据
     enum __bus_status               (*status)(void); //总线状态
     
     struct
     {
         uint16_t					(*get)(uint8_t **buffer); //获取当前发送缓冲区首地址
-        void                        (*set)(uint8_t *buffer, uint16_t size); //设置接收缓冲区
+        void                        (*set)(uint16_t size, uint8_t *buffer); //设置接收缓冲区
         void                        (*remove)(void); //删除缓冲区
         
     }                               rxbuff;
@@ -223,7 +225,7 @@ struct __serial
     struct
     {
 		uint16_t					(*get)(uint8_t **buffer); //获取当前发送缓冲区首地址
-		void                        (*set)(uint8_t *buffer, uint16_t size); //设置缓冲区
+		void                        (*set)(uint16_t size, uint8_t *buffer); //设置缓冲区
         void                        (*remove)(void); //删除缓冲区
         
     }                               txbuff;
@@ -435,8 +437,8 @@ struct __rtc
 	
     struct
     {
-        uint8_t                    (*read)(uint8_t *param); //读参数
-        uint8_t                    (*write)(const uint8_t *param); //写参数
+        uint8_t                    (*read)(uint8_t addr, uint8_t count, uint8_t *param); //读参数
+        uint8_t                    (*write)(uint8_t addr, uint8_t count, const uint8_t *param); //写参数
         
     }                               config;
 };
@@ -459,108 +461,11 @@ struct __battery
 	enum __battery_status           (*status)(void); //获取电池剩余百分百
 };
 
-/**
-  * @brief  混杂设备驱动模型
-  */
-struct __misc
-{
-    struct __device_ctrl            control;
-    
-    void                            (*runner)(uint16_t msecond); //输入上次调用与本次调用之间的间隔时间，单位毫秒
-    
-    struct
-    {
-        uint32_t                    (*read)(uint32_t addr, uint32_t count, void *buffer); //读数据
-        uint32_t                    (*write)(uint32_t addr, uint32_t count, const void *buffer); //写数据
-		
-    }                               data;
-    
-    struct
-    {
-        uint32_t                    (*read)(uint32_t addr, uint32_t count, void *buffer); //读寄存器
-        uint32_t                    (*write)(uint32_t addr, uint32_t count, const void *buffer); //写寄存器
-        
-    }                               config;
-    
-    //混杂设备的回调函数
-    struct
-    {
-        void                        (*filling)(void(*callback)(void *buffer)); //设置混杂设备回调函数
-        void                        (*remove)(void); //清除混杂设备回调函数
-        
-    }                               handler;
-};
-
 //###########################################################################
 //专用设备驱动模型
 
-/** 计量芯片在这里只定义数据元，芯片驱动接口使用 混杂设备驱动模型 即可满足要求 */
 
-/**
-  * @brief  计量数据元
-  */
-enum __metering_meta
-{
-    R_EPT	 = 0x01, //合相有功电能
-    R_EPA	 = 0x02, //A相有功电能
-    R_EPB	 = 0x03, //B相有功电能
-    R_EPC	 = 0x04, //C相有功电能
-
-    R_EQT	 = 0x05, //合相无功电能
-    R_EQA	 = 0x06, //A相无功电能
-    R_EQB	 = 0x07, //B相无功电能
-    R_EQC	 = 0x08, //C相无功电能
-
-    R_EST	 = 0x09, //合相视在电能
-    R_ESA	 = 0x0A, //A相视在电能
-    R_ESB	 = 0x0B, //B相视在电能
-    R_ESC	 = 0x0C, //C相视在电能
-
-    R_PT	 = 0x0D, //合相有功功率
-    R_PA	 = 0x0E, //A相有功功率
-    R_PB	 = 0x0F, //B相有功功率
-    R_PC	 = 0x10, //C相有功功率
-
-    R_QT	 = 0x11, //合相无功功率
-    R_QA	 = 0x12, //A相无功功率
-    R_QB	 = 0x13, //B相无功功率
-    R_QC	 = 0x14, //C相无功功率
-
-    R_ST	 = 0x15, //合相视在功率
-    R_SA	 = 0x16, //A相视在功率
-    R_SB	 = 0x17, //B相视在功率
-    R_SC	 = 0x18, //C相视在功率
-
-    R_PFT	 = 0x19, //合相功率因数
-    R_PFA	 = 0x1A, //A相功率因数
-    R_PFB	 = 0x1B, //B相功率因数
-    R_PFC	 = 0x1C, //C相功率因数
-
-
-    R_UARMS	 = 0x1D, //A相电压有效值
-    R_UBRMS	 = 0x1E, //B相电压有效值
-    R_UCRMS	 = 0x1F, //C相电压有效值
-
-    R_ITRMS	 = 0x20, //三相电流矢量和的有效值
-    R_IARMS	 = 0x21, //A相电流有效值
-    R_IBRMS	 = 0x22, //B相电流有效值
-    R_ICRMS	 = 0x23, //C相电流有效值
-
-
-    R_PGA	 = 0x24, //A相电流与电压相角
-    R_PGB	 = 0x25, //B相电流与电压相角
-    R_PGC	 = 0x26, //C相电流与电压相角
-
-    R_YUAUB	 = 0x27, //Ua与Ub的电压夹角
-    R_YUAUC	 = 0x28, //Ua与Uc的电压夹角
-    R_YUBUC	 = 0x29, //Ub与Uc的电压夹角
-
-    R_FREQ	 = 0x2A, //频率
-};
-
-
-
-
+/** LCD 设备模型 */
 
 /**
   * @brief  backlight
@@ -711,8 +616,110 @@ struct __lcd
     }                               label;
 };
 
+
+
+
+
+
+/** EMU 模型 */
+
+/**
+  * @brief  计量数据元
+  */
+enum __metering_meta
+{
+    R_EPT	 = 0x01, //合相有功电能
+    R_EPA	 = 0x02, //A相有功电能
+    R_EPB	 = 0x03, //B相有功电能
+    R_EPC	 = 0x04, //C相有功电能
+
+    R_EQT	 = 0x05, //合相无功电能
+    R_EQA	 = 0x06, //A相无功电能
+    R_EQB	 = 0x07, //B相无功电能
+    R_EQC	 = 0x08, //C相无功电能
+
+    R_EST	 = 0x09, //合相视在电能
+    R_ESA	 = 0x0A, //A相视在电能
+    R_ESB	 = 0x0B, //B相视在电能
+    R_ESC	 = 0x0C, //C相视在电能
+
+    R_PT	 = 0x0D, //合相有功功率
+    R_PA	 = 0x0E, //A相有功功率
+    R_PB	 = 0x0F, //B相有功功率
+    R_PC	 = 0x10, //C相有功功率
+
+    R_QT	 = 0x11, //合相无功功率
+    R_QA	 = 0x12, //A相无功功率
+    R_QB	 = 0x13, //B相无功功率
+    R_QC	 = 0x14, //C相无功功率
+
+    R_ST	 = 0x15, //合相视在功率
+    R_SA	 = 0x16, //A相视在功率
+    R_SB	 = 0x17, //B相视在功率
+    R_SC	 = 0x18, //C相视在功率
+
+    R_PFT	 = 0x19, //合相功率因数
+    R_PFA	 = 0x1A, //A相功率因数
+    R_PFB	 = 0x1B, //B相功率因数
+    R_PFC	 = 0x1C, //C相功率因数
+
+
+    R_UARMS	 = 0x1D, //A相电压有效值
+    R_UBRMS	 = 0x1E, //B相电压有效值
+    R_UCRMS	 = 0x1F, //C相电压有效值
+
+    R_ITRMS	 = 0x20, //三相电流矢量和的有效值
+    R_IARMS	 = 0x21, //A相电流有效值
+    R_IBRMS	 = 0x22, //B相电流有效值
+    R_ICRMS	 = 0x23, //C相电流有效值
+
+
+    R_PGA	 = 0x24, //A相电流与电压相角
+    R_PGB	 = 0x25, //B相电流与电压相角
+    R_PGC	 = 0x26, //C相电流与电压相角
+
+    R_YUAUB	 = 0x27, //Ua与Ub的电压夹角
+    R_YUAUC	 = 0x28, //Ua与Uc的电压夹角
+    R_YUBUC	 = 0x29, //Ub与Uc的电压夹角
+
+    R_FREQ	 = 0x2A, //频率
+};
+
+/**
+  * @brief  EMU设备驱动模型
+  */
+struct __meter
+{
+    struct __device_ctrl            control;
+    
+    void                            (*runner)(uint16_t msecond); //输入上次调用与本次调用之间的间隔时间，单位毫秒
+    
+	int32_t							(*read)(enum __metering_meta id); //读数据
+    
+    struct
+    {
+		bool						(*load)(uint32_t count, const uint8_t *param); //加载校准参数
+		
+		bool						(*enter)(void *arg); //进入校准
+		bool						(*status)(void); //校准是否完成（校准模式下）/ 校准参数是否正常（运行模式下）
+		uint32_t					(*shaping)(uint32_t size, uint8_t *buffer); //生成驱动可识别的校准参数
+		bool						(*exit)(void); //退出校准
+		
+    }                               calibrate;
+    
+    //回调函数，用于抛出异常
+    struct
+    {
+        void                        (*filling)(void(*callback)(void *buffer)); //设置混杂设备回调函数
+        void                        (*remove)(void); //清除混杂设备回调函数
+        
+    }                               handler;
+};
+
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
+#define DEVICE_MATCH(dev, s)     ((strstr(dev.control.name, s) == NULL)?false:true)
+
 /* Exported function prototypes ----------------------------------------------*/
 
 #endif /* __DEVICE_H__ */

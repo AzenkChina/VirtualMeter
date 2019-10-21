@@ -50,7 +50,7 @@
 #define DIGIT_r                 23
 #define DIGIT_t                 24
 #define DIGIT_U                 25
-#define DIGIT__                 26
+#define DIGIT_INVALID           26
 
 #endif
 
@@ -2656,7 +2656,7 @@ static uint8_t window_show_msg(uint8_t channel, uint8_t from, const char *msg)
                 {
                     for(bits=0; bits<7; bits++)
                     {
-                        if((digitals[DIGIT__] >> bits) & 0x01)
+                        if((digitals[DIGIT_INVALID] >> bits) & 0x01)
                         {
                             params.gdram[matrix_main[tubes][bits] / 8] |= (1 << (matrix_main[tubes][bits] % 8));
                         }
@@ -2848,7 +2848,7 @@ static uint8_t window_show_msg(uint8_t channel, uint8_t from, const char *msg)
                 {
                     for(bits=0; bits<7; bits++)
                     {
-                        if((digitals[DIGIT__] >> bits) & 0x01)
+                        if((digitals[DIGIT_INVALID] >> bits) & 0x01)
                         {
                             params.gdram[matrix_sub[tubes][bits] / 8] |= (1 << (matrix_sub[tubes][bits] % 8));
                         }

@@ -40,17 +40,17 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 		{
 			if(id.phase == M_PHASE_A)
 			{
-                DEV_M.data.read((uint32_t)R_UARMS, 1, &read);
+                read = DEV_M.read(R_UARMS);
 				*val = read;
 			}
 			else if(id.phase == M_PHASE_B)
 			{
-                DEV_M.data.read((uint32_t)R_UBRMS, 1, &read);
+                read = DEV_M.read(R_UBRMS);
 				*val = read;
 			}
 			else if(id.phase == M_PHASE_C)
 			{
-                DEV_M.data.read((uint32_t)R_UCRMS, 1, &read);
+                read = DEV_M.read(R_UCRMS);
 				*val = read;
 			}
 			else
@@ -71,17 +71,17 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 		{
 			if(id.phase == M_PHASE_A)
 			{
-                DEV_M.data.read((uint32_t)R_IARMS, 1, &read);
+                read = DEV_M.read(R_IARMS);
 				*val = read;
 			}
 			else if(id.phase == M_PHASE_B)
 			{
-                DEV_M.data.read((uint32_t)R_IBRMS, 1, &read);
+                read = DEV_M.read(R_IBRMS);
 				*val = read;
 			}
 			else if(id.phase == M_PHASE_C)
 			{
-                DEV_M.data.read((uint32_t)R_ICRMS, 1, &read);
+                read = DEV_M.read(R_ICRMS);
 				*val = read;
 			}
 			else

@@ -10,7 +10,7 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern const struct __misc meter;
+extern const struct __meter meter;
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 uint8_t is_powered(void);
 #endif

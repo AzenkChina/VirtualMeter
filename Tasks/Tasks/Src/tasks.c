@@ -165,6 +165,7 @@ static void tasks_loop(void)
 {
     uint8_t loop;
     uint8_t cnt;
+    enum  __task_status task_status;
     
     cpu.watchdog.feed();
     heap_ctrl.dinit();
@@ -180,7 +181,7 @@ static void tasks_loop(void)
             
             if(task_tables[cnt].task->status)
             {
-                enum  __task_status task_status = task_tables[cnt].task->status();
+                task_status = task_tables[cnt].task->status();
                 
                 if((task_status != TASK_INIT) && (task_status != TASK_RUN))
                 {

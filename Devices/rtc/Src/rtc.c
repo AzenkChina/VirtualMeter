@@ -99,7 +99,7 @@ static void rtc_suspend(void)
 /**
   * @brief  
   */
-static uint8_t rtc_config_read(uint8_t *param)
+static uint8_t rtc_config_read(uint8_t addr, uint8_t count, uint8_t *param)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);
@@ -116,7 +116,7 @@ static uint8_t rtc_config_read(uint8_t *param)
 /**
   * @brief  
   */
-static uint8_t rtc_config_write(const uint8_t *param)
+static uint8_t rtc_config_write(uint8_t addr, uint8_t count, const uint8_t *param)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	return(0);

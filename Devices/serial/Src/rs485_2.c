@@ -224,7 +224,7 @@ static void rs485_runner(uint16_t msecond)
 /**
   * @brief  
   */
-static uint16_t rs485_read(uint8_t *buffer, uint16_t max_size)
+static uint16_t rs485_read(uint16_t max_size, uint8_t *buffer)
 {
 	uint16_t length = serial_state.rx_frame_length;
 	
@@ -289,7 +289,7 @@ static enum __bus_status rs485_bus_status(void)
 /**
   * @brief  
   */
-static void rs485_rxbuff_set(uint8_t *buffer, uint16_t size)
+static void rs485_rxbuff_set(uint16_t size, uint8_t *buffer)
 {
 	enum __interrupt_status intr_status = cpu.interrupt.status();
 	
@@ -348,7 +348,7 @@ static void rs485_rxbuff_remove(void)
 /**
   * @brief  
   */
-static void rs485_txbuff_set(uint8_t *buffer, uint16_t size)
+static void rs485_txbuff_set(uint16_t size, uint8_t *buffer)
 {
 	serial_state.status = BUS_IDLE;
 	serial_state.tx_buff = (uint8_t *)buffer;

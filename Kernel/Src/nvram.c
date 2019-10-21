@@ -9,11 +9,17 @@
 #include <windows.h>
 #include <direct.h>
 #include <io.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #elif defined ( __linux )
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #endif
 
 #include "kernel.h"

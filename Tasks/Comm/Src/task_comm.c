@@ -252,8 +252,8 @@ static void comm_init(void)
     	{
     		port_table[cnt].serial->control.init(DEVICE_NORMAL);
     		port_table[cnt].serial->timeout.set(50);
-    		port_table[cnt].serial->rxbuff.set((buff+COMM_CONF_BUFF*(1+cnt*2+0)), COMM_CONF_BUFF);
-    		port_table[cnt].serial->txbuff.set((buff+COMM_CONF_BUFF*(1+cnt*2+1)), COMM_CONF_BUFF);
+    		port_table[cnt].serial->rxbuff.set(COMM_CONF_BUFF, (buff+COMM_CONF_BUFF*(1+cnt*2+0)));
+    		port_table[cnt].serial->txbuff.set(COMM_CONF_BUFF, (buff+COMM_CONF_BUFF*(1+cnt*2+1)));
     	}
 	    
 	    TRACE(TRACE_INFO, "Task comm initialized.");
@@ -294,7 +294,7 @@ static void comm_loop(void)
 	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
 	{
 		//从总线读取
-		length = port_table[cnt_port].serial->read(buff, COMM_CONF_BUFF);
+		length = port_table[cnt_port].serial->read(COMM_CONF_BUFF, buff);
         
 	    if(length)
 	    {

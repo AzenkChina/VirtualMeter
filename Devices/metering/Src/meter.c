@@ -252,7 +252,7 @@ static void meter_suspend(void)
 
 #if defined (DEMO_STM32F091)
 /**
-  * @brief  将 __metering_meta 转换为 702x 的命名字
+  * @brief  将 __metering_meta 转换为 702x 的命令字
   */
 static uint8_t meter_cmd_translate(enum __metering_meta id)
 {
@@ -398,119 +398,92 @@ static void meter_runner(uint16_t msecond)
 }
 
 
-static uint32_t meter_config_read(uint32_t addr, uint32_t count, void *buffer)
-{
-	return(0);
-}
 
-static uint32_t meter_config_write(uint32_t addr, uint32_t count, const void *buffer)
-{
-	return(0);
-}
-
-static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
+static int32_t meter_data_read(enum __metering_meta id)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-    uint16_t id = (uint16_t)addr;
-    uint16_t loop;
-    int32_t *result = (int32_t *)buffer;
-    
-    if(!result)
-    {
-        return(0);
-    }
+    int32_t result;
     
     if(((uint16_t)id < (uint16_t)R_EPT) || ((uint16_t)id > (uint16_t)R_FREQ))
     {
         return(0);
     }
     
-    if(((uint16_t)id + (uint16_t)count) > (uint16_t)R_FREQ)
+    if(updating)
     {
-        return(0);
-    }
-    
-    for(loop=0; loop<((uint16_t)count); loop++)
-    {
-    	if(updating)
-    	{
 #if defined ( __linux )
-            usleep(5*1000);
+        usleep(5*1000);
 #else
-            Sleep(5);
+        Sleep(5);
 #endif
-    	}
+    }
     	
-        switch((enum __metering_meta)id)
-        {
-            case R_EPA:
-            case R_EPB:
-            case R_EPC:
-            case R_EPT:
-            case R_EQA:
-            case R_EQB:
-            case R_EQC:
-            case R_EQT:
-            case R_ESA:
-            case R_ESB:
-            case R_ESC:
-            case R_EST:
-                *result = metering_data[id - 1];
-                metering_data[id - 1] = 0;
-                break;
-            case R_PA:
-            case R_PB:
-            case R_PC:
-            case R_PT:
-            case R_QA:
-            case R_QB:
-            case R_QC:
-            case R_QT:
-            case R_SA:
-            case R_SB:
-            case R_SC:
-            case R_ST:
-            case R_PFA:
-            case R_PFB:
-            case R_PFC:
-            case R_PFT:
-            case R_UARMS:
-            case R_UBRMS:
-            case R_UCRMS:
-            case R_IARMS:
-            case R_IBRMS:
-            case R_ICRMS:
-            case R_ITRMS:
-            case R_PGA:
-            case R_PGB:
-            case R_PGC:
-            case R_YUAUB:
-            case R_YUAUC:
-            case R_YUBUC:
-            case R_FREQ:
-                *result = metering_data[id - 1];
-                break;
-            default:
-                *result = 0;
-        }
-        
-        id += 1;
-        result += 1;
+    switch(id)
+    {
+        case R_EPA:
+        case R_EPB:
+        case R_EPC:
+        case R_EPT:
+        case R_EQA:
+        case R_EQB:
+        case R_EQC:
+        case R_EQT:
+        case R_ESA:
+        case R_ESB:
+        case R_ESC:
+        case R_EST:
+            result = metering_data[(uint16_t)id - 1];
+            metering_data[(uint16_t)id - 1] = 0;
+            break;
+        case R_PA:
+        case R_PB:
+        case R_PC:
+        case R_PT:
+        case R_QA:
+        case R_QB:
+        case R_QC:
+        case R_QT:
+        case R_SA:
+        case R_SB:
+        case R_SC:
+        case R_ST:
+        case R_PFA:
+        case R_PFB:
+        case R_PFC:
+        case R_PFT:
+        case R_UARMS:
+        case R_UBRMS:
+        case R_UCRMS:
+        case R_IARMS:
+        case R_IBRMS:
+        case R_ICRMS:
+        case R_ITRMS:
+        case R_PGA:
+        case R_PGB:
+        case R_PGC:
+        case R_YUAUB:
+        case R_YUAUC:
+        case R_YUBUC:
+        case R_FREQ:
+            result = metering_data[(uint16_t)id - 1];
+            break;
+        default:
+            result = 0;
     }
     
-    return((count & 0xffff));
+    return(result);
 #else
     
 #if defined (DEMO_STM32F091)
-    int32_t *result = (int32_t *)buffer;
+    int32_t result;
     uint32_t val;
-    uint8_t id;
+    uint8_t addr;
     
     if(status == DEVICE_INIT)
     {
-         id = meter_cmd_translate((enum __metering_meta)addr);
+        addr = meter_cmd_translate(id);
         devspi.select(0);
-        devspi.octet.write(id);
+        devspi.octet.write(addr);
         udelay(10);
         val = devspi.octet.read();
         val <<= 8;
@@ -519,26 +492,65 @@ static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
         val += devspi.octet.read();
         devspi.release(0);
         
-        *result = val;
+        result = val;
     }
     else
     {
-        *result = 0;
+        result = 0;
     }
     
-    return(1);
+    return(result);
 #endif
     
 #endif
 }
 
-static uint32_t meter_data_write(uint32_t addr, uint32_t count, const void *buffer)
+
+
+/**
+  * @brief  
+  */
+static bool meter_calibrate_load(uint32_t count, const uint8_t *param)
 {
-	return(0);
+    return(false);
 }
 
 /**
-  * @brief  702x 的 handler 用于向外抛出异常
+  * @brief  
+  */
+static bool meter_calibrate_enter(void *arg)
+{
+    return(false);
+}
+
+/**
+  * @brief  
+  */
+static bool meter_calibrate_status(void)
+{
+    return(false);
+}
+
+/**
+  * @brief  
+  */
+static uint32_t meter_calibrate_shaping(uint32_t size, uint8_t *buffer)
+{
+    return(0);
+}
+
+/**
+  * @brief  
+  */
+static bool meter_calibrate_exit(void)
+{
+    return(false);
+}
+
+
+
+/**
+  * @brief  handler 用于向外抛出异常
   */
 static void meter_handler_filling(void(*callback)(void *buffer))
 {
@@ -565,11 +577,11 @@ static void meter_handler_remove(void)
 /**
   * @brief  
   */
-const struct __misc meter = 
+const struct __meter meter = 
 {
     .control        = 
     {
-        .name       = "metering",
+        .name       = "ATT7022E",
         .status     = meter_status,
         .init       = meter_init,
         .suspend    = meter_suspend,
@@ -577,24 +589,20 @@ const struct __misc meter =
     
     .runner         = meter_runner,
     
-    .data			=
+    .read           = meter_data_read,
+    
+    .calibrate      = 
     {
-		.read		= meter_data_read,
-		.write		= meter_data_write,
+        .load       = meter_calibrate_load,
+        .enter      = meter_calibrate_enter,
+        .status     = meter_calibrate_status,
+        .shaping    = meter_calibrate_shaping,
+        .exit       = meter_calibrate_exit,
     },
     
-    .config			=
-    {
-		.read		= meter_config_read,
-		.write		= meter_config_write,
-    },
-    
-    .handler		=
+    .handler		= 
     {
 		.filling	= meter_handler_filling,
 		.remove		= meter_handler_remove,
     },
 };
-
-
-
