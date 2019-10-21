@@ -5,6 +5,17 @@
  **/
 
 /* Includes ------------------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 )
+#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#elif defined ( __linux )
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#endif
+
 #include "kernel.h"
 #include "allocator.h"
 #include "allocator_ctrl.h"
@@ -22,15 +33,27 @@ struct __nvram_entry
 };
 
 /* Private define ------------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 )
+#define FIL_PATH    "./memory/nvram.bin"
+#define DIR_PATH    "./memory"
+#elif defined ( __linux )
+#if defined ( BUILD_DAEMON )
+#define FIL_PATH    "/var/virtual_meter/nvram.bin"
+#define DIR_PATH    "/var/virtual_meter"
+#else
+#define FIL_PATH    "./memory/nvram.bin"
+#define DIR_PATH    "./memory"
+#endif
+#endif
+
 /* Private macro -------------------------------------------------------------*/
 #define NVRAM_ENTRY_AMOUNT			((uint16_t)(sizeof(nvram_entry)/sizeof(struct __nvram_entry)))
 #define NVRAM_SIZE                  ((uint32_t)(2*1024))
 
 /* Private variables ---------------------------------------------------------*/
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-static uint8_t nvpool[NVRAM_SIZE];
+static uint8_t *nvpool = (uint8_t *)0;
 #else
-
 #if defined ( __ICCARM__ )
 __no_init static uint8_t nvpool[NVRAM_SIZE];
 #elif defined ( __CC_ARM )
@@ -40,8 +63,6 @@ static uint8_t nvpool[NVRAM_SIZE] __attribute__ ((section ("noinit")));
 #else
 #error compiler not support.
 #endif
-
-
 #endif
 
 
@@ -56,6 +77,54 @@ static const struct __nvram_entry nvram_entry[] =
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+static check_mmap(void)
+{
+    FILE *fp;
+    char *mem = (char *)0;
+    
+#if defined ( __linux )
+    if(access(FIL_PATH, 0) != 0)
+    {
+        mkdir(DIR_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#else
+    if(_access(FIL_PATH, 0) != 0)
+    {
+        _mkdir(DIR_PATH);
+#endif
+        
+        fp = fopen(FIL_PATH,"wb+");
+        
+        if(!fp)
+        {
+            return;
+        }
+        
+        mem = malloc(NVRAM_SIZE);
+        
+        if(!mem)
+        {
+            return;
+        }
+        
+        memset((void *)mem, 0xff, NVRAM_SIZE);
+        
+        fseek(fp, 0, 0);
+        fwrite(mem, 1, NVRAM_SIZE, fp);
+        fflush(fp);
+        fclose(fp);
+        
+        free(mem);
+    }
+    
+#if defined ( __linux )
+    nvpool = (uint8_t *)mmap(0, NVRAM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+#else
+    
+#endif
+    
+}
+#endif
 
 /**
   * @brief  
@@ -64,6 +133,10 @@ static void * nvram_address(const char *name)
 {
 	uint16_t loop;
 	uint32_t address = 0;
+    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    check_mmap();
+#endif
     
     for(loop=0; loop<NVRAM_ENTRY_AMOUNT; loop++)
     {
@@ -95,6 +168,10 @@ static uint32_t nvram_size(const char *name)
 {
 	uint16_t loop;
     uint32_t address = 0;
+    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+    check_mmap();
+#endif
     
     for(loop=0; loop<NVRAM_ENTRY_AMOUNT; loop++)
     {

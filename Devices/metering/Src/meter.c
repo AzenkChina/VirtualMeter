@@ -121,7 +121,7 @@ uint8_t is_powered(void)
   */
 static enum __dev_status meter_status(void)
 {
-    //...获取当前设备状态
+    //获取当前设备状态
     return(status);
 }
 
@@ -161,6 +161,8 @@ static void meter_init(enum __dev_state state)
 
 #if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
+    
+    meter_callback= (void(*)(void *))0;
     
     if(state == DEVICE_NORMAL)
 	{
@@ -208,33 +210,18 @@ static void meter_init(enum __dev_state state)
         GPIO_SetBits(GPIOE, GPIO_Pin_15);
         mdelay(10);
         
-        //...
-        uint8_t i;
-        
-        //1
+#if defined ( MAKE_RUN_FOR_DEBUG )
+        //仅仅使芯片各个通道工作
         devspi.select(0);
         devspi.octet.write(0x80 + 1);
         devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 16));
         devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 8));
         devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 0));
         devspi.release(0);
-        udelay(100);
+#endif
         
-        //2
-        devspi.select(0);
-        devspi.octet.write(0x80 + 2);
-        devspi.octet.write(0);
-        devspi.octet.write(0);
-        devspi.octet.write(0);
-        devspi.release(0);
-        udelay(100);
-        
-        //...
-		
 		status = DEVICE_INIT;
 	}
-	
-	meter_callback= (void(*)(void *))0;
 #endif
 
 #endif
@@ -254,15 +241,8 @@ static void meter_suspend(void)
 #else
     
 #if defined (DEMO_STM32F091)
-    //...IO，寄存器，时钟等关闭
-    GPIO_InitTypeDef GPIO_InitStruct;
-    
+    meter_callback= (void(*)(void *))0;
     devspi.control.suspend();
-    
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOD, &GPIO_InitStruct);
 #endif
     
 #endif
@@ -524,19 +504,28 @@ static uint32_t meter_data_read(uint32_t addr, uint32_t count, void *buffer)
 #if defined (DEMO_STM32F091)
     int32_t *result = (int32_t *)buffer;
     uint32_t val;
-    uint8_t id = meter_cmd_translate((enum __metering_meta)addr);
+    uint8_t id;
     
-    devspi.select(0);
-    devspi.octet.write(id);
-    udelay(10);
-    val = devspi.octet.read();
-    val <<= 8;
-    val += devspi.octet.read();
-    val <<= 8;
-    val += devspi.octet.read();
-    devspi.release(0);
+    if(status == DEVICE_INIT)
+    {
+         id = meter_cmd_translate((enum __metering_meta)addr);
+        devspi.select(0);
+        devspi.octet.write(id);
+        udelay(10);
+        val = devspi.octet.read();
+        val <<= 8;
+        val += devspi.octet.read();
+        val <<= 8;
+        val += devspi.octet.read();
+        devspi.release(0);
+        
+        *result = val;
+    }
+    else
+    {
+        *result = 0;
+    }
     
-    *result = val;
     return(1);
 #endif
     
