@@ -31,6 +31,13 @@ struct __display
         }                           show;
         
 		uint8_t						(*current)(void); //获取当前显示项索引号
+		
+        struct
+        {
+			uint8_t					(*message)(uint8_t second, const char *msg); //插入显示字符串
+			uint8_t					(*instance)(uint8_t second, void *id); //插入显示数据项
+            
+        }                           insert;
         
     }                               list;
     

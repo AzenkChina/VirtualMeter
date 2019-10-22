@@ -573,6 +573,18 @@ static uint8_t display_list_current(void)
     return(disp_runs.index);
 }
 
+static uint8_t display_list_insert_message(uint8_t second, const char *msg)
+{
+	return(0);
+}
+
+static uint8_t display_list_insert_instance(uint8_t second, void *id)
+{
+	return(0);
+}
+
+
+
 static uint8_t display_config_start_get(void)
 {
     return(disp_runs.time.start);
@@ -887,6 +899,12 @@ static const struct __display display =
         },
         
         .current                = display_list_current,
+		
+		.insert					=
+		{
+			.message			= display_list_insert_message,
+			.instance			= display_list_insert_instance,
+		},
     },
     
     .config                     =
