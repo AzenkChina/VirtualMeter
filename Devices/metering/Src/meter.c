@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "meter.h"
+#include "crc.h"
 #include "trace.h"
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
@@ -394,7 +395,15 @@ static uint8_t meter_cmd_translate(enum __metering_meta id)
 
 static void meter_runner(uint16_t msecond)
 {
-    
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+
+#else
+
+#if defined (DEMO_STM32F091)
+
+#endif
+
+#endif
 }
 
 
@@ -510,17 +519,221 @@ static int32_t meter_data_read(enum __metering_meta id)
 /**
   * @brief  
   */
-static bool meter_calibrate_load(uint32_t count, const uint8_t *param)
+static bool meter_calibrate_load(uint32_t size, const void *param)
 {
-    return(false);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	if(size < sizeof(struct __calibrate_data))
+	{
+		return(false);
+	}
+	
+	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t))))
+	{
+		return(false);
+	}
+	
+	return(true);
+#else
+
+#if defined (DEMO_STM32F091)
+    uint8_t loop;
+    
+	if(size < sizeof(struct __calibrate_data))
+	{
+		return(false);
+	}
+	
+	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t))))
+	{
+		return(false);
+	}
+    
+    //清校表数据
+    devspi.select(0);
+    devspi.octet.write(0x80 + 0xc3);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.release(0);
+    
+    //写校表数据
+    for(loop=0; loop<59; loop++)
+    {
+        devspi.select(0);
+        devspi.octet.write(0x80 + (((struct __calibrate_data *)param)->reg[loop].address & 0x7f));
+        devspi.octet.write(0);
+        devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 8) & 0xff);
+        devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 0) & 0xff);
+        devspi.release(0);
+    }
+	
+	return(true);
+#endif
+
+#endif
 }
 
 /**
   * @brief  
   */
-static bool meter_calibrate_enter(void *arg)
+static bool meter_calibrate_enter(uint32_t size, void *args)
 {
-    return(false);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	if(size < sizeof(struct __calibrates))
+	{
+		return(false);
+	}
+	
+	memset((void *)&(((struct __calibrates *)args)->data), \
+           0, \
+           sizeof(((struct __calibrates *)args)->data));
+    
+	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
+                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
+	return(true);
+#else
+
+#if defined (DEMO_STM32F091)
+	if(size < sizeof(struct __calibrates))
+	{
+		return(false);
+	}
+	
+	memset((void *)&(((struct __calibrates *)args)->data), \
+           0, \
+           sizeof(((struct __calibrates *)args)->data));
+	
+	((struct __calibrates *)args)->data.reg[0].address = 0x13;
+	((struct __calibrates *)args)->data.reg[0].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[1].address = 0x14;
+	((struct __calibrates *)args)->data.reg[1].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[2].address = 0x15;
+	((struct __calibrates *)args)->data.reg[2].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[3].address = 0x21;
+	((struct __calibrates *)args)->data.reg[3].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[4].address = 0x22;
+	((struct __calibrates *)args)->data.reg[4].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[5].address = 0x23;
+	((struct __calibrates *)args)->data.reg[5].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[6].address = 0x24;
+	((struct __calibrates *)args)->data.reg[6].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[7].address = 0x25;
+	((struct __calibrates *)args)->data.reg[7].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[8].address = 0x26;
+	((struct __calibrates *)args)->data.reg[8].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[9].address = 0x27;
+	((struct __calibrates *)args)->data.reg[9].value = 0x0007;
+	
+	((struct __calibrates *)args)->data.reg[10].address = 0x28;
+	((struct __calibrates *)args)->data.reg[10].value = 0x0007;
+	((struct __calibrates *)args)->data.reg[11].address = 0x29;
+	((struct __calibrates *)args)->data.reg[11].value = 0x0007;
+	((struct __calibrates *)args)->data.reg[12].address = 0x2a;
+	((struct __calibrates *)args)->data.reg[12].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[13].address = 0x2b;
+	((struct __calibrates *)args)->data.reg[13].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[14].address = 0x2c;
+	((struct __calibrates *)args)->data.reg[14].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[15].address = 0x2d;
+	((struct __calibrates *)args)->data.reg[15].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[16].address = 0x2e;
+	((struct __calibrates *)args)->data.reg[16].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[17].address = 0x2f;
+	((struct __calibrates *)args)->data.reg[17].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[18].address = 0x04;
+	((struct __calibrates *)args)->data.reg[18].value = 0x3f82;
+	((struct __calibrates *)args)->data.reg[19].address = 0x05;
+	((struct __calibrates *)args)->data.reg[19].value = 0x3fb1;
+	
+	((struct __calibrates *)args)->data.reg[20].address = 0x06;
+	((struct __calibrates *)args)->data.reg[20].value = 0x4031;
+	((struct __calibrates *)args)->data.reg[21].address = 0x07;
+	((struct __calibrates *)args)->data.reg[21].value = 0x3f82;
+	((struct __calibrates *)args)->data.reg[22].address = 0x08;
+	((struct __calibrates *)args)->data.reg[22].value = 0x3fb1;
+	((struct __calibrates *)args)->data.reg[23].address = 0x09;
+	((struct __calibrates *)args)->data.reg[23].value = 0x4031;
+	((struct __calibrates *)args)->data.reg[24].address = 0x0a;
+	((struct __calibrates *)args)->data.reg[24].value = 0x3f82;
+	((struct __calibrates *)args)->data.reg[25].address = 0x0b;
+	((struct __calibrates *)args)->data.reg[25].value = 0x3fb1;
+	((struct __calibrates *)args)->data.reg[26].address = 0x0c;
+	((struct __calibrates *)args)->data.reg[26].value = 0x4031;
+	((struct __calibrates *)args)->data.reg[27].address = 0x0d;
+	((struct __calibrates *)args)->data.reg[27].value = 0xffef;
+	((struct __calibrates *)args)->data.reg[28].address = 0x0e;
+	((struct __calibrates *)args)->data.reg[28].value = 0xfffa;
+	((struct __calibrates *)args)->data.reg[29].address = 0x0f;
+	((struct __calibrates *)args)->data.reg[29].value = 0xfff4;
+	
+	((struct __calibrates *)args)->data.reg[30].address = 0x10;
+	((struct __calibrates *)args)->data.reg[30].value = 0xffee;
+	((struct __calibrates *)args)->data.reg[31].address = 0x11;
+	((struct __calibrates *)args)->data.reg[31].value = 0xfffb;
+	((struct __calibrates *)args)->data.reg[32].address = 0x12;
+	((struct __calibrates *)args)->data.reg[32].value = 0xfffa;
+	((struct __calibrates *)args)->data.reg[33].address = 0x17;
+	((struct __calibrates *)args)->data.reg[33].value = 0xcbcc;
+	((struct __calibrates *)args)->data.reg[34].address = 0x18;
+	((struct __calibrates *)args)->data.reg[34].value = 0xcbf5;
+	((struct __calibrates *)args)->data.reg[35].address = 0x19;
+	((struct __calibrates *)args)->data.reg[35].value = 0xcbf0;
+	((struct __calibrates *)args)->data.reg[36].address = 0x1a;
+	((struct __calibrates *)args)->data.reg[36].value = 0x7aa7;
+	((struct __calibrates *)args)->data.reg[37].address = 0x1b;
+	((struct __calibrates *)args)->data.reg[37].value = 0x7a53;
+	((struct __calibrates *)args)->data.reg[38].address = 0x1c;
+	((struct __calibrates *)args)->data.reg[38].value = 0x7afa;
+	((struct __calibrates *)args)->data.reg[39].address = 0x20;
+	((struct __calibrates *)args)->data.reg[39].value = 0x5160;
+	
+	((struct __calibrates *)args)->data.reg[40].address = 0x01;
+	((struct __calibrates *)args)->data.reg[40].value = 0xbd7f;
+	((struct __calibrates *)args)->data.reg[41].address = 0x02;
+	((struct __calibrates *)args)->data.reg[41].value = 0x0100;
+	((struct __calibrates *)args)->data.reg[42].address = 0x03;
+	((struct __calibrates *)args)->data.reg[42].value = 0x79c4;
+	((struct __calibrates *)args)->data.reg[43].address = 0x16;
+	((struct __calibrates *)args)->data.reg[43].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[44].address = 0x1d;
+	((struct __calibrates *)args)->data.reg[44].value = 0x0160;
+	((struct __calibrates *)args)->data.reg[45].address = 0x1e;
+	((struct __calibrates *)args)->data.reg[45].value = 0x0078;
+	((struct __calibrates *)args)->data.reg[46].address = 0x1f;
+	((struct __calibrates *)args)->data.reg[46].value = 0x14a0;
+	((struct __calibrates *)args)->data.reg[47].address = 0x30;
+	((struct __calibrates *)args)->data.reg[47].value = 0x0001;
+	((struct __calibrates *)args)->data.reg[48].address = 0x31;
+	((struct __calibrates *)args)->data.reg[48].value = 0x3c37;
+	((struct __calibrates *)args)->data.reg[49].address = 0x32;
+	((struct __calibrates *)args)->data.reg[49].value = 0x0000;
+	
+	((struct __calibrates *)args)->data.reg[50].address = 0x33;
+	((struct __calibrates *)args)->data.reg[50].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[51].address = 0x35;
+	((struct __calibrates *)args)->data.reg[51].value = 0x000f;
+	((struct __calibrates *)args)->data.reg[52].address = 0x36;
+	((struct __calibrates *)args)->data.reg[52].value = 0x0033;
+	((struct __calibrates *)args)->data.reg[53].address = 0x37;
+	((struct __calibrates *)args)->data.reg[53].value = 0x0000;
+	((struct __calibrates *)args)->data.reg[54].address = 0x70;
+	((struct __calibrates *)args)->data.reg[54].value = 0x0002;
+	((struct __calibrates *)args)->data.reg[55].address = 0x6d;
+	((struct __calibrates *)args)->data.reg[55].value = 0xFF00;
+	((struct __calibrates *)args)->data.reg[56].address = 0x6e;
+	((struct __calibrates *)args)->data.reg[56].value = 0x0DB8;
+	((struct __calibrates *)args)->data.reg[57].address = 0x6f;
+	((struct __calibrates *)args)->data.reg[57].value = 0xD1DA;
+	((struct __calibrates *)args)->data.reg[58].address = 0x6b;
+	((struct __calibrates *)args)->data.reg[58].value = 0x0000;
+	
+	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
+                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
+	
+    return(true);
+#endif
+
+#endif
 }
 
 /**
@@ -528,15 +741,15 @@ static bool meter_calibrate_enter(void *arg)
   */
 static bool meter_calibrate_status(void)
 {
-    return(false);
-}
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return(true);
+#else
 
-/**
-  * @brief  
-  */
-static uint32_t meter_calibrate_shaping(uint32_t size, uint8_t *buffer)
-{
-    return(0);
+#if defined (DEMO_STM32F091)
+	return(true);
+#endif
+
+#endif
 }
 
 /**
@@ -544,7 +757,15 @@ static uint32_t meter_calibrate_shaping(uint32_t size, uint8_t *buffer)
   */
 static bool meter_calibrate_exit(void)
 {
-    return(false);
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return(true);
+#else
+
+#if defined (DEMO_STM32F091)
+	return(true);
+#endif
+
+#endif
 }
 
 
@@ -581,7 +802,7 @@ const struct __meter meter =
 {
     .control        = 
     {
-        .name       = "ATT7022E",
+        .name       = "att7022e",
         .status     = meter_status,
         .init       = meter_init,
         .suspend    = meter_suspend,
@@ -596,7 +817,6 @@ const struct __meter meter =
         .load       = meter_calibrate_load,
         .enter      = meter_calibrate_enter,
         .status     = meter_calibrate_status,
-        .shaping    = meter_calibrate_shaping,
         .exit       = meter_calibrate_exit,
     },
     

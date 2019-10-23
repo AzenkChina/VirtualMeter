@@ -698,11 +698,10 @@ struct __meter
     
     struct
     {
-		bool						(*load)(uint32_t count, const uint8_t *param); //加载校准参数
+		bool						(*load)(uint32_t size, const void *param); //加载校准参数
 		
-		bool						(*enter)(void *arg); //进入校准
+		bool						(*enter)(uint32_t size, void *args); //进入校准
 		bool						(*status)(void); //校准是否完成（校准模式下）/ 校准参数是否正常（运行模式下）
-		uint32_t					(*shaping)(uint32_t size, uint8_t *buffer); //生成驱动可识别的校准参数
 		bool						(*exit)(void); //退出校准
 		
     }                               calibrate;
