@@ -34,6 +34,7 @@
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
 static void(*meter_callback)(void *buffer) = (void(*)(void *))0;
+static bool calibrate = false;
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 static SOCKET sock = INVALID_SOCKET;
@@ -211,6 +212,7 @@ static void meter_init(enum __dev_state state)
         GPIO_SetBits(GPIOE, GPIO_Pin_15);
         mdelay(10);
         
+        calibrate = false;
 		status = DEVICE_INIT;
 	}
 #endif
@@ -238,6 +240,7 @@ static void meter_suspend(void)
     
 #endif
     
+    calibrate = false;
     status = DEVICE_SUSPENDED;
 }
 
@@ -478,7 +481,7 @@ static int32_t meter_data_read(enum __metering_meta id)
     uint64_t val;
     uint8_t addr;
     
-    if(status == DEVICE_INIT)
+    if((status == DEVICE_INIT) && (calibrate == true))
     {
         addr = meter_cmd_translate(id);
         devspi.select(0);
@@ -490,7 +493,7 @@ static int32_t meter_data_read(enum __metering_meta id)
         val <<= 8;
         val += devspi.octet.read();
         devspi.release(0);
-        
+		
 		if((addr >= 0x0d) && (addr <= 0x0f))
 		{
 			val = val * 1000 / 0x2000;
@@ -502,7 +505,7 @@ static int32_t meter_data_read(enum __metering_meta id)
 			val = (uint64_t)((float)val * 1.5 / 1 + 0.5);
 			val /= 10;
 		}
-		
+        
         result = val;
     }
     else
@@ -534,7 +537,8 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
 		return(false);
 	}
 	
-	return(true);
+    calibrate = true;
+	return(calibrate);
 #else
 
 #if defined (DEMO_STM32F091)
@@ -552,13 +556,23 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
     
     //清校表数据
     devspi.select(0);
-    devspi.octet.write(0x80 + 0xc3);
+    devspi.octet.write(0xc3);
     devspi.octet.write(0);
     devspi.octet.write(0);
     devspi.octet.write(0);
     devspi.release(0);
+    mdelay(1);
     
-    //写校表数据
+    //使能写参数操作
+    devspi.select(0);
+    devspi.octet.write(0xc9);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.octet.write(0x5a);
+    devspi.release(0);
+    mdelay(1);
+    
+    //写参数
     for(loop=0; loop<59; loop++)
     {
         devspi.select(0);
@@ -567,9 +581,31 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
         devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 8) & 0xff);
         devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 0) & 0xff);
         devspi.release(0);
+        mdelay(1);
     }
+    
+    //使能读数据操作
+    devspi.select(0);
+    devspi.octet.write(0xc6);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.release(0);
+    mdelay(1);
+    
+    //关闭写参数操作
+    devspi.select(0);
+    devspi.octet.write(0xc9);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.octet.write(0);
+    devspi.release(0);
+    mdelay(1);
+    
+    mdelay(500);
 	
-	return(true);
+    calibrate = true;
+	return(calibrate);
 #endif
 
 #endif
@@ -706,7 +742,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[47].address = 0x30;
 	((struct __calibrates *)args)->data.reg[47].value = 0x0001;
 	((struct __calibrates *)args)->data.reg[48].address = 0x31;
-	((struct __calibrates *)args)->data.reg[48].value = 0x3c37;
+	((struct __calibrates *)args)->data.reg[48].value = 0x3837;
 	((struct __calibrates *)args)->data.reg[49].address = 0x32;
 	((struct __calibrates *)args)->data.reg[49].value = 0x0000;
 	
@@ -732,7 +768,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
                                                       sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
 	
-    return(true);
+    calibrate = true;
+    return(calibrate);
 #endif
 
 #endif
@@ -744,11 +781,11 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 static bool meter_calibrate_status(void)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-	return(true);
+	return(calibrate);
 #else
 
 #if defined (DEMO_STM32F091)
-	return(true);
+	return(calibrate);
 #endif
 
 #endif

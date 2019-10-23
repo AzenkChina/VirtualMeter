@@ -361,10 +361,31 @@ static const struct __metering metering =
   */
 static void metering_init(void)
 {
+    struct __calibrate_data *calibrates;
+    
 	//只有正常上电状态下才运行，其它状态下不运行
     if(system_status() == SYSTEM_RUN)
     {
-        DEV_M.control.init(DEVICE_NORMAL); 
+        DEV_M.control.init(DEVICE_NORMAL);
+        
+        calibrates = heap.dalloc(sizeof(struct __calibrate_data));
+        
+        if(calibrates)
+        {
+            if(file.read("calibration", 0, sizeof(struct __calibrate_data), (void *)calibrates) != sizeof(struct __calibrate_data))
+            {
+                TRACE(TRACE_ERR, "Calibrate information read faild.");
+            }
+            else
+            {
+                if(DEV_M.calibrate.load(sizeof(struct __calibrate_data), (void *)calibrates) != true)
+                {
+                    TRACE(TRACE_ERR, "Calibrate faild.");
+                }
+            }
+            
+            heap.free(calibrates);
+        }
         
         TRACE(TRACE_INFO, "Task metering initialized.");
 	}
@@ -413,6 +434,32 @@ static void metering_reset(void)
     status = TASK_NOTINIT;
     
     TRACE(TRACE_INFO, "Task metering reset.");
+    
+#if defined ( MAKE_RUN_FOR_DEBUG )
+    struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
+    
+    if(!calibrates)
+    {
+        return;
+    }
+    
+    heap.set(calibrates, 0, sizeof(struct __calibrates));
+    
+    calibrates->param.voltage = 220000;
+    calibrates->param.current = 1500;
+    calibrates->param.ppulse = 10000;
+    calibrates->param.qpulse = 10000;
+    
+    DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+    
+    while(DEV_M.calibrate.status() != true);
+    
+    DEV_M.calibrate.exit();
+    
+    file.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+    
+    heap.free(calibrates);
+#endif
 }
 
 /**

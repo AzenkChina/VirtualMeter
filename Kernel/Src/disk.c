@@ -48,7 +48,7 @@ static const struct __file_entry file_entry[] =
 {
     /* 注意对齐问题 */
     /* 文件名              文件大小        文件所在分区 */
-    {"calibration",	        256,            FILE_EEPROM}, //电表校准信息
+    {"calibration",	        512,            FILE_EEPROM}, //电表校准信息
     {"information",	        512,            FILE_EEPROM}, //电表基本信息
     {"measurements",        8*1024,         FILE_EEPROM}, //电表计量数据
     {"dlms",                2*1024,         FILE_EEPROM}, //DLMS协议参数
