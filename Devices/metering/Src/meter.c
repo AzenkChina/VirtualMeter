@@ -211,16 +211,6 @@ static void meter_init(enum __dev_state state)
         GPIO_SetBits(GPIOE, GPIO_Pin_15);
         mdelay(10);
         
-#if defined ( MAKE_RUN_FOR_DEBUG )
-        //仅仅使芯片各个通道工作
-        devspi.select(0);
-        devspi.octet.write(0x80 + 1);
-        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 16));
-        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 8));
-        devspi.octet.write((uint8_t)(((uint32_t)0x89ff) >> 0));
-        devspi.release(0);
-#endif
-        
 		status = DEVICE_INIT;
 	}
 #endif
@@ -485,7 +475,7 @@ static int32_t meter_data_read(enum __metering_meta id)
     
 #if defined (DEMO_STM32F091)
     int32_t result;
-    uint32_t val;
+    uint64_t val;
     uint8_t addr;
     
     if(status == DEVICE_INIT)
@@ -501,6 +491,18 @@ static int32_t meter_data_read(enum __metering_meta id)
         val += devspi.octet.read();
         devspi.release(0);
         
+		if((addr >= 0x0d) && (addr <= 0x0f))
+		{
+			val = val * 1000 / 0x2000;
+		}
+		else if((addr >= 0x10) && (addr <= 0x12))
+		{
+			val = val * 10000 / 0x1000;
+			val /= 6 * 47 / 5;
+			val = (uint64_t)((float)val * 1.5 / 1 + 0.5);
+			val /= 10;
+		}
+		
         result = val;
     }
     else
