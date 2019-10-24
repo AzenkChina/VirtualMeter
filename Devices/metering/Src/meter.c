@@ -645,6 +645,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
            0, \
            sizeof(((struct __calibrates *)args)->data));
 	
+    //功率offset校正
 	((struct __calibrates *)args)->data.reg[0].address = 0x13;
 	((struct __calibrates *)args)->data.reg[0].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[1].address = 0x14;
@@ -657,6 +658,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[4].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[5].address = 0x23;
 	((struct __calibrates *)args)->data.reg[5].value = 0x0000;
+    
+    //有效值offset
 	((struct __calibrates *)args)->data.reg[6].address = 0x24;
 	((struct __calibrates *)args)->data.reg[6].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[7].address = 0x25;
@@ -665,11 +668,12 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[8].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[9].address = 0x27;
 	((struct __calibrates *)args)->data.reg[9].value = 0x0007;
-	
 	((struct __calibrates *)args)->data.reg[10].address = 0x28;
 	((struct __calibrates *)args)->data.reg[10].value = 0x0007;
 	((struct __calibrates *)args)->data.reg[11].address = 0x29;
 	((struct __calibrates *)args)->data.reg[11].value = 0x0007;
+    
+    //ADC offset
 	((struct __calibrates *)args)->data.reg[12].address = 0x2a;
 	((struct __calibrates *)args)->data.reg[12].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[13].address = 0x2b;
@@ -682,11 +686,12 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[16].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[17].address = 0x2f;
 	((struct __calibrates *)args)->data.reg[17].value = 0x0000;
+    
+    //功率增益补偿
 	((struct __calibrates *)args)->data.reg[18].address = 0x04;
 	((struct __calibrates *)args)->data.reg[18].value = 0x3f82;
 	((struct __calibrates *)args)->data.reg[19].address = 0x05;
 	((struct __calibrates *)args)->data.reg[19].value = 0x3fb1;
-	
 	((struct __calibrates *)args)->data.reg[20].address = 0x06;
 	((struct __calibrates *)args)->data.reg[20].value = 0x4031;
 	((struct __calibrates *)args)->data.reg[21].address = 0x07;
@@ -701,25 +706,30 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[25].value = 0x3fb1;
 	((struct __calibrates *)args)->data.reg[26].address = 0x0c;
 	((struct __calibrates *)args)->data.reg[26].value = 0x4031;
+    
+    //相位校正
 	((struct __calibrates *)args)->data.reg[27].address = 0x0d;
 	((struct __calibrates *)args)->data.reg[27].value = 0xffef;
 	((struct __calibrates *)args)->data.reg[28].address = 0x0e;
 	((struct __calibrates *)args)->data.reg[28].value = 0xfffa;
 	((struct __calibrates *)args)->data.reg[29].address = 0x0f;
 	((struct __calibrates *)args)->data.reg[29].value = 0xfff4;
-	
 	((struct __calibrates *)args)->data.reg[30].address = 0x10;
 	((struct __calibrates *)args)->data.reg[30].value = 0xffee;
 	((struct __calibrates *)args)->data.reg[31].address = 0x11;
 	((struct __calibrates *)args)->data.reg[31].value = 0xfffb;
 	((struct __calibrates *)args)->data.reg[32].address = 0x12;
 	((struct __calibrates *)args)->data.reg[32].value = 0xfffa;
+    
+    //电压增益校正
 	((struct __calibrates *)args)->data.reg[33].address = 0x17;
 	((struct __calibrates *)args)->data.reg[33].value = 0xcbcc;
 	((struct __calibrates *)args)->data.reg[34].address = 0x18;
 	((struct __calibrates *)args)->data.reg[34].value = 0xcbf5;
 	((struct __calibrates *)args)->data.reg[35].address = 0x19;
 	((struct __calibrates *)args)->data.reg[35].value = 0xcbf0;
+    
+    //电流增益校正
 	((struct __calibrates *)args)->data.reg[36].address = 0x1a;
 	((struct __calibrates *)args)->data.reg[36].value = 0x7aa7;
 	((struct __calibrates *)args)->data.reg[37].address = 0x1b;
@@ -729,46 +739,45 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[39].address = 0x20;
 	((struct __calibrates *)args)->data.reg[39].value = 0x5160;
 	
-	((struct __calibrates *)args)->data.reg[40].address = 0x01;
+	((struct __calibrates *)args)->data.reg[40].address = 0x01;//模式配置寄存器
 	((struct __calibrates *)args)->data.reg[40].value = 0xbd7f;
-	((struct __calibrates *)args)->data.reg[41].address = 0x02;
+	((struct __calibrates *)args)->data.reg[41].address = 0x02;//ADC增益配置
 	((struct __calibrates *)args)->data.reg[41].value = 0x0100;
-	((struct __calibrates *)args)->data.reg[42].address = 0x03;
+	((struct __calibrates *)args)->data.reg[42].address = 0x03;//EMU单元配置
 	((struct __calibrates *)args)->data.reg[42].value = 0x79c4;
-	((struct __calibrates *)args)->data.reg[43].address = 0x16;
+	((struct __calibrates *)args)->data.reg[43].address = 0x16;//基波无功相位校正
 	((struct __calibrates *)args)->data.reg[43].value = 0x0000;
-	((struct __calibrates *)args)->data.reg[44].address = 0x1d;
+	((struct __calibrates *)args)->data.reg[44].address = 0x1d;//起动电流
 	((struct __calibrates *)args)->data.reg[44].value = 0x0160;
-	((struct __calibrates *)args)->data.reg[45].address = 0x1e;
+	((struct __calibrates *)args)->data.reg[45].address = 0x1e;//高频脉冲常数
 	((struct __calibrates *)args)->data.reg[45].value = 0x0078;
-	((struct __calibrates *)args)->data.reg[46].address = 0x1f;
+	((struct __calibrates *)args)->data.reg[46].address = 0x1f;//失压阈值
 	((struct __calibrates *)args)->data.reg[46].value = 0x14a0;
-	((struct __calibrates *)args)->data.reg[47].address = 0x30;
+	((struct __calibrates *)args)->data.reg[47].address = 0x30;//中断使能
 	((struct __calibrates *)args)->data.reg[47].value = 0x0001;
-	((struct __calibrates *)args)->data.reg[48].address = 0x31;
+	((struct __calibrates *)args)->data.reg[48].address = 0x31;//模拟模块使能
 	((struct __calibrates *)args)->data.reg[48].value = 0x3837;
-	((struct __calibrates *)args)->data.reg[49].address = 0x32;
+	((struct __calibrates *)args)->data.reg[49].address = 0x32;//全通道增益
 	((struct __calibrates *)args)->data.reg[49].value = 0x0000;
-	
-	((struct __calibrates *)args)->data.reg[50].address = 0x33;
+	((struct __calibrates *)args)->data.reg[50].address = 0x33;//脉冲加倍
 	((struct __calibrates *)args)->data.reg[50].value = 0x0000;
-	((struct __calibrates *)args)->data.reg[51].address = 0x35;
+	((struct __calibrates *)args)->data.reg[51].address = 0x35;//IO状态
 	((struct __calibrates *)args)->data.reg[51].value = 0x000f;
-	((struct __calibrates *)args)->data.reg[52].address = 0x36;
+	((struct __calibrates *)args)->data.reg[52].address = 0x36;//起动功率
 	((struct __calibrates *)args)->data.reg[52].value = 0x0033;
-	((struct __calibrates *)args)->data.reg[53].address = 0x37;
+	((struct __calibrates *)args)->data.reg[53].address = 0x37;//相位补偿区域
 	((struct __calibrates *)args)->data.reg[53].value = 0x0000;
-	((struct __calibrates *)args)->data.reg[54].address = 0x70;
-	((struct __calibrates *)args)->data.reg[54].value = 0x0002;
-	((struct __calibrates *)args)->data.reg[55].address = 0x6d;
-	((struct __calibrates *)args)->data.reg[55].value = 0xFF00;
-	((struct __calibrates *)args)->data.reg[56].address = 0x6e;
-	((struct __calibrates *)args)->data.reg[56].value = 0x0DB8;
-	((struct __calibrates *)args)->data.reg[57].address = 0x6f;
-	((struct __calibrates *)args)->data.reg[57].value = 0xD1DA;
-	((struct __calibrates *)args)->data.reg[58].address = 0x6b;
+	((struct __calibrates *)args)->data.reg[58].address = 0x6b;//Toffset校正
 	((struct __calibrates *)args)->data.reg[58].value = 0x0000;
-	
+	((struct __calibrates *)args)->data.reg[55].address = 0x6d;//Vrefgain的补偿曲线系数 TCcoffA
+	((struct __calibrates *)args)->data.reg[55].value = 0xff00;
+	((struct __calibrates *)args)->data.reg[56].address = 0x6e;//Vrefgain的补偿曲线系数 TCcoffB
+	((struct __calibrates *)args)->data.reg[56].value = 0x0db8;
+	((struct __calibrates *)args)->data.reg[57].address = 0x6f;//Vrefgain的补偿曲线系数 TCcoffC
+	((struct __calibrates *)args)->data.reg[57].value = 0xd1da;
+	((struct __calibrates *)args)->data.reg[54].address = 0x70;//算法控制
+	((struct __calibrates *)args)->data.reg[54].value = 0x0002;
+    
 	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
                                                       sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
 	

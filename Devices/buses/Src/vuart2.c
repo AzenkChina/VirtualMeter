@@ -600,6 +600,11 @@ static uint16_t uart_write(uint16_t count, const uint8_t *buffer)
         return(0);
     }
     
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     data = buffer;
     length = count;
     sent = 0;

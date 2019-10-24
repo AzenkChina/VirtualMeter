@@ -26,33 +26,31 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
-/**
-  * @brief  虚拟运行下仅支持注册一个中断：系统滴答中断 中断号为 0
-  */
-#define     INTERRUPT_AMOUNT    ((uint8_t)1)
+/* 虚拟运行下仅支持注册一个中断：系统滴答中断 中断号为 0 */
+#define INTERRUPT_AMOUNT    ((uint8_t)1)
 #else
 
 #if defined (DEMO_STM32F091)
-/**
-  * @brief  STM32 Demo 支持注册三个中断：系统滴答中断，SVC中断，PendSV中断，中断号分别为 0 1 2
-  */
-#define     INTERRUPT_AMOUNT    ((uint8_t)3)
+/* STM32 Demo 支持注册三个中断：系统滴答中断，SVC中断，PendSV中断，中断号分别为 0 1 2 */
+#define INTERRUPT_AMOUNT    ((uint8_t)3)
 #endif
 
 #endif
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static enum __interrupt_status intr_status = INTR_ENABLED;
-static enum __cpu_level cpu_level = CPU_NORMAL;
-void(*hooks[INTERRUPT_AMOUNT])(void);
-void(*hooks_redundance[INTERRUPT_AMOUNT])(void);
-
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 static volatile uint8_t counter = 0;
 static volatile uint8_t in_sleep = 0;
 char *proc_self = (char *)0;
 #endif
+
+static const union {uint32_t i; uint8_t c;} endian = {.i = 0x55FFFFAA,};
+static enum __interrupt_status intr_status = INTR_ENABLED;
+static enum __cpu_level cpu_level = CPU_NORMAL;
+
+void(*hooks[INTERRUPT_AMOUNT])(void);
+void(*hooks_redundance[INTERRUPT_AMOUNT])(void);
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -149,19 +147,11 @@ static const char* cpu_core_details(void)
   */
 static enum __cpu_endian cpu_core_endian(void)
 {
-    union
-    {
-        uint32_t i;
-        uint8_t c;
-    } u;
-
-    u.i = 0x55FFFFAA;
-
-    if(u.c == 0x55)
+    if(endian.c == 0x55)
     {
         return(CPU_BIG_ENDIAN);
     }
-    else if(u.c == 0xAA)
+    else if(endian.c == 0xAA)
     {
         return(CPU_LITTLE_ENDIAN);
     }

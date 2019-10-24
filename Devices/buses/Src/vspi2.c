@@ -49,7 +49,7 @@ static void spi2_init(enum __dev_state state)
     SPI_InitStruct.SPI_CPOL = SPI_CPOL_High;
     SPI_InitStruct.SPI_CPHA = SPI_CPHA_2Edge;
     SPI_InitStruct.SPI_NSS = SPI_NSS_Soft;
-    SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
+    SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
     SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_InitStruct.SPI_CRCPolynomial = 7;
     SPI_Init(SPI2, &SPI_InitStruct);
@@ -119,12 +119,12 @@ static uint8_t spi2_release(uint8_t cs)
 
 static uint32_t spi2_freq_get(void)
 {
-    return(1000000);
+    return(3*1000*1000);
 }
 
 static uint32_t spi2_freq_set(uint32_t rate)
 {
-    return(1000000);
+    return(3*1000*1000);
 }
 
 
@@ -135,6 +135,11 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
 {
 #if defined (DEMO_STM32F091)
     uint32_t i;
+    
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
     
     for(i=0; i<count; i++)
     {
@@ -160,6 +165,11 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
 #if defined (DEMO_STM32F091)
     uint32_t i;
     
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     for(i=0; i<count; i++)
     {
         /* Loop while DR register in not emplty */
@@ -184,6 +194,11 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
 #if defined (DEMO_STM32F091)
     uint32_t i;
     
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     for(i=0; i<count; i++)
     {
         /* Loop while DR register in not emplty */
@@ -206,6 +221,11 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
 static uint32_t spi2_readchar(void)
 {
 #if defined (DEMO_STM32F091)
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     /* Loop while DR register in not emplty */
     while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
     /* Send byte through the SPI2 peripheral */
@@ -223,6 +243,11 @@ static uint32_t spi2_readchar(void)
 static uint32_t spi2_writechar(uint32_t ch)
 {
 #if defined (DEMO_STM32F091)
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     /* Loop while DR register in not emplty */
     while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
     /* Send byte through the SPI2 peripheral */
@@ -241,6 +266,11 @@ static uint32_t spi2_writechar(uint32_t ch)
 static uint32_t spi2_readwritechar(uint32_t ch)
 {
 #if defined (DEMO_STM32F091)
+    if(status != DEVICE_INIT)
+    {
+        return(0);
+    }
+    
     /* Loop while DR register in not emplty */
     while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
     /* Send byte through the SPI2 peripheral */

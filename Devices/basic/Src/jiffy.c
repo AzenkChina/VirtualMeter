@@ -13,8 +13,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static uint32_t __jiffy = 0;
-static void (*intr_hook)(uint16_t val) = (void *)0;
-static uint32_t hook_check = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -33,11 +31,11 @@ static uint32_t jiff_time_after(uint32_t val)
 {
     if(__jiffy >= val)
     {
-        return(__jiffy - val);
+        return((uint32_t)(__jiffy - val));
     }
     else
     {
-        return(~(val - __jiffy));
+        return(((uint32_t)~(val - __jiffy)));
     }
 }
 
