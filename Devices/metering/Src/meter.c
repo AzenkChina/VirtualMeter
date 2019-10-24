@@ -134,6 +134,8 @@ static void meter_init(enum __dev_state state)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50002);
+    
+    (void)(meter_callback);
 
 	if(sock == INVALID_SOCKET)
 	{
@@ -163,6 +165,8 @@ static void meter_init(enum __dev_state state)
 
 #if defined (DEMO_STM32F091)
     GPIO_InitTypeDef GPIO_InitStruct;
+    
+    (void)(meter_callback);
     
     meter_callback= (void(*)(void *))0;
     

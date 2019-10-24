@@ -86,9 +86,9 @@ static ObjectErrs GetValue(ObjectPara *P)
     OBJ_PUSH_LENGTH(P, Length);
     
     return(OBJECT_NOERR);
-#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
-    
+#else
     return(OBJECT_ERR_LOWLEVEL);
+#endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 }
 
 /**	

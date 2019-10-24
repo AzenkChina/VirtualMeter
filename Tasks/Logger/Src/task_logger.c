@@ -101,7 +101,7 @@ static void logger_reset(void)
   */
 static enum __task_status logger_status(void)
 {
-    
+    return(TASK_INIT);
 }
 
 

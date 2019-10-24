@@ -21,10 +21,10 @@ enum __meta_item
 {
     M_NULL = 0,//未定义
     M_P_ENERGY = 1,//有功电能（mWh）
-    M_Q_ENERGY = 2,//无功电能（mVarh）
+    M_Q_ENERGY = 2,//无功电能（mvarh）
     M_S_ENERGY = 3,//视在电能（mVAh）
     M_P_POWER = 4,//有功功率（mW）
-    M_Q_POWER = 5,//无功功率（mVar）
+    M_Q_POWER = 5,//无功功率（mvar）
     M_S_POWER = 6,//视在功率（mVA）
     M_VOLTAGE = 7,//电压（mV）
     M_CURRENT = 8,//电流（mA）
@@ -97,12 +97,14 @@ enum __metering_quad
 	M_QUAD_I = 0x01,//1象限
 	M_QUAD_II = 0x02,//2象限
 	M_QUAD_III = 0x04,//3象限
-    M_QUAD_V = 0x08,//4象限
+    M_QUAD_IV = 0x08,//4象限
     
 	M_QUAD_NI = 0x10,//减1象限
 	M_QUAD_NII = 0x20,//减2象限
 	M_QUAD_NIII = 0x40,//减3象限
-    M_QUAD_NV = 0x80,//减4象限
+    M_QUAD_NIV = 0x80,//减4象限
+	
+	M_QUAD_DEMAND = 0x100,//标识该数据是需量而不是功率
 };
 
 /**
@@ -159,7 +161,9 @@ struct __meta_identifier
 //判断一个U32 ID是否为电能
 #define M_UISENERGY(val)            (((((val)>>27)&0x1f) >= M_P_ENERGY) && ((((val)>>27)&0x1f) <= M_S_ENERGY))
 //判断一个U32 ID是否为功率
-#define M_UISPOWER(val)             (((((val)>>27)&0x1f) >= M_P_POWER) && ((((val)>>27)&0x1f) <= M_S_POWER))
+#define M_UISPOWER(val)             (((((val)>>27)&0x1f) >= M_P_POWER) && ((((val)>>27)&0x1f) <= M_S_POWER) && (!(((val)&0x3ff) & M_QUAD_DEMAND)))
+//判断一个U32 ID是否为需量
+#define M_UISDEMAND(val)             (((((val)>>27)&0x1f) >= M_P_POWER) && ((((val)>>27)&0x1f) <= M_S_POWER) && (((val)&0x3ff) & M_QUAD_DEMAND))
 //判断一个U32 ID是否为电压
 #define M_UISVOLTAGE(val)           ((((val)>>27)&0x1f) == M_VOLTAGE)
 //判断一个U32 ID是否为电流
@@ -175,8 +179,9 @@ struct __meta_identifier
 
 
 //缩放数据
-// extern int64 __mids_scaling(int64 val, enum __meta_scale scale);
-// #define M_SCALING(val, scale)       (__mids_scaling(val, scale))
+//extern int64_t __mids_scaling(int64_t val, enum __meta_scale scale);
+//#define M_SCALING(val, scale)       (val = __mids_scaling(val, scale))
+
 #define M_SCALING(val, scale)       switch((enum __meta_scale)((scale)&0x1f)) { \
                                     case M_SCALE_ZP: (val) = (val)/1000;break; \
                                     case M_SCALE_N1: val = (val)/100;break; \

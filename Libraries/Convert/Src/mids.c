@@ -14,7 +14,7 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
-int64 __mids_scaling(int64 val, enum __meta_scale scale)
+int64_t __mids_scaling(int64_t val, enum __meta_scale scale)
 {
 	switch((scale)&0x1f)
 	{
@@ -49,4 +49,6 @@ int64 __mids_scaling(int64 val, enum __meta_scale scale)
 			}
 		}
 	}
+    
+    return(val);
 }

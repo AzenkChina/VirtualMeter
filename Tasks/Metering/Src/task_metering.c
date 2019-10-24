@@ -98,12 +98,12 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 
 static enum __meta_item metering_recent(struct __meta_identifier id, int64_t *val)
 {
-	
+	return(M_NULL);
 }
 
 static int64_t metering_primary(struct __meta_identifier id, int64_t val)
 {
-	
+	return(0);
 }
 
 
@@ -112,94 +112,94 @@ static int64_t metering_primary(struct __meta_identifier id, int64_t val)
 
 static uint8_t config_rate_read(void)
 {
-	
+	return(0);
 }
 
 static uint8_t config_rate_change(uint8_t rate)
 {
-	
+	return(0);
 }
 
 static uint8_t config_rate_max(void)
 {
-	
+	return(0);
 }
 
 
 static uint32_t config_current_ratio_get(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_current_ratio_set(uint32_t val)
 {
-	
+	return(0);
 }
 
 static uint32_t config_current_ratio_get_num(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_current_ratio_set_num(uint32_t val)
 {
-	
+	return(0);
 }
 
 static uint32_t config_current_ratio_get_denum(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_current_ratio_set_denum(uint32_t val)
 {
-	
+	return(0);
 }
 
 
 static uint32_t config_voltage_ratio_get(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_voltage_ratio_set(uint32_t val)
 {
-	
+	return(0);
 }
 
 static uint32_t config_voltage_ratio_get_num(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_voltage_ratio_set_num(uint32_t val)
 {
-	
+	return(0);
 }
 
 static uint32_t config_voltage_ratio_get_denum(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_voltage_ratio_set_denum(uint32_t val)
 {
-	
+	return(0);
 }
 
 static enum __metering_status config_energy_start(void)
 {
-	
+	return(M_ENERGY_START);
 }
 
 static enum __metering_status config_energy_stop(void)
 {
-	
+	return(M_ENERGY_START);
 }
 
 static enum __metering_status config_energy_status(void)
 {
-	
+	return(M_ENERGY_START);
 }
 
 static void config_energy_clear(void)
@@ -211,22 +211,22 @@ static void config_energy_clear(void)
 
 static uint8_t config_demand_get_period(void)
 {
-	
+	return(0);
 }
 
 static uint8_t config_demand_set_period(uint8_t minute)
 {
-	
+	return(0);
 }
 
 static uint8_t config_demand_get_multiple(void)
 {
-	
+	return(0);
 }
 
 static uint8_t config_demand_set_multiple(uint8_t val)
 {
-	
+	return(0);
 }
 
 static void config_demand_clear_current(void)
@@ -242,23 +242,23 @@ static void config_demand_clear_max(void)
 
 static uint32_t config_active_div_get(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_active_div_set(uint32_t val)
 {
-	
+	return(0);
 }
 
 
 static uint32_t config_reactive_div_get(void)
 {
-	
+	return(0);
 }
 
 static uint32_t config_reactive_div_set(uint32_t val)
 {
-	
+	return(0);
 }
 
 static void config_calibration_enter(void *args)
