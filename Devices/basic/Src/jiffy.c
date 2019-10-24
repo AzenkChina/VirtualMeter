@@ -41,45 +41,6 @@ static uint32_t jiff_time_after(uint32_t val)
     }
 }
 
-/**
-  * @brief  添加中断钩子函数
-  */
-static uint32_t jiff_hook_intr(void (*hook)(uint16_t val))
-{
-    hook_check = 0;
-    enum __interrupt_status intrs = cpu.interrupt.status();
-
-    if(intrs == INTR_ENABLED)
-    {
-        cpu.interrupt.disable();
-    }
-    
-    intr_hook = hook;
-    
-    if(intrs == INTR_ENABLED)
-    {
-        cpu.interrupt.enable();
-    }
-    
-    if(intr_hook)
-    {
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-	hook_check = ((uint32_t)(~(uint32_t)(intr_hook)));
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
-    }
-    
-    return(hook_check);
-}
-
 
 /**
   * @brief jiffies 接口
@@ -88,7 +49,6 @@ const struct __jiffy jiffy =
 {
     .value              = jiff_get_jiffies,
     .after              = jiff_time_after,
-    .hook_intr          = jiff_hook_intr,
 };
 
 
@@ -99,20 +59,4 @@ const struct __jiffy jiffy =
 void jitter_update(uint16_t val)
 {
     __jiffy += val;
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#endif
-
-    if(intr_hook)
-    {
-        if(hook_check = ((uint32_t)(~(uint32_t)(intr_hook))))
-        {
-            intr_hook(val);
-        }
-    }
-
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 }

@@ -11,6 +11,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 
 /* Exported types ------------------------------------------------------------*/
 /**
@@ -79,6 +80,8 @@ struct __cpu
         void                        (*disable)(void); //禁用全局中断
         void                        (*enable)(void); //使能全局中断
         enum __interrupt_status     (*status)(void); //全局中断状态
+        bool                        (*request)(uint8_t n, void(*hook)(void)); //注册一个中断
+        bool                        (*release)(uint8_t n); //释放中断
         
     }                               interrupt;
     
@@ -125,7 +128,6 @@ struct __jiffy
 {
     uint32_t                        (*value)(void); //获取当前 jiffy 值
     uint32_t                        (*after)(uint32_t val); //计算 jiffy 历史值 val 与 当前 __jiffy 的时间差，单位毫秒
-    uint32_t                        (*hook_intr)(void (*hook)(uint16_t val)); //添加中断钩子函数
 };
 
 /**

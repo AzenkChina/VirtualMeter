@@ -41,6 +41,9 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+extern void(*hooks[])(void);
+extern void(*hooks_redundance[])(void);
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -75,18 +78,26 @@ void HardFault_Handler(void)
   * @param  None
   * @retval None
   */
-//void SVC_Handler(void)
-//{
-//}
+void SVC_Handler(void)
+{
+    if((hooks[1] != 0) && (hooks[1] == hooks_redundance[1]))
+    {
+        hooks[1]();
+    }
+}
 
 /**
   * @brief  This function handles PendSVC exception.
   * @param  None
   * @retval None
   */
-//void PendSV_Handler(void)
-//{
-//}
+void PendSV_Handler(void)
+{
+    if((hooks[2] != 0) && (hooks[2] == hooks_redundance[2]))
+    {
+        hooks[2]();
+    }
+}
 
 /**
   * @brief  This function handles SysTick Handler.
@@ -98,6 +109,11 @@ void SysTick_Handler(void)
     if(cpu.core.status() != CPU_POWERSAVE)
     {
         jitter_update(1);
+    }
+    
+    if((hooks[0] != 0) && (hooks[0] == hooks_redundance[0]))
+    {
+        hooks[0]();
     }
 }
 

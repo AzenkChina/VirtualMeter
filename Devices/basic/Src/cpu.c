@@ -25,10 +25,28 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+/**
+  * @brief  虚拟运行下仅支持注册一个中断：系统滴答中断 中断号为 0
+  */
+#define     INTERRUPT_AMOUNT    ((uint8_t)1)
+#else
+
+#if defined (DEMO_STM32F091)
+/**
+  * @brief  STM32 Demo 支持注册三个中断：系统滴答中断，SVC中断，PendSV中断，中断号分别为 0 1 2
+  */
+#define     INTERRUPT_AMOUNT    ((uint8_t)3)
+#endif
+
+#endif
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static enum __interrupt_status intr_status = INTR_ENABLED;
 static enum __cpu_level cpu_level = CPU_NORMAL;
+void(*hooks[INTERRUPT_AMOUNT])(void);
+void(*hooks_redundance[INTERRUPT_AMOUNT])(void);
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 static volatile uint8_t counter = 0;
@@ -72,6 +90,11 @@ static DWORD CALLBACK ThreadTick(PVOID pvoid)
 			if(intr_status == INTR_ENABLED)
 			{
 				jitter_update(KERNEL_LOOP_SLEEPED);
+                
+                if((hooks[0] != 0) && (hooks[0] == hooks_redundance[0]))
+                {
+                    hooks[0]();
+                }
 			}
 	    }
 	}
@@ -294,6 +317,72 @@ static enum __interrupt_status cpu_entr_status(void)
 }
 
 /**
+  * @brief  注册中断函数
+  */
+static bool cpu_entr_request(uint8_t n, void(*hook)(void))
+{
+    enum __interrupt_status intrs = cpu_entr_status();
+    
+    if(hook == 0)
+    {
+        return(false);
+    }
+    
+    if(n >= INTERRUPT_AMOUNT)
+    {
+        return(false);
+    }
+    
+    if((hooks[n] != 0) && (hooks[n] == hooks_redundance[n]))
+    {
+        return(false);
+    }
+    
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_disable();
+    }
+    
+    hooks[n] = hook;
+    hooks_redundance[n] = hook;
+    
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_enable();
+    }
+    
+    return(true);
+}
+
+/**
+  * @brief  清理中断函数
+  */
+static bool cpu_entr_release(uint8_t n)
+{
+    enum __interrupt_status intrs = cpu_entr_status();
+    
+    if(n >= INTERRUPT_AMOUNT)
+    {
+        return(false);
+    }
+    
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_disable();
+    }
+    
+    hooks[n] = 0;
+    hooks_redundance[n] = 0;
+    
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_enable();
+    }
+    
+    return(true);
+}
+
+/**
   * @brief  初始化内核
   */
 static void cpu_core_init(enum __cpu_level level)
@@ -306,6 +395,13 @@ static void cpu_core_init(enum __cpu_level level)
 #else
 	HANDLE hThread;
 #endif
+    
+    enum __interrupt_status intrs = cpu_entr_status();
+    
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_disable();
+    }
 	
     if(level == CPU_NORMAL)
     {
@@ -336,6 +432,14 @@ static void cpu_core_init(enum __cpu_level level)
 		CloseHandle(hThread);
 #endif
         flag = 0xff;
+    }
+    
+    memset(hooks, 0, sizeof(hooks));
+    memset(hooks_redundance, 0, sizeof(hooks_redundance));
+
+    if(intrs == INTR_ENABLED)
+    {
+        cpu_entr_enable();
     }
 #else
 
@@ -562,6 +666,9 @@ static void cpu_core_init(enum __cpu_level level)
         
         cpu_level = CPU_POWERSAVE;
     }
+    
+    memset(hooks, 0, sizeof(hooks));
+    memset(hooks_redundance, 0, sizeof(hooks_redundance));
 
     if(intrs == INTR_ENABLED)
     {
@@ -758,6 +865,8 @@ const struct __cpu cpu =
         .disable        = cpu_entr_disable,
         .enable         = cpu_entr_enable,
         .status         = cpu_entr_status,
+        .request        = cpu_entr_request,
+        .release        = cpu_entr_release,
     },
     .watchdog           =
     {
