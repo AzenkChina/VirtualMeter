@@ -645,7 +645,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
            0, \
            sizeof(((struct __calibrates *)args)->data));
 	
-    //功率offset校正
+    //功率offset（固定值）
 	((struct __calibrates *)args)->data.reg[0].address = 0x13;
 	((struct __calibrates *)args)->data.reg[0].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[1].address = 0x14;
@@ -659,7 +659,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[5].address = 0x23;
 	((struct __calibrates *)args)->data.reg[5].value = 0x0000;
     
-    //有效值offset
+    //有效值offset（固定值）
 	((struct __calibrates *)args)->data.reg[6].address = 0x24;
 	((struct __calibrates *)args)->data.reg[6].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[7].address = 0x25;
@@ -673,7 +673,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[11].address = 0x29;
 	((struct __calibrates *)args)->data.reg[11].value = 0x0007;
     
-    //ADC offset
+    //ADC offset（固定值）
 	((struct __calibrates *)args)->data.reg[12].address = 0x2a;
 	((struct __calibrates *)args)->data.reg[12].value = 0x0000;
 	((struct __calibrates *)args)->data.reg[13].address = 0x2b;
@@ -739,15 +739,16 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[39].address = 0x20;
 	((struct __calibrates *)args)->data.reg[39].value = 0x5160;
 	
+	//控制参数
 	((struct __calibrates *)args)->data.reg[40].address = 0x01;//模式配置寄存器
 	((struct __calibrates *)args)->data.reg[40].value = 0xbd7f;
-	((struct __calibrates *)args)->data.reg[41].address = 0x02;//ADC增益配置
-	((struct __calibrates *)args)->data.reg[41].value = 0x0100;
+	((struct __calibrates *)args)->data.reg[41].address = 0x02;//ADC增益配置（电压2倍，电流1倍，零线8倍）
+	((struct __calibrates *)args)->data.reg[41].value = 0x0102;
 	((struct __calibrates *)args)->data.reg[42].address = 0x03;//EMU单元配置
 	((struct __calibrates *)args)->data.reg[42].value = 0x79c4;
 	((struct __calibrates *)args)->data.reg[43].address = 0x16;//基波无功相位校正
 	((struct __calibrates *)args)->data.reg[43].value = 0x0000;
-	((struct __calibrates *)args)->data.reg[44].address = 0x1d;//起动电流
+	((struct __calibrates *)args)->data.reg[44].address = 0x1d;//起动电流（5mA）
 	((struct __calibrates *)args)->data.reg[44].value = 0x0160;
 	((struct __calibrates *)args)->data.reg[45].address = 0x1e;//高频脉冲常数
 	((struct __calibrates *)args)->data.reg[45].value = 0x0078;
@@ -854,7 +855,7 @@ const struct __meter meter =
 {
     .control        = 
     {
-        .name       = "att7022e",
+        .name       = "att7022e 3p4w",
         .status     = meter_status,
         .init       = meter_init,
         .suspend    = meter_suspend,
