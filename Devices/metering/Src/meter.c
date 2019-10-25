@@ -31,6 +31,10 @@
 #define devspi      vspi1
 
 /* Private macro -------------------------------------------------------------*/
+#define Un      220
+#define Ib      1.5
+#define PULSE   6400
+#define HF      30
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
 static void(*meter_callback)(void *buffer) = (void(*)(void *))0;
@@ -107,9 +111,9 @@ static DWORD CALLBACK ThreadRecvMail(PVOID pvoid)
 uint8_t is_powered(void)
 {
     //只要任何一相电压大于等于1V即可
-	if(metering_data[R_UARMS - 1] >= 1000 || \
-        metering_data[R_UBRMS - 1] >= 1000 || \
-        metering_data[R_UCRMS - 1] >= 1000)
+	if(metering_data[R_UA - 1] >= 1000 || \
+        metering_data[R_UB - 1] >= 1000 || \
+        metering_data[R_UC - 1] >= 1000)
     {
         return(0xff);
     }
@@ -235,10 +239,11 @@ static void meter_suspend(void)
 		receiver.close(sock);
 		sock = INVALID_SOCKET;
 	}
+    meter_callback = (void(*)(void *))0;
 #else
     
 #if defined (DEMO_STM32F091)
-    meter_callback= (void(*)(void *))0;
+    meter_callback = (void(*)(void *))0;
     devspi.control.suspend();
 #endif
     
@@ -342,34 +347,34 @@ static uint8_t meter_cmd_translate(enum __metering_meta id)
         case R_PFT:
             result = 0x17;
             break;
-        case R_UARMS:
+        case R_UA:
             result = 0x0D;
             break;
-        case R_UBRMS:
+        case R_UB:
             result = 0x0E;
             break;
-        case R_UCRMS:
+        case R_UC:
             result = 0x0F;
             break;
-        case R_IARMS:
+        case R_IA:
             result = 0x10;
             break;
-        case R_IBRMS:
+        case R_IB:
             result = 0x11;
             break;
-        case R_ICRMS:
+        case R_IC:
             result = 0x12;
             break;
-        case R_ITRMS:
+        case R_IT:
             result = 0x13;
             break;
-        case R_PGA:
+        case R_YIA:
             result = 0x18;
             break;
-        case R_PGB:
+        case R_YIB:
             result = 0x19;
             break;
-        case R_PGC:
+        case R_YIC:
             result = 0x1A;
             break;
         case R_YUAUB:
@@ -423,7 +428,7 @@ static int32_t meter_data_read(enum __metering_meta id)
         Sleep(5);
 #endif
     }
-    	
+    
     switch(id)
     {
         case R_EPA:
@@ -457,16 +462,16 @@ static int32_t meter_data_read(enum __metering_meta id)
         case R_PFB:
         case R_PFC:
         case R_PFT:
-        case R_UARMS:
-        case R_UBRMS:
-        case R_UCRMS:
-        case R_IARMS:
-        case R_IBRMS:
-        case R_ICRMS:
-        case R_ITRMS:
-        case R_PGA:
-        case R_PGB:
-        case R_PGC:
+        case R_UA:
+        case R_UB:
+        case R_UC:
+        case R_IA:
+        case R_IB:
+        case R_IC:
+        case R_IT:
+        case R_YIA:
+        case R_YIB:
+        case R_YIC:
         case R_YUAUB:
         case R_YUAUC:
         case R_YUBUC:
@@ -481,9 +486,12 @@ static int32_t meter_data_read(enum __metering_meta id)
 #else
     
 #if defined (DEMO_STM32F091)
-    int32_t result;
-    uint64_t val;
     uint8_t addr;
+    float val;
+    union {
+        int32_t i;
+        uint32_t u;
+    } result;
     
     if((status == DEVICE_INIT) && (calibrate == true))
     {
@@ -491,33 +499,86 @@ static int32_t meter_data_read(enum __metering_meta id)
         devspi.select(0);
         devspi.octet.write(addr);
         udelay(10);
-        val = devspi.octet.read();
-        val <<= 8;
-        val += devspi.octet.read();
-        val <<= 8;
-        val += devspi.octet.read();
+        result.u = devspi.octet.read();
+        result.u <<= 8;
+        result.u += devspi.octet.read();
+        result.u <<= 8;
+        result.u += devspi.octet.read();
         devspi.release(0);
 		
-		if((addr >= 0x0d) && (addr <= 0x0f))
+        //电压
+		if((id >= R_UA) && (id <= R_UC))
 		{
-			val = val * 1000 / 0x2000;
+			val = (((float)result.u) * ((float)1000) / ((float)8192));
+            result.u = (uint32_t)val;
 		}
-		else if((addr >= 0x10) && (addr <= 0x12))
+        //电流
+		else if((id >= R_IA) && (id <= R_IC))
 		{
-			val = val * 10000 / 0x1000;
-			val /= 6 * 47 / 5;
-			val = (uint64_t)((float)val * 1.5 / 1 + 0.5);
-			val /= 10;
+			val = (((float)result.u) * ((float)10000) / ((float)4096));
+			val = (((float)val) / (((float)(6 * 47)) / ((float)5)));
+			val = (((float)val) * ((float)Ib) / ((float)1000) + ((float)0.5));
+			result.u = (uint32_t)(val / 10);
 		}
-        
-        result = val;
+        //零线电流
+		else if(id == R_IT)
+		{
+			val = (((float)result.u) * ((float)1000) / ((float)4096));
+			val = (((float)val) / (((float)(6 * 47)) / ((float)5)));
+			val = (((float)val) * ((float)Ib) / ((float)1000) + ((float)0.5));
+			result.u = (uint32_t)val;
+		}
+        //有功功率
+		else if((id >= R_PT) && (id <= R_PC))
+		{
+            result.u <<= 8;
+            result.i /= 256;
+            
+            val = 3089.90478515625 * 1000 / HF / PULSE;
+            
+            if(id == R_PT)
+            {
+                result.i = (int32_t)(result.i * val * 2);
+            }
+            else
+            {
+                result.i = (int32_t)(result.i * val * 1);
+            }
+		}
+        //无功功率
+		else if((id >= R_QT) && (id <= R_QC))
+		{
+            result.u <<= 8;
+            result.i /= 256;
+            
+            val = 3089.90478515625 * 100 / HF / PULSE;
+            
+            if(id == R_QT)
+            {
+                result.i = (int32_t)(result.i * val * 2);
+            }
+            else
+            {
+                result.i = (int32_t)(result.i * val * 1);
+            }
+		}
+        //视在功率
+		else if((id >= R_ST) && (id <= R_SC))
+		{
+            result.u <<= 8;
+            result.i /= 256;
+            
+            val = 3089.90478515625 * 1000 / HF / PULSE;
+            
+            result.i = (int32_t)(result.i * val * 1);
+		}
     }
     else
     {
-        result = 0;
+        result.i = 0;
     }
     
-    return(result);
+    return(result.i);
 #endif
     
 #endif

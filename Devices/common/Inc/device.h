@@ -664,19 +664,19 @@ enum __metering_meta
     R_PFC	 = 0x1C, //C相功率因数
 
 
-    R_UARMS	 = 0x1D, //A相电压有效值
-    R_UBRMS	 = 0x1E, //B相电压有效值
-    R_UCRMS	 = 0x1F, //C相电压有效值
+    R_UA	 = 0x1D, //A相电压
+    R_UB	 = 0x1E, //B相电压
+    R_UC	 = 0x1F, //C相电压
 
-    R_ITRMS	 = 0x20, //三相电流矢量和的有效值
-    R_IARMS	 = 0x21, //A相电流有效值
-    R_IBRMS	 = 0x22, //B相电流有效值
-    R_ICRMS	 = 0x23, //C相电流有效值
+    R_IT	 = 0x20, //三相电流矢量和
+    R_IA	 = 0x21, //A相电流
+    R_IB	 = 0x22, //B相电流
+    R_IC	 = 0x23, //C相电流
 
 
-    R_PGA	 = 0x24, //A相电流与电压相角
-    R_PGB	 = 0x25, //B相电流与电压相角
-    R_PGC	 = 0x26, //C相电流与电压相角
+    R_YIA	 = 0x24, //A相电流与电压相角
+    R_YIB	 = 0x25, //B相电流与电压相角
+    R_YIC	 = 0x26, //C相电流与电压相角
 
     R_YUAUB	 = 0x27, //Ua与Ub的电压夹角
     R_YUAUC	 = 0x28, //Ua与Uc的电压夹角
