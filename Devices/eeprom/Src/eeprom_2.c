@@ -37,15 +37,15 @@
 
 /* Private macro -------------------------------------------------------------*/
 //Page size
-#define EEP_PAGE_SIZE          ((uint32_t)(64))
+#define EEP_PAGE_SIZE           ((uint32_t)(64))
 //Page amount
-#define EEP_PAGE_AMOUNT        ((uint32_t)(512))
+#define EEP_PAGE_AMOUNT         ((uint32_t)(512))
 //Chip size
-#define EEP_CHIP_SIZE          ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
+#define EEP_CHIP_SIZE           ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
 
 #if defined (DEMO_STM32F091)
 //Device address
-#define EEP_ADDR                ((uint8_t)0x50)
+#define EEP_ADDR                ((uint8_t)0x57)
 #endif
 
 /* Private variables ---------------------------------------------------------*/

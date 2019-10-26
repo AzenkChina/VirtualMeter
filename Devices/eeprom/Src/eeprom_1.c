@@ -45,7 +45,6 @@
 
 #if defined (DEMO_STM32F091)
 //Device address
-//#define EEP_ADDR                ((uint8_t)0x57)
 #define EEP_ADDR                ((uint8_t)0x50)
 #endif
 

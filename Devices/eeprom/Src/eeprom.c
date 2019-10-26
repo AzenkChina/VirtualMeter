@@ -8,6 +8,8 @@
 #include "eeprom.h"
 #include "eeprom_1.h"
 #include "eeprom_2.h"
+#include "string.h"
+#include "crc.h"
 #include "trace.h"
 
 #if defined (DEMO_STM32F091)
@@ -15,19 +17,27 @@
 #endif
 
 /* Private typedef -----------------------------------------------------------*/
+struct __page_cache
+{
+    uint32_t page;//页地址
+    uint8_t data[64];//需要保证与物理设备页大小保持一致
+};
+
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-//页大小，注意两片eeprom页大小是否一致
-#define EEP_PAGE_SIZE          ((uint32_t)(eeprom_1.info.pagesize()))
-
+//页大小，为物理设备页大小减去页校验信息大小
+#define EEP_PAGE_SIZE          (eeprom_1.info.pagesize() - 4)
 //页数量
-#define EEP_PAGE_AMOUNT        ((uint32_t)((eeprom_1.info.pageamount() + eeprom_2.info.pageamount())))
-
+#define EEP_PAGE_AMOUNT        eeprom_1.info.pageamount()
 //芯片容量
-#define EEP_CHIP_SIZE          ((uint32_t)(EEP_PAGE_SIZE * EEP_PAGE_AMOUNT))
+#define EEP_CHIP_SIZE          EEP_PAGE_SIZE * eeprom_1.info.pageamount()
 
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
+//页面读缓冲
+static struct __page_cache rcache;
+//页面写缓冲
+static struct __page_cache wcache;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -61,11 +71,19 @@ static void eep_init(enum __dev_state state)
     GPIO_ResetBits(GPIOD, GPIO_Pin_9);
 #endif
     
+    memset(&rcache, 0xff, sizeof(rcache));
+    memset(&wcache, 0xff, sizeof(wcache));
 	eeprom_1.control.init(state);
 	eeprom_2.control.init(state);
     status = DEVICE_INIT;
     
+    //两片EEPROM 使用类似 RAID 1 方式来保证数据安全
+    //因此当两片EEPROM不一致时，需要特殊处理
     ASSERT(eeprom_1.info.pagesize() != eeprom_2.info.pagesize());
+    ASSERT(eeprom_1.info.pageamount() != eeprom_2.info.pageamount());
+    ASSERT(eeprom_1.info.chipsize() != eeprom_2.info.chipsize());
+    
+    ASSERT(eeprom_1.info.pagesize() != sizeof(rcache.data));
 }
 
 /**
@@ -73,40 +91,264 @@ static void eep_init(enum __dev_state state)
   */
 static void eep_suspend(void)
 {
+    uint32_t check;
+    
+    if(wcache.page < EEP_PAGE_AMOUNT)
+    {
+        check = wcache.data[sizeof(wcache.data) - 4];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 3];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 2];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 1];
+        
+        //校验正确，写回存储器
+        if(check == crc32(wcache.data, (sizeof(wcache.data) - 4)))
+        {
+            if(eeprom_1.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+            {
+                TRACE(TRACE_WARN, "Write main eeprom faild while suspending.");
+                
+                if(eeprom_2.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+                {
+                    TRACE(TRACE_ERR, "Write redundancy eeprom faild while suspending.");
+                }
+            }
+            else
+            {
+                if(eeprom_2.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+                {
+                    TRACE(TRACE_WARN, "Write redundancy eeprom faild while suspending.");
+                }
+            }
+        }
+    }
+    
 	eeprom_1.control.suspend();
 	eeprom_2.control.suspend();
+    
+    memset(&rcache, 0xff, sizeof(rcache));
+    memset(&wcache, 0xff, sizeof(wcache));
     
     status = DEVICE_SUSPENDED;
 }
 
 static uint32_t eep_page_read(uint32_t page, uint16_t offset, uint16_t size, uint8_t * buffer)
 {
-	if(page < eeprom_1.info.pageamount())
-	{
-		return(eeprom_1.page.read(page, offset, size, buffer));
-	}
-	else
-	{
-		return(eeprom_2.page.read((page - eeprom_1.info.pageamount()), offset, size, buffer));
-	}
+    uint32_t check;
+    
+    ASSERT((offset) >= (sizeof(rcache.data) - 4));
+    ASSERT((offset + size) > (sizeof(rcache.data) - 4));
+    
+    //检查页面缓存是否是请求页面
+    if(page == rcache.page)
+    {
+        check = rcache.data[sizeof(rcache.data) - 4];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 3];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 2];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 1];
+        
+        if(check == crc32(rcache.data, (sizeof(rcache.data) - 4)))
+        {
+            memcpy(buffer, &rcache.data[offset], size);
+            return(size);
+        }
+    }
+    
+    rcache.page = page;
+    
+    //主存储读取失败
+    if(eeprom_1.page.read(page, 0, sizeof(rcache.data), rcache.data) != sizeof(rcache.data))
+    {
+        TRACE(TRACE_WARN, "Read main eeprom faild.");
+        
+        if(eeprom_2.page.read(page, 0, sizeof(rcache.data), rcache.data) != sizeof(rcache.data))
+        {
+            TRACE(TRACE_ERR, "Read redundancy eeprom faild.");
+            return(0);
+        }
+        else
+        {
+            check = rcache.data[sizeof(rcache.data) - 4];
+            check <<= 8;
+            check += rcache.data[sizeof(rcache.data) - 3];
+            check <<= 8;
+            check += rcache.data[sizeof(rcache.data) - 2];
+            check <<= 8;
+            check += rcache.data[sizeof(rcache.data) - 1];
+            
+            //冗余存储校验成功
+            if(check == crc32(rcache.data, (sizeof(rcache.data) - 4)))
+            {
+                memcpy(buffer, &rcache.data[offset], size);
+                return(size);
+            }
+            else
+            {
+                TRACE(TRACE_ERR, "Check redundancy eeprom faild.");
+                return(0);
+            }
+        }
+    }
+    //主存储读取成功
+    else
+    {
+        check = rcache.data[sizeof(rcache.data) - 4];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 3];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 2];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 1];
+        
+        //主存储校验成功
+        if(check == crc32(rcache.data, (sizeof(rcache.data) - 4)))
+        {
+            memcpy(buffer, &rcache.data[offset], size);
+            return(size);
+        }
+        //主存储校验失败
+        else
+        {
+            TRACE(TRACE_WARN, "Check main eeprom faild.");
+            
+            //冗余存储读取失败
+            if(eeprom_2.page.read(page, 0, sizeof(rcache.data), rcache.data) != sizeof(rcache.data))
+            {
+                TRACE(TRACE_ERR, "Read redundancy eeprom faild.");
+                return(0);
+            }
+            //冗余存储读取成功
+            else
+            {
+                check = rcache.data[sizeof(rcache.data) - 4];
+                check <<= 8;
+                check += rcache.data[sizeof(rcache.data) - 3];
+                check <<= 8;
+                check += rcache.data[sizeof(rcache.data) - 2];
+                check <<= 8;
+                check += rcache.data[sizeof(rcache.data) - 1];
+                
+                //冗余存储校验成功
+                if(check == crc32(rcache.data, (sizeof(rcache.data) - 4)))
+                {
+                    memcpy(buffer, &rcache.data[offset], size);
+                    return(size);
+                }
+                else
+                {
+                    TRACE(TRACE_ERR, "Check redundancy eeprom faild.");
+                    return(0);
+                }
+            }
+        }
+    }
 }
 
 static uint32_t eep_page_write(uint32_t page, uint16_t offset, uint16_t size, const uint8_t *buffer)
 {
-	if(page < eeprom_1.info.pageamount())
-	{
-		return(eeprom_1.page.write(page, offset, size, buffer));
-	}
-	else
-	{
-		return(eeprom_2.page.write((page - eeprom_1.info.pageamount()), offset, size, buffer));
-	}
+    uint32_t check;
+    
+    ASSERT((offset) >= (sizeof(rcache.data) - 4));
+    ASSERT((offset + size) > (sizeof(rcache.data) - 4));
+    
+    //检查写缓存页面缓存是否是请求页面
+    if((page != wcache.page) && (wcache.page < EEP_PAGE_AMOUNT))
+    {
+        check = wcache.data[sizeof(wcache.data) - 4];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 3];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 2];
+        check <<= 8;
+        check += wcache.data[sizeof(wcache.data) - 1];
+        
+        //校验正确，写回存储器
+        if(check == crc32(wcache.data, (sizeof(wcache.data) - 4)))
+        {
+            if(eeprom_1.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+            {
+                TRACE(TRACE_WARN, "Write main eeprom faild.");
+                
+                if(eeprom_2.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+                {
+                    TRACE(TRACE_ERR, "Write redundancy eeprom faild.");
+                }
+            }
+            else
+            {
+                if(eeprom_2.page.write(wcache.page, 0, sizeof(wcache.data), wcache.data) != sizeof(wcache.data))
+                {
+                    TRACE(TRACE_WARN, "Write redundancy eeprom faild.");
+                }
+            }
+        }
+    }
+    
+    //检查读缓存页面缓存是否是请求页面
+    if(page == rcache.page)
+    {
+        check = rcache.data[sizeof(rcache.data) - 4];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 3];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 2];
+        check <<= 8;
+        check += rcache.data[sizeof(rcache.data) - 1];
+        
+        if(check == crc32(rcache.data, (sizeof(rcache.data) - 4)))
+        {
+            memcpy(&wcache, &rcache, sizeof(wcache));
+        }
+        else
+        {
+            if(eep_page_read(page, 0, (sizeof(rcache.data) - 4), wcache.data) != sizeof(wcache.data))
+            {
+                TRACE(TRACE_ERR, "Make cache faild while writing eeprom.");
+                memset(&wcache, 0, sizeof(wcache));
+            }
+        }
+        
+        //失效当前页面读缓存
+        memset(&rcache, 0xff, sizeof(rcache));
+        
+        //更新页数据
+        memcpy(&wcache.data[offset], buffer, size);
+    }
+    else
+    {
+        if(eep_page_read(page, 0, (sizeof(rcache.data) - 4), wcache.data) != sizeof(wcache.data))
+        {
+            TRACE(TRACE_ERR, "Make cache faild while writing eeprom.");
+            memset(&wcache, 0, sizeof(wcache));
+        }
+        
+        //更新页数据
+        memcpy(&wcache.data[offset], buffer, size);
+    }
+    
+    wcache.page = page;
+    
+    //添加页校验
+    check = crc32(wcache.data, (sizeof(wcache.data) - 4));
+    wcache.data[sizeof(wcache.data) - 4] = ((check >> 24) & 0xff);
+    wcache.data[sizeof(wcache.data) - 3] = ((check >> 16) & 0xff);
+    wcache.data[sizeof(wcache.data) - 2] = ((check >> 8) & 0xff);
+    wcache.data[sizeof(wcache.data) - 1] = ((check >> 0) & 0xff);
+    
+    return(size);
 }
 
 static uint32_t eep_erase(void)
 {
 	eeprom_1.erase();
 	eeprom_2.erase();
+    memset(&rcache, 0xff, sizeof(rcache));
+    memset(&wcache, 0xff, sizeof(wcache));
 	return(EEP_CHIP_SIZE);
 }
 

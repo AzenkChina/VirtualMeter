@@ -693,7 +693,10 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
     
 	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
                                                       sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
-	return(true);
+    
+    calibrate = true;
+    
+    return(true);
 #else
 
 #if defined (DEMO_STM32F091)
