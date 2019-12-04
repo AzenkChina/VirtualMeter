@@ -1608,7 +1608,7 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
         //数字处理
         for(tubes=0; tubes<8; tubes++)
         {
-            for(bits=0; bits<8; bits++)
+            for(bits=0; bits<7; bits++)
             {
                 params.gdram[matrix_main[tubes][bits] / 8] &= ~(1 << (matrix_main[tubes][bits] % 8));
             }
@@ -1616,7 +1616,7 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
         
         for(tubes=0; tubes<effect; tubes++)
         {
-            for(bits=0; bits<8; bits++)
+            for(bits=0; bits<7; bits++)
             {
                 if((digitals[number[tubes]] >> bits) & 0x01)
                 {
