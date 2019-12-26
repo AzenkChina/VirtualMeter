@@ -9,11 +9,5 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: test1
-      run: ls -a
-    - name: configure
-      run: cd Project/GCC_LINUX
-    - name: test2
-      run: ls -a
-    - name: make
-      run: make
+    - name: build
+      run: cd Project/GCC_LINUX && make
