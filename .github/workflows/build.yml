@@ -10,5 +10,5 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: build
-      run: cd ./Project/GCC_LINUX && && mkdir ./obj && mkdir ./exe && make && cp ./exe/VirtualMeter ./ && make clean
+      run: cd ./Project/GCC_LINUX && mkdir ./obj && mkdir ./exe && make && cp ./exe/VirtualMeter ./ && make clean
  
