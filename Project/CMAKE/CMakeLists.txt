@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 2.8)
 
 
 
 #Firstly, define the project name
-project(VirtualMeter LANGUAGES C CXX ASM)
+project(VirtualMeter LANGUAGES ASM C CXX)
 
 
 
@@ -195,45 +195,7 @@ set(includes
 
 
 #Then we define the platform specific files & paths
-if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
-	list(APPEND sources 
-			 ../../Devices/basic/Src/STM32F0xx/cmsis/gcc/startup_stm32f0xx.s
-			 ../../Devices/basic/Src/STM32F0xx/cmsis/system_stm32f0xx.c
-			 ../../Devices/basic/Src/STM32F0xx/Interrupts/stm32f0xx_it.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_adc.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_can.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_cec.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_comp.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crc.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crs.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dac.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dbgmcu.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dma.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_exti.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_flash.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_gpio.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_i2c.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_iwdg.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_misc.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_pwr.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rcc.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rtc.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_spi.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_syscfg.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_tim.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_usart.c
-			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_wwdg.c
-			 ../../Devices/buses/Src/viic1.c
-			 ../../Devices/buses/Src/viic2.c
-			 ../../Devices/buses/Src/viic3.c
-			 ../../Devices/buses/Src/vspi1.c
-			 ../../Devices/buses/Src/vspi2.c)
-
-	list(APPEND includes 
-			 ../../Devices/basic/Inc/STM32F0xx/cmsis
-			 ../../Devices/basic/Inc/STM32F0xx/Interrupts
-			 ../../Devices/basic/Inc/STM32F0xx/STM32F0xx_StdPeriph_Lib)
-else()
+if(WIN32 OR UNIX)
 	list(APPEND sources 
 			 ../../Devices/serial/Src/console.c
 			 ../../Devices/common/Src/comm_socket.c
@@ -278,33 +240,51 @@ else()
 			 ../../Tasks/Timed/Src/vm_timed.c
 			 ../../Tasks/Protocols/Core/Src/vm_protocol.c
 			 ../../Tasks/Console/Src/task_console.c)
+else()
+	list(APPEND sources 
+			 ../../Devices/basic/Src/STM32F0xx/cmsis/gcc/startup_stm32f0xx.s
+			 ../../Devices/basic/Src/STM32F0xx/cmsis/system_stm32f0xx.c
+			 ../../Devices/basic/Src/STM32F0xx/Interrupts/stm32f0xx_it.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_adc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_can.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_cec.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_comp.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crs.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dac.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dbgmcu.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dma.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_exti.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_flash.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_gpio.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_i2c.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_iwdg.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_misc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_pwr.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rcc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rtc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_spi.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_syscfg.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_tim.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_usart.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_wwdg.c
+			 ../../Devices/buses/Src/viic1.c
+			 ../../Devices/buses/Src/viic2.c
+			 ../../Devices/buses/Src/viic3.c
+			 ../../Devices/buses/Src/vspi1.c
+			 ../../Devices/buses/Src/vspi2.c)
+
+	list(APPEND includes 
+			 ../../Devices/basic/Inc/STM32F0xx/cmsis
+			 ../../Devices/basic/Inc/STM32F0xx/Interrupts
+			 ../../Devices/basic/Inc/STM32F0xx/STM32F0xx_StdPeriph_Lib)
 endif()
 
 
 
 
 #Specify the compile parameters
-if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
-#Specify cross compilers and tools
-	set(CMAKE_SYSTEM_NAME "Generic")
-	set(CMAKE_SYSTEM_PROCESSOR "arm")
-	set(CROSS "arm-none-eabi")
-	set(CMAKE_C_COMPILER_WORKS 1)
-	set(CMAKE_C_COMPILER "${CROSS}-gcc")
-	set(CMAKE_CXX_COMPILER_WORKS 1)
-	set(CMAKE_CXX_COMPILER "${CROSS}-g++")
-	set(CMAKE_ASM_COMPILER "${CROSS}-gcc")
-	set(CMAKE_AR "${CROSS}-ar")
-	set(CMAKE_OBJCOPY "${CROSS}-objcopy")
-	set(CMAKE_OBJDUMP "${CROSS}-objdump")
-	set(SIZE "${CROSS}-size")
-	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
-	set(CMAKE_C_FLAGS_INIT "-std=gnu99 -mcpu=cortex-m0 -mthumb -mthumb-interwork -ffunction-sections -fdata-sections -g -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
-	set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
-	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\) -DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
-#Uncomment for debug version
-	add_definitions(-DMAKE_RUN_FOR_DEBUG)
-else()
+if(WIN32 OR UNIX)
 if(WIN32)
 	list(APPEND flags -O3 -std=c99)
 	list(APPEND libraries ws2_32 Winmm)
@@ -318,23 +298,33 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	list(APPEND defines MAKE_RUN_FOR_DEBUG)
 endif()
 endif()
+else()
+	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
+	set(CMAKE_ASM_FLAGS "-march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_C_FLAGS "-std=gnu99 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_CXX_FLAGS "-std=c++11 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
+	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\) -DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+	add_definitions(-DMAKE_RUN_FOR_DEBUG)
+endif()
 endif()
 
 
 
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
-	include_directories(${includes})
-	add_executable(${PROJECT_NAME}.elf ${sources} ${LINKER_SCRIPT})
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
-	add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-         COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
-         COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
-         COMMENT "Output converting")
-else()
+if(WIN32 OR UNIX)
 	add_executable(${PROJECT_NAME} ${sources})
 	target_include_directories(${PROJECT_NAME} PRIVATE ${includes})
 	target_compile_definitions(${PROJECT_NAME} PRIVATE ${defines})
 	target_compile_options(${PROJECT_NAME} PRIVATE ${flags})
 	target_link_libraries(${PROJECT_NAME} ${libraries})
+else()
+	include_directories(${includes})
+	add_executable(${PROJECT_NAME}.elf ${sources} ${LINKER_SCRIPT})
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
+	add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
+         COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
+		 COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
+         COMMENT "Output converting")
 endif()
