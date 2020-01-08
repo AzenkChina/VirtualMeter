@@ -2103,7 +2103,7 @@
         <group>
           <name>cmsis</name>
           <file>
-            <name>$PROJ_DIR$\..\..\Devices\basic\Src\STM32F0xx\cmsis\startup_stm32f091.s</name>
+            <name>$PROJ_DIR$\..\..\Devices\basic\Src\STM32F0xx\cmsis\iar\startup_stm32f091.s</name>
           </file>
           <file>
             <name>$PROJ_DIR$\..\..\Devices\basic\Src\STM32F0xx\cmsis\system_stm32f0xx.c</name>
@@ -2385,6 +2385,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\Libraries\Convert\Src\bcd.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\Libraries\Convert\Src\mids.c</name>
       </file>
     </group>
     <group>
