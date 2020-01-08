@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.4)
-project(VirtualMeter LANGUAGES C)
 
+
+
+#Firstly, define the project name
+project(VirtualMeter LANGUAGES C CXX ASM)
+
+
+
+#Secondly, indexing the project files & search paths
 set(sources
- ../../Devices/serial/Src/console.c
  ../../Devices/eeprom/Src/eeprom_1.c
  ../../Devices/eeprom/Src/eeprom_2.c
  ../../Devices/rtc/Src/rtc.c
@@ -20,7 +26,6 @@ set(sources
  ../../Devices/sensor/Src/button.c
  ../../Devices/sensor/Src/magnetic.c
  ../../Devices/keys/Src/keys.c
- ../../Devices/common/Src/comm_socket.c
  ../../Devices/flash/Src/flash.c
  ../../Devices/eeprom/Src/eeprom.c
  ../../Devices/metering/Src/meter.c
@@ -32,36 +37,6 @@ set(sources
  ../../Libraries/trace/Src/trace.c
  ../../Libraries/Convert/Src/axdr.c
  ../../Libraries/Convert/Src/bcd.c
- ../../Libraries/Lua/Src/lapi.c
- ../../Libraries/Lua/Src/lauxlib.c
- ../../Libraries/Lua/Src/lbaselib.c
- ../../Libraries/Lua/Src/lcode.c
- ../../Libraries/Lua/Src/ldblib.c
- ../../Libraries/Lua/Src/ldebug.c
- ../../Libraries/Lua/Src/ldo.c
- ../../Libraries/Lua/Src/ldump.c
- ../../Libraries/Lua/Src/lfunc.c
- ../../Libraries/Lua/Src/lgc.c
- ../../Libraries/Lua/Src/linit.c
- ../../Libraries/Lua/Src/liolib.c
- ../../Libraries/Lua/Src/llex.c
- ../../Libraries/Lua/Src/lmathlib.c
- ../../Libraries/Lua/Src/lmem.c
- ../../Libraries/Lua/Src/loadlib.c
- ../../Libraries/Lua/Src/lobject.c
- ../../Libraries/Lua/Src/lopcodes.c
- ../../Libraries/Lua/Src/loslib.c
- ../../Libraries/Lua/Src/lparser.c
- ../../Libraries/Lua/Src/lstate.c
- ../../Libraries/Lua/Src/lstring.c
- ../../Libraries/Lua/Src/lstrlib.c
- ../../Libraries/Lua/Src/ltable.c
- ../../Libraries/Lua/Src/ltablib.c
- ../../Libraries/Lua/Src/ltm.c
- ../../Libraries/Lua/Src/lundump.c
- ../../Libraries/Lua/Src/lvm.c
- ../../Libraries/Lua/Src/lzio.c
- ../../Libraries/Lua/Src/print.c
  ../../Libraries/Check/Src/crc.c
  ../../Libraries/Mbed/tls/library/aes.c
  ../../Libraries/Mbed/tls/library/aesni.c
@@ -146,13 +121,11 @@ set(sources
  ../../Kernel/Src/kernel.c
  ../../Kernel/Src/disk.c
  ../../Kernel/Src/nvram.c
- ../../Kernel/Src/vm_basis.c
  ../../Tasks/Tasks/Src/tasks.c
  ../../Tasks/Calendar/Src/task_calendar.c
  ../../Tasks/Disconnect/Src/task_disconnect.c
  ../../Tasks/Logger/Src/task_logger.c
  ../../Tasks/Timed/Src/task_timed.c
- ../../Tasks/Console/Src/task_console.c
  ../../Tasks/Metering/Src/task_metering.c
  ../../Tasks/Display/Src/task_display.c
  ../../Tasks/Keyboard/Src/task_keyboard.c
@@ -174,18 +147,9 @@ set(sources
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_exception.c
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_imagetransfer.c
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_security_setup.c
- ../../Tasks/Protocols/proto_xmodem/Src/proto_xmodem.c
- ../../Tasks/Comm/Src/vm_comm.c
- ../../Tasks/Metering/Src/vm_metering.c
- ../../Tasks/Calendar/Src/vm_calendar.c
- ../../Tasks/Disconnect/Src/vm_disconnect.c
- ../../Tasks/Display/Src/vm_display.c
- ../../Tasks/Keyboard/Src/vm_keyboard.c
- ../../Tasks/Logger/Src/vm_logger.c
- ../../Tasks/Timed/Src/vm_timed.c
- ../../Tasks/Protocols/Core/Src/vm_protocol.c)
+ ../../Tasks/Protocols/proto_xmodem/Src/proto_xmodem.c)
 
-include_directories(
+set(includes 
  ../../Devices/common/Inc
  ../../Devices/battery/Inc
  ../../Devices/basic/Inc
@@ -227,21 +191,150 @@ include_directories(
  ../../Tasks/Metering/Inc
  ../../Tasks/Utilities/Inc)
 
-#Debug?
-list(APPEND defines MAKE_RUN_FOR_DEBUG)
 
-if(WIN32)
-	list(APPEND flags -O3 -std=c99)
-	list(APPEND libraries ws2_32 Winmm)
-elseif(UNIX)
-	list(APPEND flags -O3 -std=gnu99)
-	list(APPEND libraries pthread m rt)
+
+
+#Then we define the platform specific files & paths
+if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
+	list(APPEND sources 
+			 ../../Devices/basic/Src/STM32F0xx/cmsis/gcc/startup_stm32f0xx.s
+			 ../../Devices/basic/Src/STM32F0xx/cmsis/system_stm32f0xx.c
+			 ../../Devices/basic/Src/STM32F0xx/Interrupts/stm32f0xx_it.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_adc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_can.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_cec.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_comp.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_crs.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dac.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dbgmcu.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_dma.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_exti.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_flash.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_gpio.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_i2c.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_iwdg.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_misc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_pwr.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rcc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_rtc.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_spi.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_syscfg.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_tim.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_usart.c
+			 ../../Devices/basic/Src/STM32F0xx/STM32F0xx_StdPeriph_Lib/stm32f0xx_wwdg.c
+			 ../../Devices/buses/Src/viic1.c
+			 ../../Devices/buses/Src/viic2.c
+			 ../../Devices/buses/Src/viic3.c
+			 ../../Devices/buses/Src/vspi1.c
+			 ../../Devices/buses/Src/vspi2.c)
+
+	list(APPEND includes 
+			 ../../Devices/basic/Inc/STM32F0xx/cmsis
+			 ../../Devices/basic/Inc/STM32F0xx/Interrupts
+			 ../../Devices/basic/Inc/STM32F0xx/STM32F0xx_StdPeriph_Lib)
 else()
-	#To support mcu compiler here
+	list(APPEND sources 
+			 ../../Devices/serial/Src/console.c
+			 ../../Devices/common/Src/comm_socket.c
+			 ../../Libraries/Lua/Src/lapi.c
+			 ../../Libraries/Lua/Src/lauxlib.c
+			 ../../Libraries/Lua/Src/lbaselib.c
+			 ../../Libraries/Lua/Src/lcode.c
+			 ../../Libraries/Lua/Src/ldblib.c
+			 ../../Libraries/Lua/Src/ldebug.c
+			 ../../Libraries/Lua/Src/ldo.c
+			 ../../Libraries/Lua/Src/ldump.c
+			 ../../Libraries/Lua/Src/lfunc.c
+			 ../../Libraries/Lua/Src/lgc.c
+			 ../../Libraries/Lua/Src/linit.c
+			 ../../Libraries/Lua/Src/liolib.c
+			 ../../Libraries/Lua/Src/llex.c
+			 ../../Libraries/Lua/Src/lmathlib.c
+			 ../../Libraries/Lua/Src/lmem.c
+			 ../../Libraries/Lua/Src/loadlib.c
+			 ../../Libraries/Lua/Src/lobject.c
+			 ../../Libraries/Lua/Src/lopcodes.c
+			 ../../Libraries/Lua/Src/loslib.c
+			 ../../Libraries/Lua/Src/lparser.c
+			 ../../Libraries/Lua/Src/lstate.c
+			 ../../Libraries/Lua/Src/lstring.c
+			 ../../Libraries/Lua/Src/lstrlib.c
+			 ../../Libraries/Lua/Src/ltable.c
+			 ../../Libraries/Lua/Src/ltablib.c
+			 ../../Libraries/Lua/Src/ltm.c
+			 ../../Libraries/Lua/Src/lundump.c
+			 ../../Libraries/Lua/Src/lvm.c
+			 ../../Libraries/Lua/Src/lzio.c
+			 ../../Libraries/Lua/Src/print.c
+			 ../../Kernel/Src/vm_basis.c
+			 ../../Tasks/Comm/Src/vm_comm.c
+			 ../../Tasks/Metering/Src/vm_metering.c
+			 ../../Tasks/Calendar/Src/vm_calendar.c
+			 ../../Tasks/Disconnect/Src/vm_disconnect.c
+			 ../../Tasks/Display/Src/vm_display.c
+			 ../../Tasks/Keyboard/Src/vm_keyboard.c
+			 ../../Tasks/Logger/Src/vm_logger.c
+			 ../../Tasks/Timed/Src/vm_timed.c
+			 ../../Tasks/Protocols/Core/Src/vm_protocol.c
+			 ../../Tasks/Console/Src/task_console.c)
 endif()
 
 
-add_executable(VirtualMeter ${sources})
-target_compile_definitions(VirtualMeter PRIVATE ${defines})
-target_compile_options(VirtualMeter PRIVATE ${flags})
-target_link_libraries(VirtualMeter ${libraries})
+
+
+#Specify the compile parameters
+if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
+#Specify cross compilers and tools
+	set(CMAKE_SYSTEM_NAME "Generic")
+	set(CMAKE_SYSTEM_PROCESSOR "arm")
+	set(CROSS "arm-none-eabi")
+	set(CMAKE_C_COMPILER_WORKS 1)
+	set(CMAKE_C_COMPILER "${CROSS}-gcc")
+	set(CMAKE_CXX_COMPILER_WORKS 1)
+	set(CMAKE_CXX_COMPILER "${CROSS}-g++")
+	set(CMAKE_ASM_COMPILER "${CROSS}-gcc")
+	set(CMAKE_AR "${CROSS}-ar")
+	set(CMAKE_OBJCOPY "${CROSS}-objcopy")
+	set(CMAKE_OBJDUMP "${CROSS}-objdump")
+	set(SIZE "${CROSS}-size")
+	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
+	set(CMAKE_C_FLAGS_INIT "-std=gnu99 -mcpu=cortex-m0 -mthumb -mthumb-interwork -ffunction-sections -fdata-sections -g -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
+	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\) -DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
+#Uncomment for debug version
+	add_definitions(-DMAKE_RUN_FOR_DEBUG)
+else()
+if(WIN32)
+	list(APPEND flags -O3 -std=c99)
+	list(APPEND libraries ws2_32 Winmm)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+	list(APPEND defines MAKE_RUN_FOR_DEBUG)
+endif()
+else()
+	list(APPEND flags -O3 -std=gnu99)
+	list(APPEND libraries pthread m rt)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+	list(APPEND defines MAKE_RUN_FOR_DEBUG)
+endif()
+endif()
+endif()
+
+
+
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "MCU")
+	include_directories(${includes})
+	add_executable(${PROJECT_NAME}.elf ${sources} ${LINKER_SCRIPT})
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
+	add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
+         COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
+         COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
+         COMMENT "Output converting")
+else()
+	add_executable(${PROJECT_NAME} ${sources})
+	target_include_directories(${PROJECT_NAME} PRIVATE ${includes})
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${defines})
+	target_compile_options(${PROJECT_NAME} PRIVATE ${flags})
+	target_link_libraries(${PROJECT_NAME} ${libraries})
+endif()
