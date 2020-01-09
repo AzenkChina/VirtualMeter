@@ -20,6 +20,3 @@ A general develop framework for smart meter.
 ▪很少的RAM（<16KB）和ROM（<64KB）占用。
 ▪跨平台功能，可运行在Windows和Linux系统上。
 ▪嵌入Lua脚本语言以支撑集成测试和黑盒测试。 
-
-
-cmake -DCMAKE_TOOLCHAIN_FILE=STM32F0.cmake -DCMAKE_BUILD_TYPE=DEBUG -G "MinGW Makefiles" CMakeLists.txt
