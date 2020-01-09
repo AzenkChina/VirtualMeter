@@ -169,7 +169,6 @@ set(includes
  ../../Libraries/Info/Inc
  ../../Libraries/Mbed/tls
  ../../Libraries/Convert/Inc
- ../../Libraries/Lua/Inc
  ../../Libraries/trace/Inc
  ../../Kernel/Inc
  ../../Tasks/Tasks/Inc
@@ -240,6 +239,9 @@ if(WIN32 OR UNIX)
 			 ../../Tasks/Timed/Src/vm_timed.c
 			 ../../Tasks/Protocols/Core/Src/vm_protocol.c
 			 ../../Tasks/Console/Src/task_console.c)
+
+	list(APPEND includes 
+			 ../../Libraries/Lua/Inc)
 else()
 	list(APPEND sources 
 			 ../../Devices/basic/Src/STM32F0xx/cmsis/gcc/startup_stm32f0xx.s
@@ -299,12 +301,13 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 endif()
 endif()
 else()
-	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
 	set(CMAKE_ASM_FLAGS "-march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
 	set(CMAKE_C_FLAGS "-std=gnu99 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
 	set(CMAKE_CXX_FLAGS "-std=c++11 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
 	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
-	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\) -DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
+	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\))
+	add_definitions(-DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	add_definitions(-DMAKE_RUN_FOR_DEBUG)
 endif()
@@ -313,15 +316,16 @@ endif()
 
 
 
+#Make project
 if(WIN32 OR UNIX)
 	add_executable(${PROJECT_NAME} ${sources})
-	target_include_directories(${PROJECT_NAME} PRIVATE ${includes})
+	include_directories(${includes})
 	target_compile_definitions(${PROJECT_NAME} PRIVATE ${defines})
 	target_compile_options(${PROJECT_NAME} PRIVATE ${flags})
 	target_link_libraries(${PROJECT_NAME} ${libraries})
 else()
-	include_directories(${includes})
 	add_executable(${PROJECT_NAME}.elf ${sources} ${LINKER_SCRIPT})
+	include_directories(${includes})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
 	add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
          COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
