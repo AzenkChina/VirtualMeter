@@ -1,7 +1,7 @@
 build in windows:
-cmake -DCMAKE_TOOLCHAIN_FILE=STM32F0.cmake -DCMAKE_BUILD_TYPE=DEBUG -G "MinGW Makefiles" CMakeLists.txt -B STM32F0
-cmake -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -G "MinGW Makefiles" -B WIN32
+cmake -DCMAKE_TOOLCHAIN_FILE="STM32F0.cmake" -DCMAKE_BUILD_TYPE=DEBUG -G "MinGW Makefiles" CMakeLists.txt -BSTM32F0
+cmake -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -G "MinGW Makefiles" -BWIN32
 
 build in linux:
-cmake -DCMAKE_TOOLCHAIN_FILE=STM32F0.cmake -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -B STM32F0
-cmake -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -B LINUX
+cmake -DCMAKE_TOOLCHAIN_FILE="STM32F0.cmake" -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -BSTM32F0
+cmake -DCMAKE_BUILD_TYPE=DEBUG CMakeLists.txt -BLINUX
