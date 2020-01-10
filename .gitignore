@@ -1,7 +1,5 @@
 *.VC.db
-Project/DEV_C_WIN32/exe
-Project/DEV_C_WIN32/obj
-Project/GCC_LINUX/exe
-Project/GCC_LINUX/obj
-Project/IAR_STM32_F091/Debug
-Project/IAR_STM32_F091/Release
+Project/DEV_C_WIN32/exe/*
+Project/DEV_C_WIN32/obj/*
+Project/IAR_STM32_F091/Debug/*
+Project/IAR_STM32_F091/Release/*
