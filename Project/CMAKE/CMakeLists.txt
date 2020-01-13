@@ -286,47 +286,41 @@ endif()
 
 
 #Specify the compile parameters
-if(WIN32 OR UNIX)
-if(WIN32)
-	list(APPEND flags -O3 -std=c99)
-	list(APPEND libraries ws2_32 Winmm)
-if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-	list(APPEND defines MAKE_RUN_FOR_DEBUG)
-endif()
-else()
-	list(APPEND flags -O3 -std=gnu99)
-	list(APPEND libraries pthread m rt)
-if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-	list(APPEND defines MAKE_RUN_FOR_DEBUG)
-endif()
-endif()
-else()
-	set(CMAKE_ASM_FLAGS "-march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
-	set(CMAKE_C_FLAGS "-std=gnu99 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
-	set(CMAKE_CXX_FLAGS "-std=c++11 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
-	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
-	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
-	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\))
-	add_definitions(-DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	add_definitions(-DMAKE_RUN_FOR_DEBUG)
 endif()
+
+if(WIN32 OR UNIX)
+	set(CMAKE_C_FLAGS "-std=c99 -ffunction-sections -fdata-sections -O3 -s")
+	set(CMAKE_CXX_FLAGS "-std=c++11 -ffunction-sections -fdata-sections -O3 -s")
+	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections")
+if(WIN32)
+	list(APPEND libraries ws2_32 Winmm)
+else()
+	list(APPEND libraries pthread m rt)
+endif()
+else()
+	set(CMAKE_ASM_FLAGS "-march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_C_FLAGS "-std=c99 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(CMAKE_CXX_FLAGS "-std=c++11 -march=armv6-m -mthumb -msoft-float -mthumb-interwork -ffunction-sections -fdata-sections -Os -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
+	set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F0.ld")
+	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
+	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\))
+	add_definitions(-DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
 endif()
 
 
 
 
 #Make project
+include_directories(${includes})
+
 if(WIN32 OR UNIX)
 	add_executable(${PROJECT_NAME} ${sources})
-	include_directories(${includes})
-	target_compile_definitions(${PROJECT_NAME} PRIVATE ${defines})
-	target_compile_options(${PROJECT_NAME} PRIVATE ${flags})
 	target_link_libraries(${PROJECT_NAME} ${libraries})
 else()
 	add_executable(${PROJECT_NAME}.elf ${sources} ${LINKER_SCRIPT})
-	include_directories(${includes})
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
 	add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
          COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
 		 COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
