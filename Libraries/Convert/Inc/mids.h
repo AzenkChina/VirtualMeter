@@ -91,7 +91,7 @@ enum __meta_scale
 /**
   * @brief  象限标识
   */
-enum __metering_quad
+enum __meta_quad
 {
     M_QUAD_N = 0x00,//无
 	M_QUAD_I = 0x01,//1象限
@@ -104,7 +104,39 @@ enum __metering_quad
 	M_QUAD_NIII = 0x40,//减3象限
     M_QUAD_NIV = 0x80,//减4象限
 	
-	M_QUAD_DEMAND = 0x100,//标识该数据是需量而不是功率
+	M_QUAD_DEMAND = 0x100,//当item 为功率时，标记该数据是需量
+};
+
+/**
+  * @brief  历史记录
+  */
+enum __meta_history
+{
+	M_HIST = 0x200,//历史记录标记（上0次）
+	M_HIST_01 = 0x210,//上1次
+	M_HIST_02 = 0x220,//上2次
+	M_HIST_03 = 0x230,//上3次
+	M_HIST_04 = 0x240,//上4次
+	M_HIST_05 = 0x250,//上5次
+	M_HIST_06 = 0x260,//上6次
+	M_HIST_07 = 0x270,//上7次
+	M_HIST_08 = 0x280,//上8次
+	M_HIST_09 = 0x290,//上9次
+	M_HIST_10 = 0x2a0,//上10次
+	M_HIST_11 = 0x2b0,//上11次
+	M_HIST_12 = 0x2c0,//上12次
+	M_HIST_13 = 0x2d0,//上13次
+	M_HIST_14 = 0x2e0,//上14次
+	M_HIST_15 = 0x2f0,//上15次
+};
+
+/**
+  * @brief  当使用历史记录功能时，M_QUAD_NI、M_QUAD_NII、M_QUAD_NIII、M_QUAD_NIV 这四个标识将不可用
+  */
+union __meta_flex
+{
+	enum __meta_quad quad;
+	enum __meta_history history;
 };
 
 /**
@@ -117,13 +149,18 @@ struct __meta_identifier
     uint32_t rate       :4;//费率 0 ~ 15
     uint32_t scale      :5;//缩放 enum __meta_scale
 	uint32_t type		:5;//enum __axdr_type
-	uint32_t flex       :10;//当item 为电能或者功率时，解析为 enum __metering_quad 否则自由定义
+	//首先检查 M_HIST 是否置位
+	//M_HIST 置位则代表是历史数据
+	//M_HIST 置位并且item 为电能或者功率时，flex字段解析为 enum __meta_quad 和 enum __meta_history 的组合
+	//M_HIST 置位并且item 不是电能或者功率时，flex字段解析为 enum __meta_history
+	//M_HIST 未置位并且item 不是电能或者功率时，flex字段自由解析
+	uint32_t flex       :10;
 };
 
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-//将一个数据标识转换成U32   i=item p=phase r=rate s=scale t=type f=quad or flexable
+//将一个数据标识转换成U32   i=item p=phase r=rate s=scale t=type f=flexable
 #define M_ID2U(i,p,r,s,t,f)         ((uint32_t)\
                                     (((i)&0x1f)<<27)|\
                                     (((p)&0x07)<<24)|\
@@ -175,6 +212,26 @@ struct __meta_identifier
 //判断一个U32 ID是否为频率
 #define M_UISFREQ(val)              ((((val)>>27)&0x1f) == M_FREQUENCY)
 
+
+
+
+//判断一个U32 ID flex 字段是否为历史记录
+#define M_FISHIST(val)              ((val&0x200) == M_HIST)
+//将一个U32 ID flex 字段转换为历史记录值
+#define M_F2HIST(val)              ((val&0x0f0)>>4)
+
+//判断一个U32 ID flex 字段是否为正向有功
+#define M_FISPACT(val)              ((val&0x00f) == (M_QUAD_I|M_QUAD_IV))
+//判断一个U32 ID flex 字段是否为反向有功
+#define M_FISNACT(val)              ((val&0x00f) == (M_QUAD_II|M_QUAD_III))
+//判断一个U32 ID flex 字段是否为正向无功
+#define M_FISPREA(val)              ((val&0x00f) == (M_QUAD_I|M_QUAD_II))
+//判断一个U32 ID flex 字段是否为反向无功
+#define M_FISNREA(val)              ((val&0x00f) == (M_QUAD_III|M_QUAD_IV))
+//判断一个U32 ID flex 字段是否为正向视在
+#define M_FISPAPP(val)              ((val&0x00f) == (M_QUAD_I|M_QUAD_IV))
+//判断一个U32 ID flex 字段是否为反向视在
+#define M_FISNAPP(val)              ((val&0x00f) == (M_QUAD_II|M_QUAD_III))
 
 
 
