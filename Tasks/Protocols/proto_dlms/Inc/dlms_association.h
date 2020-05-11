@@ -22,6 +22,20 @@ struct __dlms_session
     uint16_t sap;
 };
 
+/**	
+  * @brief Object identifier
+  */
+struct __object_identifier
+{
+    uint8_t joint_iso_ctt;
+    uint8_t country;
+    uint16_t name;
+    uint8_t organization;
+    uint8_t ua;
+    uint8_t context;
+    uint8_t id;
+};
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 extern void dlms_asso_gateway(struct __dlms_session session,
@@ -45,6 +59,8 @@ extern uint8_t dlms_asso_fc(uint8_t *buffer);
 extern uint8_t dlms_asso_akey(uint8_t *buffer);
 extern uint8_t dlms_asso_ekey(uint8_t *buffer);
 extern uint8_t dlms_asso_dedkey(uint8_t *buffer);
+extern uint8_t dlms_asso_ssprikey(uint8_t *buffer);
+extern uint8_t dlms_asso_cspubkey(uint8_t *buffer);
 extern void dlms_asso_key_eliminate(void);
 extern uint8_t dlms_asso_applname(uint8_t *buffer);
 extern uint8_t dlms_asso_mechname(uint8_t *buffer);

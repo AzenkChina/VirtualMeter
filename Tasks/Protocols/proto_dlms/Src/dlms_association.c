@@ -27,20 +27,6 @@ struct __ap
 };
 
 /**	
-  * @brief Object identifier
-  */
-struct __object_identifier
-{
-    uint8_t joint_iso_ctt;
-    uint8_t country;
-    uint16_t name;
-    uint8_t organization;
-    uint8_t ua;
-    uint8_t context;
-    uint8_t id;
-};
-
-/**	
   * @brief Association Source Diagnostics
   */
 enum __asso_diagnose
@@ -48,6 +34,8 @@ enum __asso_diagnose
     SUCCESS_NOSEC_LLS = 0,
     FAILURE_CONTEXT_NAME,
     FAILURE_NO_REASION,
+	FAILURE_CALLING_TITLE,
+	FAILURE_AUTH = 0x0D,
     SUCCESS_HLS = 0x0E,
 };
 
@@ -78,8 +66,10 @@ struct __dlms_association
     struct __object_identifier mech_name;
     uint8_t callingtitle[8+2];
     uint8_t localtitle[8+2];
-    uint8_t akey[32+2];
-    uint8_t ekey[32+2];
+    uint8_t akey[32+2];//报文认证密钥
+    uint8_t ekey[32+2];//报文加密密钥
+    uint8_t ssprikey[48+2];//服务器签名私钥
+    uint8_t cspubkey[96+2];//客户端验签公钥
     uint8_t ctos[64+2];
     uint8_t stoc[64+2];
     uint8_t sc;
@@ -136,6 +126,10 @@ struct __aarq_request
 #define DLMS_CONFIG_LOAD_AKEY(i)                dlms_util_load_akey(i)
 //加载加密密钥（info）
 #define DLMS_CONFIG_LOAD_EKEY(i)                dlms_util_load_uekey(i)
+//加载服务器签名私钥（info）
+#define DLMS_CONFIG_LOAD_SSKEY(i)				dlms_util_load_ssprikey(i)
+//加载客户端验签公钥（info）
+#define DLMS_CONFIG_LOAD_CSKEY(i)				dlms_util_load_cspubkey(i)
 //加载本机system title（info）
 #define DLMS_CONFIG_LOAD_TITLE(i)               dlms_util_load_title(i)
 //加载管理维护密码（info）
@@ -396,7 +390,8 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
         return;
     }
     
-    if((info[4] == 0x21) && ((info[5] + 4) == info[1]))
+    if(((info[4] == 0x21) && ((info[5] + 4) == info[1])) || \
+		((info[4] == 0xDB) && (info[5] == 0x08) && ((info[3] + 2) == info[1])))
     {
 		//加载 local_AP_title
 		DLMS_CONFIG_LOAD_TITLE(asso->localtitle);
@@ -405,7 +400,14 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
 		//加载 akey
 		DLMS_CONFIG_LOAD_AKEY(asso->akey);
     	
-        asso->info.sc = info[6];
+		if(info[4] == 0x21)
+		{
+			asso->info.sc = info[6];
+		}
+		else
+		{
+			asso->info.sc = info[15];
+		}
         
         mbedtls_gcm_init(&ctx);
         ret = mbedtls_gcm_setkey(&ctx,
@@ -413,7 +415,7 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                                  &asso->ekey[2],
                                  asso->ekey[1]*8);
         
-        switch(asso->info.sc & 0xf0)
+        switch(asso->info.sc)
         {
             case 0x10:
             {
@@ -552,6 +554,53 @@ static void parse_user_information(const uint8_t *info, struct __dlms_associatio
                 msg = output;
                 break;
             }
+            case 0x31:
+			case 0x32:
+            {
+                //加密加认证
+                output = heap.dalloc(info[14] + 4);
+                if(!output)
+                {
+                    ret = -1;
+                    break;
+                }
+                
+                add = heap.dalloc(1 + asso->akey[1]);
+                if(!add)
+                {
+                    ret = -1;
+                    break;
+                }
+                add[0] = asso->info.sc;
+                heap.copy(&add[1], &asso->akey[2], asso->akey[1]);
+                
+                iv = heap.dalloc(12);
+                if(!iv)
+                {
+                    ret = -1;
+                    break;
+                }
+                heap.copy(iv, &asso->callingtitle[2], 8);
+                heap.copy(&iv[8], &info[16], 4);
+                
+                if(ret)
+                {
+                    break;
+                }
+                
+                ret = mbedtls_gcm_auth_decrypt(&ctx,
+                                               (info[1] - 18 - 12),
+                                               iv,
+                                               12,
+                                               add,
+                                               (1 + asso->akey[1]),
+                                               &info[2 + info[1] - 12],
+                                               12,
+                                               &info[20],
+                                               (output + 4));
+                msg = output;
+                break;
+			}
             default:
             {
                 ret = -1;
@@ -679,6 +728,10 @@ static void asso_keys_flush(void)
             DLMS_CONFIG_LOAD_EKEY(asso_list[cnt]->ekey);
             //加载 akey
             DLMS_CONFIG_LOAD_AKEY(asso_list[cnt]->akey);
+			//加载 server signing private key
+			DLMS_CONFIG_LOAD_SSKEY(asso_list[cnt]->ssprikey);
+			//加载 client signing public key
+			DLMS_CONFIG_LOAD_CSKEY(asso_list[cnt]->cspubkey);
         }
     }
 }
@@ -1136,7 +1189,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
         input_length = 14;
     }
     
-    if((asso->info.sc & 0x30) == 0x20)
+    if(asso->info.sc == 0x20)
     {
         //加密 user-information
         dlms_asso_localtitle(iv);
@@ -1181,7 +1234,7 @@ static void asso_aarq_low(struct __dlms_association *asso,
         *filled_length += input_length;
         *(buffer + 1) = *filled_length - 2;
     }
-    else if((asso->info.sc & 0x30) == 0)
+    else if(asso->info.sc == 0)
     {
         *(buffer + *filled_length + 0) = 0xBE;
         *(buffer + *filled_length + 1) = input_length + 2;
@@ -1494,7 +1547,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
         input_length = 14;
     }
     
-    if((asso->info.sc & 0xf0) == 0x10)
+    if(asso->info.sc== 0x10)
     {
         //仅认证 user-information
         dlms_asso_localtitle(iv);
@@ -1551,7 +1604,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
         *filled_length += sizeof(tag);
         *(buffer + 1) = *filled_length - 2;
     }
-    else if((asso->info.sc & 0xf0) == 0x20)
+    else if(asso->info.sc == 0x20)
     {
         //仅加密 user-information
         dlms_asso_localtitle(iv);
@@ -1596,7 +1649,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
         *filled_length += input_length;
         *(buffer + 1) = *filled_length - 2;
     }
-    else if((asso->info.sc & 0xf0) == 0x30)
+    else if(asso->info.sc == 0x30)
     {
         //加密和认证 user-information
         dlms_asso_localtitle(iv);
@@ -1647,6 +1700,63 @@ static void asso_aarq_high(struct __dlms_association *asso,
         
         heap.copy((buffer + *filled_length + 11 + input_length), tag, sizeof(tag));
         *filled_length += 11;
+        *filled_length += input_length;
+        *filled_length += sizeof(tag);
+        *(buffer + 1) = *filled_length - 2;
+    }
+    else if((asso->info.sc == 0x31) || (asso->info.sc == 0x32))
+    {
+        //加密和认证 user-information
+        dlms_asso_localtitle(iv);
+        dlms_asso_fc(&iv[8]);
+        
+        *(buffer + *filled_length + 0) = 0xBE;
+        *(buffer + *filled_length + 1) = input_length + 2 + 10 + 6 + sizeof(tag);
+        *(buffer + *filled_length + 2) = 0x04;
+        *(buffer + *filled_length + 3) = input_length + 10 + 6 + sizeof(tag);
+        *(buffer + *filled_length + 4) = 0xDB;
+        *(buffer + *filled_length + 5) = 0x08;
+		heap.copy((buffer + *filled_length + 6), iv, 8);
+        *(buffer + *filled_length + 14) = input_length + 5 + sizeof(tag);
+		*(buffer + *filled_length + 15) = asso->info.sc;
+		heap.copy((buffer + *filled_length + 16), &iv[8], 4);
+        
+        mbedtls_gcm_init(&ctx);
+        
+        ret = mbedtls_gcm_setkey(&ctx,
+                                 MBEDTLS_CIPHER_ID_AES,
+                                 &asso->ekey[2],
+                                 asso->ekey[1]*8);
+        
+        if(ret != 0)
+                goto enc_faild;
+        
+        add = heap.dalloc(1 + asso->akey[1]);
+        if(!add)
+                goto enc_faild;
+        add[0] = asso->info.sc;
+        heap.copy(&add[1], &asso->akey[2], asso->akey[1]);
+        
+        ret = mbedtls_gcm_crypt_and_tag(&ctx,
+                                        MBEDTLS_GCM_ENCRYPT,
+                                        input_length,
+                                        iv,
+                                        sizeof(iv),
+                                        add,
+                                        (1 + asso->akey[1]),
+                                        input,
+                                        (buffer + *filled_length + 20),
+                                        sizeof(tag),
+                                        tag);
+        heap.free(add);
+        
+        if(ret != 0)
+                goto enc_faild;
+        
+        mbedtls_gcm_free(&ctx);
+        
+        heap.copy((buffer + *filled_length + 20 + input_length), tag, sizeof(tag));
+        *filled_length += 20;
         *filled_length += input_length;
         *filled_length += sizeof(tag);
         *(buffer + 1) = *filled_length - 2;
@@ -2188,7 +2298,7 @@ uint8_t dlms_asso_fc(uint8_t *buffer)
 }
 
 /**
-  * @brief 获取 akey <32字节
+  * @brief 获取 akey <=32字节
   */
 uint8_t dlms_asso_akey(uint8_t *buffer)
 {
@@ -2208,7 +2318,7 @@ uint8_t dlms_asso_akey(uint8_t *buffer)
 }
 
 /**
-  * @brief 获取 ekey <32字节
+  * @brief 获取 ekey <=32字节
   */
 uint8_t dlms_asso_ekey(uint8_t *buffer)
 {
@@ -2228,7 +2338,7 @@ uint8_t dlms_asso_ekey(uint8_t *buffer)
 }
 
 /**
-  * @brief 获取 dedkey <32字节
+  * @brief 获取 dedkey <=32字节
   */
 uint8_t dlms_asso_dedkey(uint8_t *buffer)
 {
@@ -2245,6 +2355,46 @@ uint8_t dlms_asso_dedkey(uint8_t *buffer)
     heap.copy(buffer, &asso_current->info.dedkey[2], asso_current->info.dedkey[1]);
     
     return(asso_current->info.dedkey[1]);
+}
+
+/**
+  * @brief 获取 server signing private key <=48字节
+  */
+uint8_t dlms_asso_ssprikey(uint8_t *buffer)
+{
+    if(!asso_current || !buffer)
+    {
+        return(0);
+    }
+    
+    if((asso_current->ssprikey[1] > 48) || (asso_current->ssprikey[1] == 0))
+    {
+        return(0);
+    }
+    
+    heap.copy(buffer, &asso_current->ssprikey[2], asso_current->ssprikey[1]);
+    
+    return(asso_current->ssprikey[1]);
+}
+
+/**
+  * @brief 获取 client signing public key <=96字节
+  */
+uint8_t dlms_asso_cspubkey(uint8_t *buffer)
+{
+    if(!asso_current || !buffer)
+    {
+        return(0);
+    }
+    
+    if((asso_current->cspubkey[1] > 96) || (asso_current->cspubkey[1] == 0))
+    {
+        return(0);
+    }
+    
+    heap.copy(buffer, &asso_current->cspubkey[2], asso_current->cspubkey[1]);
+    
+    return(asso_current->cspubkey[1]);
 }
 
 /**
