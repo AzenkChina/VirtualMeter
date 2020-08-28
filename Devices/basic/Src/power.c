@@ -6,13 +6,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "power.h"
+#include "delay.h"
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 #include "meter.h"
 #else
 
 #if defined (DEMO_STM32F091)
-#include "delay.h"
 #include "stm32f0xx.h"
 #endif
 

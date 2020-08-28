@@ -246,7 +246,7 @@ uint8_t info_get_management_passwd(uint8_t buff_length, uint8_t *buff)
     }
     
     buff[5] = '>';
-    memcpy(&buff[6], "management", 16);
+    memcpy(&buff[6], "management", 10);
     memcpy(&buff[0], "meter", 5);
     
     return(16);
