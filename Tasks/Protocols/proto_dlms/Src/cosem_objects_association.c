@@ -11,6 +11,7 @@
 #include "mbedtls/gcm.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
 #include "mbedtls/bignum.h"
 #include "dlms_association.h"
 #include "dlms_application.h"
@@ -375,7 +376,7 @@ static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
 		{
 			mbedtls_ecdsa_context ctx;
 			mbedtls_mpi r, s;
-			uint8_t hash[32];
+			uint8_t hash[48];
 			uint8_t ssprikey[48];
 			uint8_t len_ssprikey;
 			uint8_t cspubkey[96];
@@ -406,7 +407,14 @@ static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
 			mbedtls_mpi_init( &r );
 			mbedtls_mpi_init( &s );
 			mbedtls_ecp_keypair_init( &ctx );
-			mbedtls_ecp_group_load( &ctx.grp, MBEDTLS_ECP_DP_SECP256R1 );
+			if(len_cspubkey == 64)
+			{
+				mbedtls_ecp_group_load( &ctx.grp, MBEDTLS_ECP_DP_SECP256R1 );
+			}
+			else
+			{
+				mbedtls_ecp_group_load( &ctx.grp, MBEDTLS_ECP_DP_SECP384R1 );
+			}
 			
 			if((ret = mbedtls_mpi_read_binary(&ctx.d, ssprikey, len_ssprikey)) != 0)
 			{
@@ -439,64 +447,90 @@ static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
 			len_message += dlms_asso_stoc(&message[16]);
 			len_message += dlms_asso_ctos(&message[16 + len_message]);
 			
-			if( ( ret = mbedtls_sha256_ret( message, len_message, hash, 0 ) ) != 0 )
+			if(len_cspubkey == 64)
 			{
-			    goto cleanup;
-			}
-			
-		    if( ( ret = mbedtls_ecdsa_verify( &ctx.grp, hash, sizeof( hash ), \
-												 &ctx.Q, &r, &s) ) != 0 )
-			{
-		        goto cleanup;
+				if( ( ret = mbedtls_sha256_ret( message, len_message, hash, 0 ) ) != 0 )
+				{
+					goto cleanup;
+				}
+				if( ( ret = mbedtls_ecdsa_verify( &ctx.grp, hash, 32, \
+													 &ctx.Q, &r, &s) ) != 0 )
+				{
+					goto cleanup;
+				}
 			}
 			else
 			{
-			    mbedtls_mpi_free( &r );
-			    mbedtls_mpi_free( &s );
-				mbedtls_mpi_init( &r );
-				mbedtls_mpi_init( &s );
-				
-				len_message = dlms_asso_localtitle(&message[0]);
-				len_message += dlms_asso_callingtitle(&message[8]);
-				len_message += dlms_asso_ctos(&message[16]);
-				len_message += dlms_asso_stoc(&message[16 + len_message]);
-				
+				if( ( ret = mbedtls_sha512_ret( message, len_message, hash, 1 ) ) != 0 )
+				{
+					goto cleanup;
+				}
+				if( ( ret = mbedtls_ecdsa_verify( &ctx.grp, hash, 48, \
+													 &ctx.Q, &r, &s) ) != 0 )
+				{
+					goto cleanup;
+				}
+			}
+			
+			mbedtls_mpi_free( &r );
+			mbedtls_mpi_free( &s );
+			mbedtls_mpi_init( &r );
+			mbedtls_mpi_init( &s );
+			
+			len_message = dlms_asso_localtitle(&message[0]);
+			len_message += dlms_asso_callingtitle(&message[8]);
+			len_message += dlms_asso_ctos(&message[16]);
+			len_message += dlms_asso_stoc(&message[16 + len_message]);
+			
+			if(len_cspubkey == 64)
+			{
 				if( ( ret = mbedtls_sha256_ret( message, len_message, hash, 0 ) ) != 0 )
 				{
-				    goto cleanup;
+					goto cleanup;
 				}
 				
-				if( ( ret = mbedtls_ecdsa_sign( &ctx.grp, &r, &s, &ctx.d, hash, sizeof( hash ), \
+				if( ( ret = mbedtls_ecdsa_sign( &ctx.grp, &r, &s, &ctx.d, hash, 32, \
 												   rng, NULL) ) != 0 )
-			    {
-			        goto cleanup;
-			    }
-				else
 				{
-					axdr.type.encode(AXDR_OCTET_STRING, &OBJ_OUT_ADDR(P)[0]);
-					axdr.length.encode(len_cspubkey, &OBJ_OUT_ADDR(P)[1]);
-					
-					if( ( ret = mbedtls_mpi_write_binary( &r, &OBJ_OUT_ADDR(P)[2 + 0], len_ssprikey ) ) != 0 )
-					{
-						goto cleanup;
-					}
-					if( ( ret = mbedtls_mpi_write_binary( &s, &OBJ_OUT_ADDR(P)[2 + len_ssprikey], len_ssprikey ) ) != 0 )
-					{
-						goto cleanup;
-					}
-					
-					OBJ_PUSH_LENGTH(P, (2 + len_cspubkey));
-					
-					dlms_asso_accept_fctos();
+					goto cleanup;
 				}
+			}
+			else
+			{
+				if( ( ret = mbedtls_sha512_ret( message, len_message, hash, 1 ) ) != 0 )
+				{
+					goto cleanup;
+				}
+				
+				if( ( ret = mbedtls_ecdsa_sign( &ctx.grp, &r, &s, &ctx.d, hash, 48, \
+												   rng, NULL) ) != 0 )
+				{
+					goto cleanup;
+				}
+			}
+			
+			axdr.type.encode(AXDR_OCTET_STRING, &OBJ_OUT_ADDR(P)[0]);
+			axdr.length.encode(len_cspubkey, &OBJ_OUT_ADDR(P)[1]);
+			
+			if( ( ret = mbedtls_mpi_write_binary( &r, &OBJ_OUT_ADDR(P)[2 + 0], len_ssprikey ) ) != 0 )
+			{
+				goto cleanup;
+			}
+			if( ( ret = mbedtls_mpi_write_binary( &s, &OBJ_OUT_ADDR(P)[2 + len_ssprikey], len_ssprikey ) ) != 0 )
+			{
+				goto cleanup;
+			}
+			
+			OBJ_PUSH_LENGTH(P, (2 + len_cspubkey));
+			
+			dlms_asso_accept_fctos();
 cleanup:
-			    mbedtls_mpi_free( &r );
-			    mbedtls_mpi_free( &s );
-				mbedtls_ecdsa_free( &ctx );
-				if(ret != 0)
-				{
-					return(OBJECT_ERR_NODEF);
-				}
+			mbedtls_mpi_free( &r );
+			mbedtls_mpi_free( &s );
+			mbedtls_ecdsa_free( &ctx );
+			if(ret != 0)
+			{
+				return(OBJECT_ERR_LOWLEVEL);
 			}
 			
 			break;

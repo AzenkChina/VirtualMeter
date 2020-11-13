@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdbool.h"
+#include "string.h"
 #include "system.h"
 #include "dlms_types.h"
 #include "dlms_application.h"
@@ -15,6 +16,10 @@
 #include "axdr.h"
 #include "mids.h"
 #include "mbedtls/gcm.h"
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
+#include "mbedtls/bignum.h"
 
 /* Private define ------------------------------------------------------------*/
 #define DLMS_REQ_LIST_MAX   ((uint8_t)6) //一次请求可接受的最大数据项数
@@ -43,7 +48,49 @@ enum __appl_result
 struct __appl_request
 {
     uint8_t service;//enum __dlms_request_type
-    uint8_t sc;//加密方式
+	
+	union
+	{
+		struct
+		{
+			uint8_t *transaction;//签名报文标识
+			uint8_t *originator;//签名报文发起者
+			uint8_t *recipient;//签名报文接收者
+			uint8_t *date;//签名报文时间
+			uint8_t *others;//签名报文其它信息
+			uint8_t *content;//数据
+			uint8_t *signature;//签名
+		} sign;
+		
+		struct
+		{
+			uint8_t *transaction;//签名报文标识
+			uint8_t *originator;//签名报文发起者
+			uint8_t *recipient;//签名报文接收者
+			uint8_t *date;//签名报文时间
+			uint8_t *others;//签名报文其它信息
+			uint8_t *key;//签名报文时间
+			uint8_t *content;//数据
+		} cipher;
+		
+		struct
+		{
+			uint8_t control;//控制码
+			uint16_t number;//块计数
+			uint16_t ack;//块计数确认
+			uint8_t *content;//数据
+		} block;
+		
+		struct
+		{
+			uint8_t *originator;//加密报文发起者
+			uint8_t *content;//数据
+		} global;
+		
+	} general;
+	
+	uint8_t sc;//加密方式
+	uint8_t *plain;//明文的首地址
     uint8_t type;//enum __dlms_get_request_type || enum __dlms_set_request_type || enum __dlms_action_request_type
     uint8_t id;//Invoke-Id-And-Priority
     struct
@@ -112,7 +159,7 @@ static uint8_t *request_formatter(uint32_t mid, const uint8_t *in, uint16_t size
         return((uint8_t *)in);
     }
     
-    if(!AXDR_CONTAINED(in[0]))
+    if(!AXDR_CONTAINABLE(in[0]))
     {
         *out = size;
         return((uint8_t *)in);
@@ -126,52 +173,52 @@ static uint8_t *request_formatter(uint32_t mid, const uint8_t *in, uint16_t size
         case AXDR_ENUM:
         case AXDR_UNSIGNED:
         {
-            val = (int64_t)container.u8_t;
+            val = (int64_t)container.vu8;
             break;
         }
         case AXDR_INTEGER:
         {
-            val = (int64_t)container.i8_t;
+            val = (int64_t)container.vi8;
             break;
         }
         case AXDR_LONG:
         {
-            val = (int64_t)container.i16_t;
+            val = (int64_t)container.vi16;
             break;
         }
         case AXDR_LONG_UNSIGNED:
         {
-            val = (int64_t)container.u16_t;
+            val = (int64_t)container.vu16;
             break;
         }
         case AXDR_DOUBLE_LONG:
         {
-            val = (int64_t)container.i32_t;
+            val = (int64_t)container.vi32;
             break;
         }
         case AXDR_DOUBLE_LONG_UNSIGNED:
         {
-            val = (int64_t)container.u32_t;
+            val = (int64_t)container.vu32;
             break;
         }
         case AXDR_FLOAT32:
         {
-            val = (int64_t)container.float_t;
+            val = (int64_t)container.vf32;
             break;
         }
         case AXDR_FLOAT64:
         {
-            val = (int64_t)container.double_t;
+            val = (int64_t)container.vf64;
             break;
         }
         case AXDR_LONG64:
         {
-            val = (int64_t)container.i64_t;
+            val = (int64_t)container.vi64;
             break;
         }
         case AXDR_LONG64_UNSIGNED:
         {
-            val = (int64_t)container.u64_t;
+            val = (int64_t)container.vu64;
             break;
         }
     }
@@ -305,11 +352,12 @@ static uint16_t response_formatter(uint32_t mid, const uint8_t *in, uint16_t siz
   */
 static enum __appl_result parse_dlms_frame(const uint8_t *info, \
                                            uint16_t length, \
-                                           struct __appl_request *request)
+                                           struct __appl_request *request, \
+										   bool origin)
 {
+	uint8_t service;
     uint16_t frame_length = 0;
     uint16_t frame_decoded = 0;
-    const uint8_t *start = (const uint8_t *)0;
     uint16_t info_length = 0;
     uint16_t ninfo;
     uint8_t nloop;
@@ -319,12 +367,435 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
         return(APPL_OTHERS);
     }
     
-    request->service = info[0];
+	service = info[0];
+	if(origin)
+	{
+		request->service = info[0];
+	}
     frame_decoded = 1;
     
-    //第一遍解析，去除加密
-    switch(request->service)
+    switch(service)
     {
+		case GNL_SIGN_REQUEST:
+		{
+			uint8_t title[8];
+			uint8_t cspubkey[96];
+			uint8_t len_cspubkey;
+			uint8_t z[48];
+			unsigned char hash[48];
+			mbedtls_ecdsa_context ctx;
+			mbedtls_mpi r, s;
+			uint8_t len_signature;
+			uint8_t *ctext;
+			uint16_t len_ctext;
+            int ret = 0;
+            
+			//TransactionId
+			if(*(info + frame_decoded) != 0x08)
+			{
+				return(APPL_ENC_FAILD);
+			}
+			else
+			{
+				request->general.sign.transaction = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 9;
+			}
+			//OriginatorSystemTitle
+			if(*(info + frame_decoded) != 0x08)
+			{
+				return(APPL_ENC_FAILD);
+			}
+			else
+			{
+				dlms_asso_callingtitle(title);
+				if(memcmp(title, (info + frame_decoded + 1), 8) != 0)
+				{
+					return(APPL_ENC_FAILD);
+				}
+				request->general.sign.originator = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 9;
+			}
+			//RecipientSystemTitle
+			if(*(info + frame_decoded) != 0x08)
+			{
+				return(APPL_ENC_FAILD);
+			}
+			else
+			{
+				dlms_asso_localtitle(title);
+				if(memcmp(title, (info + frame_decoded + 1), 8) != 0)
+				{
+					return(APPL_ENC_FAILD);
+				}
+				request->general.sign.recipient = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 9;
+			}
+			//DateTime
+			if(*(info + frame_decoded) == 0x00)
+			{
+				request->general.sign.date = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 1;
+			}
+			else if(*(info + frame_decoded) == 0x0c)
+			{
+				request->general.sign.date = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 0x0c;
+			}
+			else
+			{
+				return(APPL_ENC_FAILD);
+			}
+			//OtherInformation
+			if(*(info + frame_decoded) == 0x00)
+			{
+				request->general.sign.others = (uint8_t *)(info + frame_decoded);
+				frame_decoded += 1;
+			}
+			else
+			{
+				request->general.sign.others = (uint8_t *)(info + frame_decoded);
+				frame_decoded += axdr.length.decode((info + frame_decoded), &frame_length);
+				frame_decoded += frame_length;
+				if(frame_length >= 128)
+				{
+					return(APPL_ENC_FAILD);
+				}
+			}
+			
+			//Data
+            frame_decoded += axdr.length.decode((info + frame_decoded), &frame_length);
+			request->general.sign.content = (uint8_t *)(info + frame_decoded);
+            if(frame_length < 3)
+			{
+				return(APPL_ENC_FAILD);
+			}
+			
+			request->general.sign.signature = (uint8_t *)(info + frame_decoded + frame_length + 1);
+            if((length == (frame_decoded + frame_length + 1 + 64)) && (*(info + frame_decoded + frame_length) == 64))
+            {
+				len_signature = 64;
+            }
+			else if((length == (frame_length + frame_decoded + 1 + 96)) && (*(info + frame_decoded + frame_length) == 96))
+			{
+				len_signature = 96;
+			}
+			else
+			{
+				return(APPL_ENC_FAILD);
+			}
+			
+			len_cspubkey = dlms_asso_cspubkey(cspubkey);
+			
+			if((len_cspubkey != 64) && (len_cspubkey != 96))
+			{
+				return(APPL_ENC_FAILD);
+			}
+			memset(z, 0, sizeof(z));
+			z[len_cspubkey / 2 - 1] = 1;
+			
+			mbedtls_mpi_init( &r );
+			mbedtls_mpi_init( &s );
+			mbedtls_ecp_keypair_init( &ctx );
+			if(len_cspubkey == 64)
+			{
+				mbedtls_ecp_group_load( &ctx.grp, MBEDTLS_ECP_DP_SECP256R1 );
+			}
+			else
+			{
+				mbedtls_ecp_group_load( &ctx.grp, MBEDTLS_ECP_DP_SECP384R1 );
+			}
+			
+			if((ret = mbedtls_mpi_read_binary( &ctx.Q.X, &cspubkey[0], len_cspubkey / 2)) != 0)
+			{
+				goto cleanup;
+			}
+			if((ret = mbedtls_mpi_read_binary( &ctx.Q.Y, &cspubkey[len_cspubkey / 2], len_cspubkey / 2)) != 0)
+			{
+				goto cleanup;
+			}
+			if((ret = mbedtls_mpi_read_binary( &ctx.Q.Z, z, len_cspubkey / 2)) != 0)
+			{
+				goto cleanup;
+			}
+			
+			if((ret = mbedtls_mpi_read_binary(&r, &request->general.sign.signature[1], len_signature / 2)) != 0)
+			{
+				goto cleanup;
+			}
+			if((ret = mbedtls_mpi_read_binary(&s, &request->general.sign.signature[1 + len_signature / 2], len_signature / 2)) != 0)
+			{
+				goto cleanup;
+			}
+			
+			len_ctext = (3 + 3 * 8) + (1 + request->general.sign.date[0]) + (1 + request->general.sign.others[0]) + frame_length;
+			ctext = heap.dalloc(len_ctext);
+			if(!ctext)
+			{
+				ret = MBEDTLS_ERR_MPI_ALLOC_FAILED;
+				goto cleanup;
+			}
+			
+			memcpy(&ctext[0], request->general.sign.transaction, 9);
+			memcpy(&ctext[9], request->general.sign.originator, 9);
+			memcpy(&ctext[18], request->general.sign.recipient, 9);
+			memcpy(&ctext[27], request->general.sign.date, 1 + request->general.sign.date[0]);
+			memcpy(&ctext[27 + 1 + request->general.sign.date[0]], request->general.sign.others, 1 + request->general.sign.others[0]);
+			memcpy(&ctext[27 + 1 + request->general.sign.date[0] + 1 + request->general.sign.others[0]], request->general.sign.content, frame_length);
+			
+			if(len_cspubkey == 64)
+			{
+				if( ( ret = mbedtls_sha256_ret( ctext, len_ctext, hash, 0 ) ) != 0 )
+				{
+					heap.free(ctext);
+					goto cleanup;
+				}
+				heap.free(ctext);
+				
+				if( ( ret = mbedtls_ecdsa_verify( &ctx.grp, hash, 32, \
+													 &ctx.Q, &r, &s) ) != 0 )
+				{
+					goto cleanup;
+				}
+			}
+			else
+			{
+				if( ( ret = mbedtls_sha512_ret( ctext, len_ctext, hash, 1 ) ) != 0 )
+				{
+					heap.free(ctext);
+					goto cleanup;
+				}
+				heap.free(ctext);
+				
+				if( ( ret = mbedtls_ecdsa_verify( &ctx.grp, hash, 48, \
+													 &ctx.Q, &r, &s) ) != 0 )
+				{
+					goto cleanup;
+				}
+			}
+			
+	cleanup:
+			mbedtls_mpi_free( &r );
+			mbedtls_mpi_free( &s );
+			mbedtls_ecdsa_free( &ctx );
+			if(ret != 0)
+			{
+				return(APPL_ENC_FAILD);
+			}
+			
+			return(parse_dlms_frame(request->general.sign.content, frame_length, request, false));
+			
+            break;
+		}
+		case GNL_GLO_CIPHER_REQUEST:
+		case GNL_DED_CIPHER_REQUEST:
+        {
+            uint8_t *add = (void *)0;
+            uint8_t *input = (void *)0;
+            uint8_t iv[12];
+            uint8_t ekey[32];
+            uint8_t akey[32];
+            uint8_t len_ekey;
+            uint8_t len_akey;
+            mbedtls_gcm_context ctx;
+            int ret = 0;
+            
+			if(*(info + frame_decoded) != 0x08)
+			{
+				return(APPL_OTHERS);
+			}
+			else
+			{
+				memcpy(iv, (info + frame_decoded + 1), 8);
+				frame_decoded += 9;
+			}
+			
+            frame_decoded += axdr.length.decode((info + frame_decoded), &frame_length);
+            request->sc = info[frame_decoded];
+            
+            if(length != (frame_length + frame_decoded))
+            {
+                return(APPL_OTHERS);
+            }
+            
+            if(request->service == GNL_DED_CIPHER_REQUEST)
+            {
+                len_ekey = dlms_asso_dedkey(ekey);
+            }
+            else
+            {
+                len_ekey = dlms_asso_ekey(ekey);
+            }
+            
+            len_akey = dlms_asso_akey(akey);
+            
+            heap.copy(&iv[8], &info[frame_decoded + 1], 4);
+            
+            mbedtls_gcm_init(&ctx);
+            ret = mbedtls_gcm_setkey(&ctx,
+                                     MBEDTLS_CIPHER_ID_AES,
+                                     ekey,
+                                     len_ekey*8);
+            
+            switch(request->sc & 0xf0)
+            {
+                case 0x10:
+                {
+                    //仅认证
+                    if(ret)
+                    {
+                        break;
+                    }
+                    
+                    if(frame_length < (5 + 12))
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    add = heap.dalloc(frame_length + 1 + len_akey);
+                    if(!add)
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    add[0] = request->sc;
+                    heap.copy(&add[1], akey, len_akey);
+                    heap.copy(&add[1+len_akey], &info[frame_decoded + 5], (frame_length - 5 - 12));
+                    
+                    if(ret)
+                    {
+                        break;
+                    }
+                    
+                    ret = mbedtls_gcm_auth_decrypt(&ctx,
+                                                   0,
+                                                   iv,
+                                                   12,
+                                                   add,
+                                                   (1 + len_akey + frame_length - 5 - 12),
+                                                   &info[frame_decoded + (frame_length - 12 + 1)],
+                                                   12,
+                                                   (unsigned char *)0,
+                                                   (unsigned char *)0);
+                    info_length = frame_length - 5 - 12;
+                    
+                    break;
+                }
+                case 0x20:
+                {
+                    //仅加密
+                    if(ret)
+                    {
+                        break;
+                    }
+                    
+                    if(frame_length < 5)
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    input = heap.dalloc(frame_length - 5);
+                    if(!input)
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    heap.copy(input, &info[frame_decoded + 5], (frame_length - 5));
+                    
+                    ret = mbedtls_gcm_auth_decrypt(&ctx,
+                                                   (frame_length - 5),
+                                                   iv,
+                                                   12,
+                                                   (unsigned char *)0,
+                                                   0,
+                                                   (unsigned char *)0,
+                                                   0,
+                                                   input,
+                                                   (unsigned char *)&info[frame_decoded + 5]);
+                    info_length = frame_length - 5;
+                    
+                    break;
+                }
+                case 0x30:
+                {
+                    //加密加认证
+                    if(ret)
+                    {
+                        break;
+                    }
+                    
+                    if(frame_length < (5 + 12))
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    add = heap.dalloc(1 + len_akey);
+                    if(!add)
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    add[0] = request->sc;
+                    heap.copy(&add[1], akey, len_akey);
+                    
+                    input = heap.dalloc(frame_length - 5 - 12);
+                    if(!input)
+                    {
+                        ret = -1;
+                        break;
+                    }
+                    
+                    heap.copy(input, &info[frame_decoded + 5], (frame_length - 5 - 12));
+                    
+                    ret = mbedtls_gcm_auth_decrypt(&ctx,
+                                                   (frame_length - 5 - 12),
+                                                   iv,
+                                                   12,
+                                                   add,
+                                                   (1 + len_akey),
+                                                   &info[1 + frame_length - 12 + 1],
+                                                   12,
+                                                   input,
+                                                   (unsigned char *)&info[frame_decoded + 5]);
+                    info_length = frame_length - 5 - 12;
+                    
+                    break;
+                }
+                default:
+                {
+                    ret = -1;
+                }
+            }
+            
+            mbedtls_gcm_free( &ctx );
+            
+            if(add)
+            {
+                heap.free(add);
+            }
+            
+            if(input)
+            {
+                heap.free(input);
+            }
+            
+            if(!ret)
+            {
+				request->plain = (uint8_t *)&info[frame_decoded + 5];
+				return(parse_dlms_frame(request->plain, info_length, request, false));
+            }
+            else
+            {
+                return(APPL_ENC_FAILD);
+            }
+            
+            break;
+        }
         case GLO_GET_REQUEST:
         case GLO_SET_REQUEST:
         case GLO_ACTION_REQUEST:
@@ -520,15 +991,15 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
             {
                 heap.free(input);
             }
-            
+			
             if(!ret)
             {
-                start = &info[frame_decoded + 5];
+				request->plain = (uint8_t *)&info[frame_decoded + 5];
+				return(parse_dlms_frame(request->plain, info_length, request, false));
             }
             else
             {
-                start = (uint8_t *)0;
-                info_length = 0;
+                return(APPL_ENC_FAILD);
             }
             
             break;
@@ -537,263 +1008,259 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
         case SET_REQUEST:
         case ACTION_REQUEST:
         {
-            start = info;
-            info_length = length;
+			if(origin)
+			{
+				request->plain = (uint8_t *)info;
+			}
+			
+			request->type = request->plain[1];
+			request->id = request->plain[2];
+			
+			switch(request->plain[0])
+			{
+				case GET_REQUEST:
+				{
+					switch(request->type)
+					{
+						case GET_NORMAL:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].classid = &request->plain[3];
+							request->info[0].obis = &request->plain[5];
+							request->info[0].index = &request->plain[11];
+							request->info[0].data = &request->plain[12];
+							if(info_length < 13)
+							{
+								return(APPL_OTHERS);
+							}
+							else
+							{
+								request->info[0].length = info_length - 12;
+							}
+							break;
+						}
+						case GET_NEXT:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].block = request->plain[3];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[4];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[5];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[6];
+							if(info_length < 7)
+							{
+								return(APPL_OTHERS);
+							}
+							else
+							{
+								request->info[0].length = 0;
+							}
+							break;
+						}
+						case GET_WITH_LIST:
+						{
+							if((!request->plain[3]) || (request->plain[3] > DLMS_REQ_LIST_MAX))
+							{
+								return(APPL_UNSUPPORT);
+							}
+							
+							ninfo = 4;
+							
+							for(nloop=0; nloop<request->plain[3]; nloop ++)
+							{
+								request->info[nloop].active = 0xff;
+								request->info[nloop].classid = &request->plain[ninfo + 0];
+								request->info[nloop].obis = &request->plain[ninfo + 2];
+								request->info[nloop].index = &request->plain[ninfo + 8];
+								request->info[nloop].data = &request->plain[ninfo + 9];
+								
+								if(info_length < (ninfo + 9))
+								{
+									return(APPL_OTHERS);
+								}
+								
+								if(*(request->info[nloop].data) != 0)
+								{
+									return(APPL_UNSUPPORT);
+								}
+								
+								request->info[nloop].length = 0;
+								
+								ninfo += 10;
+							}
+							
+							break;
+						}
+						default:
+						{
+							return(APPL_UNSUPPORT);
+						}
+					}
+					break;
+				}
+				case SET_REQUEST:
+				{
+					switch(request->type)
+					{
+						case SET_NORMAL:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].classid = &request->plain[3];
+							request->info[0].obis = &request->plain[5];
+							request->info[0].index = &request->plain[11];
+							request->info[0].data = &request->plain[13];
+							request->info[0].length = info_length - 13;
+							if((info_length < 14) || request->plain[12])
+							{
+								return(APPL_OTHERS);
+							}
+							break;
+						}
+						case SET_FIRST_BLOCK:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].classid = &request->plain[3];
+							request->info[0].obis = &request->plain[5];
+							request->info[0].index = &request->plain[11];
+							request->info[0].end = &request->plain[13];
+							request->info[0].block = request->plain[14];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[15];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[16];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[17];
+							request->info[0].data = &request->plain[18 + axdr.length.decode(&request->plain[18], &request->info[0].length)];
+							if((info_length < 20) || request->plain[12])
+							{
+								return(APPL_OTHERS);
+							}
+							break;
+						}
+						case SET_WITH_BLOCK:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].end = &request->plain[3];
+							request->info[0].block = request->plain[4];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[5];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[6];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[7];
+							request->info[0].data = &request->plain[8 + axdr.length.decode(&request->plain[8], &request->info[0].length)];
+							if(info_length < 10)
+							{
+								return(APPL_OTHERS);
+							}
+							break;
+						}
+						case SET_WITH_LIST:
+						case SET_WITH_LIST_AND_FIRST_BLOCK:
+						default:
+						{
+							return(APPL_UNSUPPORT);
+						}
+					}
+					break;
+				}
+				case ACTION_REQUEST:
+				{
+					switch(request->type)
+					{
+						case ACTION_NORMAL:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].classid = &request->plain[3];
+							request->info[0].obis = &request->plain[5];
+							request->info[0].index = &request->plain[11];
+							
+							if(request->plain[12])
+							{
+								request->info[0].data = &request->plain[13];
+								request->info[0].length = info_length - 13;
+								if(info_length < 14)
+								{
+									return(APPL_OTHERS);
+								}
+							}
+							else
+							{
+								request->info[0].data = (uint8_t *)0;
+								request->info[0].length = 0;
+								if(info_length < 12)
+								{
+									return(APPL_OTHERS);
+								}
+							}
+							break;
+						}
+						case ACTION_NEXT_BLOCK:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].end = &request->plain[3];
+							request->info[0].block = request->plain[4];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[5];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[6];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[7];
+							request->info[0].data = &request->plain[8 + axdr.length.decode(&request->plain[8], &request->info[0].length)];
+							if(info_length < 10)
+							{
+								return(APPL_OTHERS);
+							}
+							break;
+						}
+						case ACTION_FIRST_BLOCK:
+						{
+							request->info[0].active = 0xff;
+							request->info[0].classid = &request->plain[3];
+							request->info[0].obis = &request->plain[5];
+							request->info[0].index = &request->plain[11];
+							request->info[0].end = &request->plain[12];
+							request->info[0].block = request->plain[13];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[14];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[15];
+							request->info[0].block <<= 8;
+							request->info[0].block += request->plain[16];
+							request->info[0].data = &request->plain[17 + axdr.length.decode(&request->plain[17], &request->info[0].length)];
+							if(info_length < 19)
+							{
+								return(APPL_OTHERS);
+							}
+							break;
+						}
+						case ACTION_WITH_LIST:
+						case ACTION_WITH_LIST_AND_FIRST_BLOCK:
+						case ACTION_WITH_BLOCK:
+						default:
+						{
+							return(APPL_UNSUPPORT);
+						}
+					}
+					break;
+				}
+				default:
+				{
+					return(APPL_UNSUPPORT);
+				}
+			}
+			
+			return(APPL_SUCCESS);
+			
             break;
         }
         default:
         {
-            start = (const uint8_t *)0;
-            info_length = 0;
+			return(APPL_OTHERS);
         }
     }
-    
-    if(!start || !info_length)
-    {
-        return(APPL_ENC_FAILD);
-    }
-    
-    request->type = start[1];
-    request->id = start[2];
-    
-    //第二遍解析，索引报文
-    switch(start[0])
-    {
-        case GET_REQUEST:
-        {
-            switch(request->type)
-            {
-                case GET_NORMAL:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[3];
-                    request->info[0].obis = (uint8_t *)&start[5];
-                    request->info[0].index = (uint8_t *)&start[11];
-                    request->info[0].data = (uint8_t *)&start[12];
-                    if(info_length < 13)
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    else
-                    {
-                        request->info[0].length = info_length - 12;
-                    }
-                    break;
-                }
-                case GET_NEXT:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].block = start[3];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[4];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[5];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[6];
-                    if(info_length < 7)
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    else
-                    {
-                        request->info[0].length = 0;
-                    }
-                    break;
-                }
-                case GET_WITH_LIST:
-                {
-                    if((!start[3]) || (start[3] > DLMS_REQ_LIST_MAX))
-                    {
-                        return(APPL_UNSUPPORT);
-                    }
-                    
-                    ninfo = 4;
-                    
-                    for(nloop=0; nloop<start[3]; nloop ++)
-                    {
-                        request->info[nloop].active = 0xff;
-                        request->info[nloop].classid = (uint8_t *)&start[ninfo + 0];
-                        request->info[nloop].obis = (uint8_t *)&start[ninfo + 2];
-                        request->info[nloop].index = (uint8_t *)&start[ninfo + 8];
-                        request->info[nloop].data = (uint8_t *)&start[ninfo + 9];
-                        
-                        if(info_length < (ninfo + 9))
-                        {
-                            return(APPL_OTHERS);
-                        }
-                        
-                        if(*(request->info[nloop].data) != 0)
-                        {
-                            return(APPL_UNSUPPORT);
-                        }
-                        
-                        request->info[nloop].length = 0;
-                        
-                        ninfo += 10;
-                    }
-                    
-                    break;
-                }
-                default:
-                {
-                    return(APPL_UNSUPPORT);
-                }
-            }
-            break;
-        }
-        case SET_REQUEST:
-        {
-            switch(request->type)
-            {
-                case SET_NORMAL:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[3];
-                    request->info[0].obis = (uint8_t *)&start[5];
-                    request->info[0].index = (uint8_t *)&start[11];
-                    request->info[0].data = (uint8_t *)&start[13];
-                    request->info[0].length = info_length - 13;
-                    if((info_length < 14) || start[12])
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    break;
-                }
-                case SET_FIRST_BLOCK:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[3];
-                    request->info[0].obis = (uint8_t *)&start[5];
-                    request->info[0].index = (uint8_t *)&start[11];
-                    request->info[0].end = (uint8_t *)&start[13];
-                    request->info[0].block = start[14];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[15];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[16];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[17];
-                    request->info[0].data = (uint8_t *)&start[18 + axdr.length.decode(&start[18], &request->info[0].length)];
-                    if((info_length < 20) || start[12])
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    break;
-                }
-                case SET_WITH_BLOCK:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].end = (uint8_t *)&start[3];
-                    request->info[0].block = start[4];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[5];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[6];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[7];
-                    request->info[0].data = (uint8_t *)&start[8 + axdr.length.decode(&start[8], &request->info[0].length)];
-                    if(info_length < 10)
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    break;
-                }
-                case SET_WITH_LIST:
-                case SET_WITH_LIST_AND_FIRST_BLOCK:
-                default:
-                {
-                    return(APPL_UNSUPPORT);
-                }
-            }
-            break;
-        }
-        case ACTION_REQUEST:
-        {
-            switch(request->type)
-            {
-                case ACTION_NORMAL:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[3];
-                    request->info[0].obis = (uint8_t *)&start[5];
-                    request->info[0].index = (uint8_t *)&start[11];
-                    
-                    if(start[12])
-                    {
-                        request->info[0].data = (uint8_t *)&start[13];
-                        request->info[0].length = info_length - 13;
-                        if(info_length < 14)
-                        {
-                            return(APPL_OTHERS);
-                        }
-                    }
-                    else
-                    {
-                        request->info[0].data = (uint8_t *)0;
-                        request->info[0].length = 0;
-                        if(info_length < 12)
-                        {
-                            return(APPL_OTHERS);
-                        }
-                    }
-                    break;
-                }
-                case ACTION_NEXT_BLOCK:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].end = (uint8_t *)&start[3];
-                    request->info[0].block = start[4];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[5];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[6];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[7];
-                    request->info[0].data = (uint8_t *)&start[8 + axdr.length.decode(&start[8], &request->info[0].length)];
-                    if(info_length < 10)
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    break;
-                }
-                case ACTION_FIRST_BLOCK:
-                {
-                    request->info[0].active = 0xff;
-                    request->info[0].classid = (uint8_t *)&start[3];
-                    request->info[0].obis = (uint8_t *)&start[5];
-                    request->info[0].index = (uint8_t *)&start[11];
-                    request->info[0].end = (uint8_t *)&start[12];
-                    request->info[0].block = start[13];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[14];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[15];
-                    request->info[0].block <<= 8;
-                    request->info[0].block += start[16];
-                    request->info[0].data = (uint8_t *)&start[17 + axdr.length.decode(&start[17], &request->info[0].length)];
-                    if(info_length < 19)
-                    {
-                        return(APPL_OTHERS);
-                    }
-                    break;
-                }
-                case ACTION_WITH_LIST:
-                case ACTION_WITH_LIST_AND_FIRST_BLOCK:
-                case ACTION_WITH_BLOCK:
-                default:
-                {
-                    return(APPL_UNSUPPORT);
-                }
-            }
-            break;
-        }
-        default:
-        {
-            return(APPL_UNSUPPORT);
-        }
-    }
-    
-    return(APPL_SUCCESS);
 }
 
 /**
@@ -1273,6 +1740,16 @@ static bool check_accessibility(struct __appl_request *request, struct __cosem_i
 }
 
 /**	
+  * @brief 生成回复报文（随机数生成器）
+  */
+static int rng(void *p, unsigned char *buf, size_t blen)
+{
+	dlms_asso_random(blen, buf);
+	
+	return(0);
+}
+
+/**	
   * @brief 生成回复报文
   */
 static enum __appl_result reply_normal(struct __appl_request *request, \
@@ -1281,6 +1758,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
                                        uint16_t *filled_length)
 {
     uint8_t cnt = 0;
+	uint8_t service;
     uint8_t *plain = (uint8_t *)0;
     uint16_t plain_length = 0;
     
@@ -1292,7 +1770,6 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
     uint16_t cipher_length = 0;
     uint8_t tag[12] = {0};
     uint8_t *add = (uint8_t *)0;
-    
     mbedtls_gcm_context ctx;
     int ret;
     
@@ -1307,7 +1784,18 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
     
     //step 2
     //组包返回的报文（明文）
-    switch(request->service)
+	if((request->service == GNL_GLO_CIPHER_REQUEST) || \
+		(request->service == GNL_DED_CIPHER_REQUEST) || \
+		(request->service == GNL_SIGN_REQUEST))
+	{
+		service = request->plain[0];
+	}
+	else
+	{
+		service = request->service;
+	}
+	
+    switch(service)
     {
         case GET_REQUEST:
         case GLO_GET_REQUEST:
@@ -1695,7 +2183,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
             
             break;
         }
-        default:
+		default:
         {
             heap.free(plain);
             return(APPL_UNSUPPORT);
@@ -1709,6 +2197,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
         case GLO_GET_REQUEST:
         case GLO_SET_REQUEST:
         case GLO_ACTION_REQUEST:
+		case GNL_GLO_CIPHER_REQUEST:
         {
             ekey_length = dlms_asso_ekey(ekey);
             akey_length = dlms_asso_akey(akey);
@@ -1719,6 +2208,7 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
         case DED_GET_REQUEST:
         case DED_SET_REQUEST:
         case DED_ACTION_REQUEST:
+		case GNL_DED_CIPHER_REQUEST:
         {
             ekey_length = dlms_asso_dedkey(ekey);
             akey_length = dlms_asso_akey(akey);
@@ -1726,6 +2216,39 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
             dlms_asso_fc(&iv[8]);
             break;
         }
+		case GNL_SIGN_REQUEST:
+		{
+            if((request->general.sign.content[0] == GLO_GET_REQUEST) || \
+					(request->general.sign.content[0] == GLO_SET_REQUEST) || \
+					(request->general.sign.content[0] == GLO_ACTION_REQUEST))
+			{
+				ekey_length = dlms_asso_ekey(ekey);
+				akey_length = dlms_asso_akey(akey);
+				dlms_asso_localtitle(iv);
+				dlms_asso_fc(&iv[8]);
+			}
+			else if((request->general.sign.content[0] == DED_GET_REQUEST) || \
+				(request->general.sign.content[0] == DED_SET_REQUEST) || \
+				(request->general.sign.content[0] == DED_ACTION_REQUEST))
+            {
+				ekey_length = dlms_asso_dedkey(ekey);
+				akey_length = dlms_asso_akey(akey);
+				dlms_asso_localtitle(iv);
+				dlms_asso_fc(&iv[8]);
+            }
+			else if((request->general.sign.content[0] == GET_REQUEST) || \
+					(request->general.sign.content[0] == SET_REQUEST) || \
+					(request->general.sign.content[0] == ACTION_REQUEST))
+            {
+				break;
+            }
+			else
+			{
+				heap.free(plain);
+				return(APPL_ENC_FAILD);
+			}
+			break;
+		}
         default:
         {
             //不需要加密，明文返回
@@ -1763,9 +2286,75 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
         case DED_ACTION_REQUEST:
         	buffer[0] = DED_ACTION_RESPONSE;
         	break;
+        case GNL_GLO_CIPHER_REQUEST:
+        	buffer[0] = GNL_GLO_CIPHER_RESPONSE;
+        	break;
+        case GNL_DED_CIPHER_REQUEST:
+        	buffer[0] = GNL_DED_CIPHER_RESPONSE;
+        	break;
+        case GNL_SIGN_REQUEST:
+        	buffer[0] = GNL_SIGN_RESPONSE;
+        	break;
     }
     
     cipher_length = 1;
+	
+	if((request->service == GNL_GLO_CIPHER_REQUEST) || (request->service == GNL_DED_CIPHER_REQUEST))
+	{
+		buffer[cipher_length] = 8;
+		cipher_length += 1;
+		dlms_asso_localtitle(&buffer[cipher_length]);
+		cipher_length += 8;
+	}
+	else if(request->service == GNL_SIGN_REQUEST)
+	{
+		//留空，存放长度信息，最长3字节
+		cipher_length += 3;
+		
+		//Transaction Id
+		memcpy(&buffer[cipher_length], request->general.sign.transaction, 9);
+		cipher_length += 9;
+		//Originator System Title
+		memcpy(&buffer[cipher_length], request->general.sign.recipient, 9);
+		cipher_length += 9;
+		//Recipient System Title
+		memcpy(&buffer[cipher_length], request->general.sign.originator, 9);
+		cipher_length += 9;
+		//Date Time
+		if(request->general.sign.date)
+		{
+			//...签名时间暂时使用接收的时间
+			memcpy(&buffer[cipher_length], request->general.sign.date, 13);
+			cipher_length += 13;
+		}
+		else
+		{
+			buffer[cipher_length] = 0;
+			cipher_length += 1;
+		}
+		
+		//Other_Information
+		buffer[cipher_length] = 0;
+		cipher_length += 1;
+		
+		switch(request->general.sign.content[0])
+		{
+			case GET_REQUEST:
+			case SET_REQUEST:
+			case ACTION_REQUEST:
+			{
+				heap.copy(&buffer[cipher_length], plain, plain_length);
+				cipher_length += plain_length;
+				break;
+			}
+			default:
+			{
+				buffer[cipher_length] = request->general.sign.content[0];
+				cipher_length += 1;
+				break;
+			}
+		}
+	}
 	
 	if((request->sc & 0xf0) == 0x10)
 	{
@@ -1932,14 +2521,29 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
 	}
 	else
 	{
-		goto enc_faild;
+		if(request->service != GNL_SIGN_REQUEST)
+		{
+			goto enc_faild;
+		}
 	}
     
     heap.free(plain);
-    return(APPL_SUCCESS);
+	if(request->service == GNL_SIGN_REQUEST)
+	{
+		goto add_signature;
+	}
+	else
+	{
+    	return(APPL_SUCCESS);
+	}
+
 enc_faild:
     heap.free(plain);
     return(APPL_ENC_FAILD);
+
+add_signature:
+	heap.free(plain);
+	return(APPL_SUCCESS);
 }
 
 /**	
@@ -2012,7 +2616,7 @@ void dlms_appl_entrance(const uint8_t *info,
     //step 1
     //解析报文
     //去除加密，并且索引报文中有效字段
-    result = parse_dlms_frame(info, length, &request);
+    result = parse_dlms_frame(info, length, &request, true);
     
     //解析报文失败
     if(result != APPL_SUCCESS)
