@@ -46,16 +46,16 @@ enum __axdr_type
   */
 union __axdr_container
 {
-    uint8_t     u8_t;
-    int8_t      i8_t;
-    uint16_t    u16_t;
-    int16_t     i16_t;
-    uint32_t    u32_t;
-    int32_t     i32_t;
-    uint64_t    u64_t;
-    int64_t     i64_t;
-    float       float_t;
-    double      double_t;
+    uint8_t     vu8;
+    int8_t      vi8;
+    uint16_t    vu16;
+    int16_t     vi16;
+    uint32_t    vu32;
+    int32_t     vi32;
+    uint64_t    vu64;
+    int64_t     vi64;
+    float       vf32;
+    double      vf64;
 };
 
 /**
@@ -85,7 +85,7 @@ struct __axdr_conv
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#define AXDR_CONTAINED(type)        ((type >= 5 && type <= 6)   || \
+#define AXDR_CONTAINABLE(type)		((type >= 5 && type <= 6)   || \
                                     (type >= 15 && type <= 18)  || \
                                     (type >= 20 && type <= 24))
 

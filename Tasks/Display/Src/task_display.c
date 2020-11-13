@@ -232,7 +232,7 @@ static void select_data(uint32_t mid, uint8_t *data)
     
     type = axdr.type.decode(data);
     
-    if(AXDR_CONTAINED(type))
+    if(AXDR_CONTAINABLE(type))
     {
         axdr.decode(data, 0, &container);
     }
@@ -249,89 +249,89 @@ static void select_data(uint32_t mid, uint8_t *data)
         {
             if(disp_runs.dots.voltage > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.voltage - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.voltage - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.voltage));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.voltage));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.voltage, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.voltage, select_unit(id));
         }
         else if(M_UISCURRENT(mid))
         {
             if(disp_runs.dots.current > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.current - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.current - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.current));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.current));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.current, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.current, select_unit(id));
         }
         else if(M_UISPOWER(mid))
         {
             if(disp_runs.dots.power > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.power - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.power - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.power));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.power));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.power, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.power, select_unit(id));
         }
         else if(M_UISENERGY(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.energy - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.energy));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.energy, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.energy, select_unit(id));
         }
         else if(M_UISPF(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.energy - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.energy));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.pf, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.pf, select_unit(id));
         }
         else if(M_UISANGLE(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.energy - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.energy));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.angle, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.angle, select_unit(id));
         }
         else if(M_UISFREQ(mid))
         {
             if(disp_runs.dots.energy > 3)
             {
-                container.i64_t *= pow_uint(10, (disp_runs.dots.energy - 3));
+                container.vi64 *= pow_uint(10, (disp_runs.dots.energy - 3));
             }
             else
             {
-                container.i64_t /= pow_uint(10, (3 - disp_runs.dots.energy));
+                container.vi64 /= pow_uint(10, (3 - disp_runs.dots.energy));
             }
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, (enum __lcd_dot)disp_runs.dots.freq, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, (enum __lcd_dot)disp_runs.dots.freq, select_unit(id));
         }
         else
         {
-            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.i64_t, LCD_DOT_NONE, select_unit(id));
+            lcd.window.show.dec(LCD_WINDOW_MAIN, (int32_t)container.vi64, LCD_DOT_NONE, select_unit(id));
         }
     }
     else if(M_UISFMT(mid))
@@ -339,33 +339,33 @@ static void select_data(uint32_t mid, uint8_t *data)
         switch(id.item)
         {
             case FMT_BIN: //二进制格式
-                lcd.window.show.bin(LCD_WINDOW_MAIN, container.u16_t, LCD_DOT_NONE, LCD_UNIT_NONE);
+                lcd.window.show.bin(LCD_WINDOW_MAIN, container.vu16, LCD_DOT_NONE, LCD_UNIT_NONE);
                 break;
             case FMT_BCD: //...BCD格式
             case FMT_HEX: //十六进制格式
-                lcd.window.show.hex(LCD_WINDOW_MAIN, container.u32_t, LCD_DOT_NONE, LCD_UNIT_NONE);
+                lcd.window.show.hex(LCD_WINDOW_MAIN, container.vu32, LCD_DOT_NONE, LCD_UNIT_NONE);
                 break;
             case FMT_DATE: //日期格式
-                lcd.window.show.date(LCD_WINDOW_MAIN, container.u64_t, LCD_DATE_YYMMDD);
+                lcd.window.show.date(LCD_WINDOW_MAIN, container.vu64, LCD_DATE_YYMMDD);
                 break;
             case FMT_TIME: //时间格式
-                lcd.window.show.date(LCD_WINDOW_MAIN, container.u64_t, LCD_DATE_hhmmss);
+                lcd.window.show.date(LCD_WINDOW_MAIN, container.vu64, LCD_DATE_hhmmss);
                 break;
             case FMT_DTIME: //日期时间格式
-                lcd.window.show.date(LCD_WINDOW_MAIN, container.u64_t, LCD_DATE_MMDDhhmm);
+                lcd.window.show.date(LCD_WINDOW_MAIN, container.vu64, LCD_DATE_MMDDhhmm);
                 break;
             case FMT_ASCII: //字符串格式
             case FMT_STR:
                 lcd.window.show.msg(LCD_WINDOW_MAIN, 7, (const char *)(data+2));
                 break;
             default:
-                lcd.window.show.dec(LCD_WINDOW_MAIN, container.i32_t, LCD_DOT_NONE, LCD_UNIT_NONE);
+                lcd.window.show.dec(LCD_WINDOW_MAIN, container.vi32, LCD_DOT_NONE, LCD_UNIT_NONE);
                 break;
         }
     }
     else
     {
-        lcd.window.show.dec(LCD_WINDOW_MAIN, container.i32_t, LCD_DOT_NONE, LCD_UNIT_NONE);
+        lcd.window.show.dec(LCD_WINDOW_MAIN, container.vi32, LCD_DOT_NONE, LCD_UNIT_NONE);
     }
 }
 

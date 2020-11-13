@@ -389,7 +389,7 @@ const struct __eeprom eeprom_1 =
 {
     .control        = 
     {
-        .name       = "eeprom#1",
+        .name       = "m24256",
         .status     = eep_status,
         .init       = eep_init,
         .suspend    = eep_suspend,
