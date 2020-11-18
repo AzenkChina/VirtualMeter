@@ -31,16 +31,11 @@
   * 获取一个属性
   *
   */
-TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
+TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, bool isSet)
 {
     TypeObject *Obj = (TypeObject *)0;
     
     if(!Index)
-    {
-        return((TypeObject)0);
-    }
-    
-    if((Motive != MOTIV_GET) && (Motive != MOTIV_SET))
     {
         return((TypeObject)0);
     }
@@ -59,7 +54,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -78,7 +73,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -97,7 +92,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -116,7 +111,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -135,7 +130,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -154,7 +149,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }
@@ -173,7 +168,7 @@ TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive)
                 Index -= 1;
                 Index *= 2;
                 Obj += Index;
-                if(Motive == MOTIV_SET)
+                if(isSet)
                 {
                     Obj += 1;
                 }

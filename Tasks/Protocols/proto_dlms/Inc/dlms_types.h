@@ -341,6 +341,15 @@ struct __cosem_request_desc
 };
 
 /* Exported macro ------------------------------------------------------------*/
+#define MAKE_COSEM_DESC(D, c, o, i, s)		(D)->classid = (c); \
+                                        	heap.copy((D)->obis, o, 6); \
+											(D)->index = (i); \
+											(D)->selector = (s);//初始化 __cosem_descriptor
+
+#define MAKE_COSEM_REQUEST(R, s, l, r, d)	(R)->suit = (s); \
+											(R)->level = (l); \
+											(R)->request = (r); \
+											(R)->descriptor = *(d);//初始化 __cosem_request_desc
 /* Exported function prototypes ----------------------------------------------*/
 
 #endif /* __DLMS_TYPES_H__ */

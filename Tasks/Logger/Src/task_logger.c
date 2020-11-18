@@ -17,6 +17,21 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**
+  * @brief  事件行为
+  */
+enum __event_behaviors
+{
+	EVB_PU		= 0x0001, //正常运行时可触发
+	EVB_PD		= 0x0002, //低功耗时可触发
+	EVB_STR		= 0x0004, //事件开始可触发
+	EVB_END		= 0x0008, //事件结束可触发
+	EVB_STRPU	= 0x0010, //上电时强制触发开始
+	EVB_ENDPU	= 0x0020, //上电时强制触发结束
+	EVB_STRPD	= 0x0040, //掉电时强制触发开始（掉电时事件状态强制设置位 EVS_STARTING，下次上电处理）
+	EVB_ENDPD	= 0x0080, //掉电时强制触发结束（掉电时事件状态强制设置位 EVS_ENDING，下次上电处理）
+};
+
+/**
   * @brief  事件配置表
   */
 struct __logger_table

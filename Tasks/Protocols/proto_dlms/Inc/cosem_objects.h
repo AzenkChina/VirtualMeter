@@ -10,6 +10,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 #include "object_template.h"
 
 /* Exported types ------------------------------------------------------------*/
@@ -399,12 +400,9 @@ typedef struct
 
 
 /* Exported constants --------------------------------------------------------*/
-#define MOTIV_GET       ((uint8_t)0x0f)
-#define MOTIV_SET       ((uint8_t)0xf0)
-
 /* Exported macro ------------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
-extern TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, uint8_t Motive);
+extern TypeObject CosemLoadAttribute(uint16_t ClassID, uint8_t Index, bool isSet);
 extern TypeObject CosemLoadMethod(uint16_t ClassID, uint8_t Index);
 
 #endif /* __COSEM_OBJECTS_H__ */

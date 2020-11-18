@@ -80,30 +80,38 @@ typedef ObjectErrs (*TypeObject)(ObjectPara *P);
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#define OBJ_IN_ADDR(P)                  ((const uint8_t *)(P->Input.Buffer))//获取输入数据首地址
-#define OBJ_IN_SIZE(P)                  ((uint16_t)(P->Input.Size))//获取输入数据字节长度
-#define OBJ_IN_OID(P)                   ((uint32_t)(P->Input.OID))//获取对象索引
-#define OBJ_IN_MID(P)                   ((uint32_t)(P->Input.MID))//获取数据标识
+#define OBJ_IO_INIT(P, i, li, o, lo)	(P)->Input.Buffer = (i); \
+                                        (P)->Input.Size = (li); \
+										(P)->Input.OID = 0xffffffff; \
+										(P)->Input.MID = 0; \
+										(P)->Output.Buffer = (o); \
+										(P)->Output.Size = (lo); \
+										(P)->Output.Filled = 0;//初始化IO
 
-#define OBJ_OUT_ADDR(P)                 (P->Output.Buffer)//获取输出缓冲首地址
-#define OBJ_OUT_SIZE(P)                 (P->Output.Size)//获取输出缓冲字节大小
-#define OBJ_PUSH_LENGTH(P, n)           (P->Output.Filled = n)//设置输出数据字节长度
+#define OBJ_IN_ADDR(P)                  ((const uint8_t *)((P)->Input.Buffer))//获取输入数据首地址
+#define OBJ_IN_SIZE(P)                  ((uint16_t)((P)->Input.Size))//获取输入数据字节长度
+#define OBJ_IN_OID(P)                   ((uint32_t)((P)->Input.OID))//获取对象索引
+#define OBJ_IN_MID(P)                   ((uint32_t)((P)->Input.MID))//获取数据标识
 
-#define OBJ_ITERATE_INIT(P, f, t)       P->Iterator.From = f; \
-                                        P->Iterator.To = t; \
-                                        if(P->Iterator.From != P->Iterator.To) \
-                                            {P->Iterator.Status = ITER_ONGOING;}//初始化迭代器
-#define OBJ_ITERATE_FROM(P)             (P->Iterator.From)//迭代器起始
-#define OBJ_ITERATE_TO(P)               (P->Iterator.To)//迭代器结束
-#define OBJ_ITERATE_STEPPING(P)         if(P->Iterator.From < P->Iterator.To) \
-                                            {P->Iterator.From += 1;} \
-                                        else if(P->Iterator.From > P->Iterator.To) \
-                                            {P->Iterator.From -= 1;} \
-                                        if(P->Iterator.From == P->Iterator.To) \
-                                            {P->Iterator.Status = ITER_FINISHED;}//迭代器步进
+#define OBJ_OUT_ADDR(P)                 ((P)->Output.Buffer)//获取输出缓冲首地址
+#define OBJ_OUT_SIZE(P)                 ((P)->Output.Size)//获取输出缓冲字节大小
+#define OBJ_PUSH_LENGTH(P, n)           ((P)->Output.Filled = (n))//设置输出数据字节长度
 
-#define OBJ_IS_ITERATING(P)             ((P->Iterator.Status == ITER_ONGOING) && \
-                                        (P->Iterator.From != P->Iterator.To))//判断是否正在迭代中
+#define OBJ_ITERATE_INIT(P, f, t)       (P)->Iterator.From = (f); \
+                                        (P)->Iterator.To = (t); \
+                                        if((P)->Iterator.From != P->Iterator.To) \
+                                            {(P)->Iterator.Status = ITER_ONGOING;}//初始化迭代器
+#define OBJ_ITERATE_FROM(P)             ((P)->Iterator.From)//迭代器起始
+#define OBJ_ITERATE_TO(P)               ((P)->Iterator.To)//迭代器结束
+#define OBJ_ITERATE_STEPPING(P)         if((P)->Iterator.From < (P)->Iterator.To) \
+                                            {(P)->Iterator.From += 1;} \
+                                        else if((P)->Iterator.From > (P)->Iterator.To) \
+                                            {(P)->Iterator.From -= 1;} \
+                                        if((P)->Iterator.From == (P)->Iterator.To) \
+                                            {(P)->Iterator.Status = ITER_FINISHED;}//迭代器步进
+
+#define OBJ_IS_ITERATING(P)             (((P)->Iterator.Status == ITER_ONGOING) && \
+                                        ((P)->Iterator.From != (P)->Iterator.To))//判断是否正在迭代中
 
 /* Exported function prototypes ----------------------------------------------*/
 

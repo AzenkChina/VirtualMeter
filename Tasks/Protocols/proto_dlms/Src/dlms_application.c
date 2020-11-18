@@ -1317,7 +1317,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     
                     Current->Entry[0].Para.Input.Buffer = request->info[0].data;
                     Current->Entry[0].Para.Input.Size = request->info[0].length;
-                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_GET);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, false);
                     
                     break;
                 }
@@ -1371,7 +1371,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                         
                         Current->Entry[cnt].Para.Input.Buffer = request->info[cnt].data;
                         Current->Entry[cnt].Para.Input.Size = request->info[cnt].length;
-                        Current->Entry[cnt].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_GET);
+                        Current->Entry[cnt].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, false);
                     }
                     
                     break;
@@ -1411,7 +1411,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                                                                             request->info[0].data, \
                                                                             request->info[0].length, \
                                                                             &Current->Entry[0].Para.Input.Size);
-                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_SET);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, false);
                     break;
                 }
                 case SET_FIRST_BLOCK:
@@ -1446,7 +1446,7 @@ static enum __appl_result make_cosem_instance(const struct __appl_request *reque
                     {
                         Current->Entry[0].Para.Iterator.Status = ITER_FINISHED;//赋值迭代标识
                     }
-                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, MOTIV_SET);
+                    Current->Entry[0].Object = CosemLoadAttribute(desc.descriptor.classid, desc.descriptor.index, false);
                     break;
                 }
                 case SET_WITH_BLOCK:
