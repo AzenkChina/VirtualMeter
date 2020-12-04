@@ -89,7 +89,7 @@ static const struct __file_entry file_entry[] =
     {"lexicon",             64*1024,        CT_SECURE},		//电表数据项词典
     {"disconnect",          512,            CT_SECURE},		//继电器参数
     {"display",             4*1024,         CT_SECURE},		//显示参数
-    {"firmware",            512*1024,       CT_RING},		//固件升级
+    {"firmware",            512*1024,       CT_PARALLEL},	//固件升级
 };
 
 static uint8_t lock = 0;
@@ -594,7 +594,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 		return(0);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -732,7 +732,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 		return(0);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file_info, info, LFS_O_RDWR);
@@ -906,7 +906,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 		return(0);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR);
@@ -1043,7 +1043,7 @@ static bool disk_ring_info(const char *name, struct __ring_info *ring_info)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -1144,7 +1144,7 @@ static bool disk_ring_reset(const char *name)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR);
@@ -1267,7 +1267,7 @@ static bool disk_ring_init(const char *name, uint32_t length)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".r0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR | LFS_O_CREAT);
@@ -1366,7 +1366,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 		return(0);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -1487,7 +1487,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 		return(0);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -1612,7 +1612,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -1713,7 +1713,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR);
@@ -1794,7 +1794,7 @@ static bool disk_parallel_status(const char *name, uint32_t index)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".chk");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -1878,7 +1878,7 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".chk");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR);
@@ -1976,7 +1976,7 @@ static bool disk_parallel_info(const char *name, struct __parallel_info *paralle
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDONLY);
@@ -2081,7 +2081,7 @@ static bool disk_parallel_reset(const char *name)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".chk");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR | LFS_O_CREAT);
@@ -2144,8 +2144,8 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
-	strcat(info, ".r0");
+	strcpy(info, file_entry[loop].name);
+	strcat(info, ".p0");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR | LFS_O_CREAT);
 	if(err)
@@ -2204,7 +2204,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 		return(false);
 	}
 	
-	strcat(info, file_entry[loop].name);
+	strcpy(info, file_entry[loop].name);
 	strcat(info, ".chk");
 	
 	err = lfs_file_open(&lfs_lfs, &lfs_file, info, LFS_O_RDWR | LFS_O_CREAT);

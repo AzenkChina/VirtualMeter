@@ -15,7 +15,7 @@ repeat
 	local data = io.read(96)
 	if(data ~= nil)
 	then
-		basis.file.write(system, offset, 96, data)
+		basis.file.parameter.write(system, offset, 96, data)
 		offset = offset + 96
 	end
 until(data == nil)
