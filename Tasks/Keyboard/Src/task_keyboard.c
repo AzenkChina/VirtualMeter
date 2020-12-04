@@ -134,6 +134,8 @@ static void keyboard_init(void)
     }
     
     keys.handler.filling(key_changed);
+	
+	TRACE(TRACE_INFO, "Task keyboard initialized.");
 }
 
 /**
@@ -167,6 +169,7 @@ static void keyboard_exit(void)
 {
     keys.handler.remove();
     keys.control.suspend();
+	TRACE(TRACE_INFO, "Task keyboard exited.");
 }
 
 /**
@@ -176,6 +179,7 @@ static void keyboard_reset(void)
 {
     keys.handler.remove();
     keys.control.suspend();
+	TRACE(TRACE_INFO, "Task keyboard reset.");
 }
 
 /**

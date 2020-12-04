@@ -194,7 +194,7 @@ static void tasks_sched(enum __klevel level)
             calcu_loop = 0;
         }
 		
-        if((level == SYSTEM_WAKEUP) && (relative < (PERIOD_RUNNING * 3 / 4)) && (cpu_load < 75))
+        if((level == SYSTEM_WAKEUP) && (relative < (PERIOD_RUNNING * 3 / 4)) && (cpu_load < 50))
 		{
 			//cpu idle
 			cpu.core.idle((PERIOD_RUNNING - relative - 1));

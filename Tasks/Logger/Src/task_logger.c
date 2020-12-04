@@ -93,7 +93,7 @@ static enum __event_status logger_event_status_read(enum __event_id id)
 {
 	enum __event_id val = EVI_ALL;
 	
-	if(logger_status.check != crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check))))
+	if(logger_status.check != crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)), 0))
 	{
 		return(EVS_ENDED);
 	}
@@ -122,7 +122,7 @@ static bool logger_event_status_toggle(enum __event_id id, enum __event_status s
 		return(false);
 	}
 	
-	if(logger_status.check != crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check))))
+	if(logger_status.check != crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)), 0))
 	{
 		return(false);
 	}
@@ -158,7 +158,7 @@ static bool logger_event_status_toggle(enum __event_id id, enum __event_status s
 	//更新状态
 	logger_status.value[id/4] &= ~(0x03 << ((id%4)*2));
 	logger_status.value[id/4] |= (((uint8_t)status) << ((id%4)*2));
-	logger_status.check = crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)));
+	logger_status.check = crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)), 0);
 	
 	//事件开始可触发
 	if(behaviors & EVB_STR)
@@ -187,7 +187,7 @@ static bool logger_event_add_monitor(void (*callback)(enum __event_id, enum __ev
 		return(false);
 	}
 	
-	if(monitors.check != crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check))))
+	if(monitors.check != crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0))
 	{
 		return(false);
 	}
@@ -215,7 +215,7 @@ static bool logger_event_add_monitor(void (*callback)(enum __event_id, enum __ev
 	}
 	
 	monitors.callback[blank] = callback;
-	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)));
+	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0);
 	return(true);
 }
 
@@ -229,7 +229,7 @@ static bool logger_event_remove_monitor(void (*callback)(enum __event_id, enum _
 		return(false);
 	}
 	
-	if(monitors.check != crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check))))
+	if(monitors.check != crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0))
 	{
 		return(false);
 	}
@@ -247,7 +247,7 @@ static bool logger_event_remove_monitor(void (*callback)(enum __event_id, enum _
 		}
 	}
 	
-	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)));
+	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0);
 	return(true);
 }
 
@@ -323,13 +323,15 @@ static void task_logger_init(void)
     }
 	
 	//初始化监听列表
-    memset(&monitors, 0, sizeof(monitors));
-	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)));
+    heap.set(&monitors, 0, sizeof(monitors));
+	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0);
 	
 	//...加载事件状态
-	memset(&logger_status, 0, sizeof(logger_status));
+	heap.set(&logger_status, 0, sizeof(logger_status));
 	
 	//...记录上电时需要处理的事件，延迟处理
+	
+	TRACE(TRACE_INFO, "Task logger initialized.");
 }
 
 /**
@@ -350,9 +352,11 @@ static void task_logger_loop(void)
 static void task_logger_exit(void)
 {
 	//...保存事件状态
-	memset(&logger_status, 0, sizeof(logger_status));
+	heap.set(&logger_status, 0, sizeof(logger_status));
 	
 	task_status = TASK_NOTINIT;
+	
+	TRACE(TRACE_INFO, "Task logger exited.");
 }
 
 /**
@@ -361,15 +365,17 @@ static void task_logger_exit(void)
 static void task_logger_reset(void)
 {
 	//初始化监听列表
-    memset(&monitors, 0, sizeof(monitors));
-	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)));
+    heap.set(&monitors, 0, sizeof(monitors));
+	monitors.check = crc32(&monitors, (sizeof(monitors) - sizeof(monitors.check)), 0);
 	
 	//...初始化事件状态
-	memset(&logger_status, 0, sizeof(logger_status));
-	logger_status.check = crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)));
+	heap.set(&logger_status, 0, sizeof(logger_status));
+	logger_status.check = crc32(&logger_status, (sizeof(logger_status) - sizeof(logger_status.check)), 0);
 	//...写回
 	
 	task_status = TASK_NOTINIT;
+	
+	TRACE(TRACE_INFO, "Task logger reset.");
 }
 
 /**

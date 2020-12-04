@@ -257,9 +257,9 @@ static void protocol_init(void)
     	//初始化所有协议栈
     	proto_init();
 	    
-	    TRACE(TRACE_INFO, "Task protocol initialized.");
-	    
 	    status = TASK_INIT;
+		
+		TRACE(TRACE_INFO, "Task protocol initialized.");
     }
 }
 
@@ -282,9 +282,9 @@ static void protocol_exit(void)
 {
 	//退出所有协议栈
     proto_exit();
-    
-    TRACE(TRACE_INFO, "Task protocol exited.");
+	
     status = TASK_SUSPEND;
+	TRACE(TRACE_INFO, "Task protocol exited.");
 }
 
 /**
@@ -295,8 +295,8 @@ static void protocol_reset(void)
 	//退出所有协议栈
     proto_reset();
     
-    TRACE(TRACE_INFO, "Task protocol reset.");
     status = TASK_NOTINIT;
+	TRACE(TRACE_INFO, "Task protocol reset.");
 }
 
 /**

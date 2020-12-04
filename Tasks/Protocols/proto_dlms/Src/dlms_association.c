@@ -1484,7 +1484,7 @@ static void asso_aarq_high(struct __dlms_association *asso,
                 *(buffer + *filled_length + 2) = 0x80;
                 *(buffer + *filled_length + 3) = 0x10;
                 dlms_asso_random(16, (buffer + *filled_length + 4));
-                memcpy(asso->stoc, (buffer + *filled_length + 2), (2 + 16));
+                heap.copy(asso->stoc, (buffer + *filled_length + 2), (2 + 16));
                 *filled_length += (4 + 16);
             }
         }

@@ -24,6 +24,7 @@
 static void dlms_init(void)
 {
 	hdlc_init();
+	dlms_lex_init();
 }
 
 static void dlms_loop(void)
@@ -39,6 +40,7 @@ static void dlms_exit(void)
 static void dlms_reset(void)
 {
 	hdlc_init();
+	dlms_lex_init();
     
 #if defined ( MAKE_RUN_FOR_DEBUG )
     {
@@ -81,10 +83,10 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
 	OBJ_IO_INIT(&P, input, sizeof(input), buff, size);
     
 	MAKE_COSEM_DESC(&cosem_descriptor, 
-					(((uint16_t)descriptor[0]) << 8 + descriptor[1]),
+					((((uint16_t)descriptor[0]) << 8) + descriptor[1]),
 					&descriptor[2],
 					descriptor[8],
-					(((uint16_t)descriptor[9]) << 8 + descriptor[10]));
+					((((uint16_t)descriptor[9]) << 8) + descriptor[10]));
 	MAKE_COSEM_REQUEST(&desc, 0xff, DLMS_ACCESS_HIGH, GET_REQUEST, &cosem_descriptor);
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);
@@ -123,10 +125,10 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 	OBJ_IO_INIT(&P, buff, size, output, sizeof(output));
     
 	MAKE_COSEM_DESC(&cosem_descriptor, 
-					(((uint16_t)descriptor[0]) << 8 + descriptor[1]),
+					((((uint16_t)descriptor[0]) << 8) + descriptor[1]),
 					&descriptor[2],
 					descriptor[8],
-					(((uint16_t)descriptor[9]) << 8 + descriptor[10]));
+					((((uint16_t)descriptor[9]) << 8) + descriptor[10]));
 	MAKE_COSEM_REQUEST(&desc, 0xff, DLMS_ACCESS_HIGH, SET_REQUEST, &cosem_descriptor);
 	
     dlms_lex_parse(&desc, &right, &P.Input.OID, &P.Input.MID);

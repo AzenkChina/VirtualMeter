@@ -597,7 +597,7 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
 		return(false);
 	}
 	
-	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t))))
+	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
 	{
 		return(false);
 	}
@@ -614,7 +614,7 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
 		return(false);
 	}
 	
-	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t))))
+	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
 	{
 		return(false);
 	}
@@ -692,7 +692,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
            sizeof(((struct __calibrates *)args)->data));
     
 	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
-                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
+                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t), 0);
     
     calibrate = true;
     
@@ -844,7 +844,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	((struct __calibrates *)args)->data.reg[54].value = 0x0002;
     
 	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
-                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t));
+                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t), 0);
 	
     calibrate = true;
     return(calibrate);

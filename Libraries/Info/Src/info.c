@@ -263,7 +263,7 @@ uint64_t info_get_address(void)
 {
     uint64_t address = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, address), \
 					sizeof(address), \
 					&address) != sizeof(address))
@@ -281,7 +281,7 @@ uint64_t info_set_address(uint64_t val)
 {
 	uint64_t address = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, address), \
 					sizeof(address), \
 					&address) != sizeof(address))
@@ -297,7 +297,7 @@ uint64_t info_set_address(uint64_t val)
   */
 uint8_t info_get_serial(char *buff)
 {
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, serial), \
 					STRUCT_SIZE(struct __information, serial), \
 					buff) != STRUCT_SIZE(struct __information, serial))
@@ -331,7 +331,7 @@ uint8_t info_set_serial(const char *buff)
 		length = strlen(buff);
 	}
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, serial), \
 					length, \
 					buff) != length)
@@ -347,7 +347,7 @@ uint8_t info_set_serial(const char *buff)
   */
 uint8_t info_get_type(char *buff)
 {
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, type), \
 					STRUCT_SIZE(struct __information, type), \
 					buff) != STRUCT_SIZE(struct __information, type))
@@ -381,7 +381,7 @@ uint8_t info_set_type(const char *buff)
 		length = strlen(buff);
 	}
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, type), \
 					length, \
 					buff) != length)
@@ -399,7 +399,7 @@ uint8_t info_get_phase(void)
 {
     uint16_t phase = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, phase), \
 					sizeof(phase), \
 					&phase) != sizeof(phase))
@@ -417,7 +417,7 @@ uint8_t info_set_phase(uint8_t val)
 {
 	uint16_t phase = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, phase), \
 					sizeof(phase), \
 					&phase) != sizeof(phase))
@@ -435,7 +435,7 @@ uint8_t info_get_wire(void)
 {
     uint16_t wire = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, wire), \
 					sizeof(wire), \
 					&wire) != sizeof(wire))
@@ -453,7 +453,7 @@ uint8_t info_set_wire(uint8_t val)
 {
 	uint16_t wire = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, wire), \
 					sizeof(wire), \
 					&wire) != sizeof(wire))
@@ -471,7 +471,7 @@ uint32_t info_get_voltage(void)
 {
     uint32_t voltage = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, voltage), \
 					sizeof(voltage), \
 					&voltage) != sizeof(voltage))
@@ -489,7 +489,7 @@ uint32_t info_set_voltage(uint32_t val)
 {
 	uint32_t voltage = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, voltage), \
 					sizeof(voltage), \
 					&voltage) != sizeof(voltage))
@@ -507,7 +507,7 @@ uint32_t info_get_current_rated(void)
 {
     uint32_t current_rated = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, current_rated), \
 					sizeof(current_rated), \
 					&current_rated) != sizeof(current_rated))
@@ -525,7 +525,7 @@ uint32_t info_set_current_rated(uint32_t val)
 {
 	uint32_t current_rated = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, current_rated), \
 					sizeof(current_rated), \
 					&current_rated) != sizeof(current_rated))
@@ -543,7 +543,7 @@ uint32_t info_get_current_max(void)
 {
     uint32_t current_max = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, current_max), \
 					sizeof(current_max), \
 					&current_max) != sizeof(current_max))
@@ -561,7 +561,7 @@ uint32_t info_set_current_max(uint32_t val)
 {
 	uint32_t current_max = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, current_max), \
 					sizeof(current_max), \
 					&current_max) != sizeof(current_max))
@@ -579,7 +579,7 @@ uint32_t info_get_frequency(void)
 {
     uint32_t frequency = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, frequency), \
 					sizeof(frequency), \
 					&frequency) != sizeof(frequency))
@@ -597,7 +597,7 @@ uint32_t info_set_frequency(uint32_t val)
 {
 	uint32_t frequency = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, frequency), \
 					sizeof(frequency), \
 					&frequency) != sizeof(frequency))
@@ -615,7 +615,7 @@ uint32_t info_get_accuracy_active(void)
 {
     uint32_t accuracy_active = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, accuracy_active), \
 					sizeof(accuracy_active), \
 					&accuracy_active) != sizeof(accuracy_active))
@@ -633,7 +633,7 @@ uint32_t info_set_accuracy_active(uint32_t val)
 {
 	uint32_t accuracy_active = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, accuracy_active), \
 					sizeof(accuracy_active), \
 					&accuracy_active) != sizeof(accuracy_active))
@@ -651,7 +651,7 @@ uint32_t info_get_accuracy_reactive(void)
 {
     uint32_t accuracy_reactive = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, accuracy_reactive), \
 					sizeof(accuracy_reactive), \
 					&accuracy_reactive) != sizeof(accuracy_reactive))
@@ -669,7 +669,7 @@ uint32_t info_set_accuracy_reactive(uint32_t val)
 {
 	uint32_t accuracy_reactive = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, accuracy_reactive), \
 					sizeof(accuracy_reactive), \
 					&accuracy_reactive) != sizeof(accuracy_reactive))
@@ -687,7 +687,7 @@ uint64_t info_get_manufacture(void)
 {
     uint64_t manufacture = 0;
     
-    if(file.read("information", \
+    if(file.parameter.read("information", \
 					STRUCT_OFFSET(struct __information, manufacture), \
 					sizeof(manufacture), \
 					&manufacture) != sizeof(manufacture))
@@ -705,7 +705,7 @@ uint64_t info_set_manufacture(uint64_t val)
 {
 	uint64_t manufacture = val;
 	
-    if(file.write("information", \
+    if(file.parameter.write("information", \
 					STRUCT_OFFSET(struct __information, manufacture), \
 					sizeof(manufacture), \
 					&manufacture) != sizeof(manufacture))

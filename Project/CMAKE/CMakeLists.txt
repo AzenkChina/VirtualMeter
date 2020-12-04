@@ -38,6 +38,7 @@ set(sources
  ../../Libraries/Convert/Src/axdr.c
  ../../Libraries/Convert/Src/bcd.c
  ../../Libraries/Check/Src/crc.c
+ ../../Libraries/Check/Src/ecc.c
  ../../Libraries/Mbed/tls/library/aes.c
  ../../Libraries/Mbed/tls/library/aesni.c
  ../../Libraries/Mbed/tls/library/arc4.c
@@ -117,6 +118,8 @@ set(sources
  ../../Libraries/Mbed/tls/library/x509write_crt.c
  ../../Libraries/Mbed/tls/library/x509write_csr.c
  ../../Libraries/Mbed/tls/library/xtea.c
+ ../../Libraries/Mbed/littlefs/Src/lfs.c
+ ../../Libraries/Mbed/littlefs/Src/lfs_util.c
  ../../Kernel/Src/heap.c
  ../../Kernel/Src/kernel.c
  ../../Kernel/Src/disk.c
@@ -168,6 +171,7 @@ set(includes
  ../../Libraries/Check/Inc
  ../../Libraries/Info/Inc
  ../../Libraries/Mbed/tls
+ ../../Libraries/Mbed/littlefs/Inc
  ../../Libraries/Convert/Inc
  ../../Libraries/trace/Inc
  ../../Kernel/Inc
@@ -286,6 +290,8 @@ endif()
 
 
 #Specify the compile parameters
+add_definitions(-DLFS_NO_ASSERT -DLFS_NO_DEBUG -DLFS_NO_WARN -DLFS_NO_ERROR)
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	add_definitions(-DMAKE_RUN_FOR_DEBUG)
 endif()

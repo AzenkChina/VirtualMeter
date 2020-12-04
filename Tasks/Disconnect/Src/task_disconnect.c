@@ -165,7 +165,7 @@ static uint8_t relay_priority_write(uint8_t selection, const uint8_t *priority)
     
     heap.set(&param, 0, sizeof(param));
     
-    file.read("disconnect", 0, sizeof(param), &param);
+    file.parameter.read("disconnect", 0, sizeof(param), &param);
         
     if(param.selection >= RELAY_CONF_CONTENT)
     {
@@ -174,7 +174,7 @@ static uint8_t relay_priority_write(uint8_t selection, const uint8_t *priority)
     
     heap.copy(param.priority[param.selection], priority, sizeof(param.priority[param.selection]));
     
-    file.write("disconnect", 0, sizeof(param), &param);
+    file.parameter.write("disconnect", 0, sizeof(param), &param);
     
     if(param.selection == selection)
     {
@@ -204,7 +204,7 @@ static uint8_t relay_priority_read(uint8_t selection, uint8_t *priority)
     
     heap.set(&param, 0, sizeof(param));
     
-    file.read("disconnect", 0, sizeof(param), &param);
+    file.parameter.read("disconnect", 0, sizeof(param), &param);
     
     return(heap.copy(priority, param.priority[selection], sizeof(param.priority[selection])));
 }
@@ -223,11 +223,11 @@ static uint8_t relay_selection_set(uint8_t selection)
     
     heap.set(&param, 0, sizeof(param));
     
-    file.read("disconnect", 0, sizeof(param), &param);
+    file.parameter.read("disconnect", 0, sizeof(param), &param);
     
     param.selection = selection;
     
-    file.write("disconnect", 0, sizeof(param), &param);
+    file.parameter.write("disconnect", 0, sizeof(param), &param);
     
     heap.copy(relay_runs.priority, param.priority[selection], sizeof(relay_runs.priority));
     relay_runs.flush = 0xff;
@@ -244,7 +244,7 @@ static uint8_t relay_selection_get(void)
     
     heap.set(&param, 0, sizeof(param));
     
-    file.read("disconnect", 0, sizeof(param), &param);
+    file.parameter.read("disconnect", 0, sizeof(param), &param);
     
 	return(param.selection);
 }
@@ -258,12 +258,12 @@ static uint32_t relay_mask_set(uint32_t mask)
     
     heap.set(&param, 0, sizeof(param));
     
-    file.read("disconnect", 0, sizeof(param), &param);
+    file.parameter.read("disconnect", 0, sizeof(param), &param);
     
     param.mask = mask;
     relay_runs.mask = mask;
     
-    file.write("disconnect", 0, sizeof(param), &param);
+    file.parameter.write("disconnect", 0, sizeof(param), &param);
     
     relay_runs.flush = 0xff;
     
@@ -324,7 +324,7 @@ static void disc_init(void)
         
         heap.set(&param, 0, sizeof(param));
         
-        file.read("disconnect", 0, sizeof(param), &param);
+        file.parameter.read("disconnect", 0, sizeof(param), &param);
         
         if(param.selection >= RELAY_CONF_CONTENT)
         {
@@ -346,6 +346,7 @@ static void disc_init(void)
         request_action(action);
         
         task_status = TASK_INIT;
+		TRACE(TRACE_INFO, "Task disconnect initialized.");
     }
 }
 
@@ -409,6 +410,7 @@ static void disc_exit(void)
 {
     relay.control.suspend();
     task_status = TASK_NOTINIT;
+	TRACE(TRACE_INFO, "Task disconnect exited.");
 }
 
 /**
@@ -440,9 +442,10 @@ static void disc_reset(void)
             }
         }
         
-        file.write("disconnect", 0, sizeof(param), &param);
+        file.parameter.write("disconnect", 0, sizeof(param), &param);
     }
 #endif // #if defined ( MAKE_RUN_FOR_DEBUG )
+	TRACE(TRACE_INFO, "Task disconnect reset.");
 }
 
 /**

@@ -10,6 +10,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 
 /* Exported types ------------------------------------------------------------*/
 /**
@@ -22,28 +23,77 @@ struct __nvram
 };
 
 /**
-  * @brief  存储器接口
-  */
-struct __file
-{
-    uint32_t                    (*read)(const char *name, uint32_t offset, uint32_t count, void *buff);
-    uint32_t                    (*write)(const char *name, uint32_t offset, uint32_t count, const void *buff);
-    uint32_t                    (*size)(const char *name);
-    uint32_t                    (*cluster)(const char *name);
-};
-
-/**
   * @brief  堆接口
   */
 struct __heap
 {
     void                            *(*salloc)(const char *name, uint32_t size);
+    void                            *(*szalloc)(const char *name, uint32_t size);
     void                            *(*scalloc)(const char *name, uint32_t n, uint32_t size);
     void                            *(*dalloc)(uint32_t size);
+    void                            *(*dzalloc)(uint32_t size);
     void                            *(*dcalloc)(uint32_t n, uint32_t size);
     void                            (*free)(void *address);
-    uint32_t                        (*copy)(void *dst, const void *src, uint32_t count);
-    uint32_t                        (*set)(void *address, uint8_t ch, uint32_t count);
+    uint32_t                        (*copy)(void *dst, const void *src, uint32_t size);
+    uint32_t                        (*set)(void *address, uint8_t ch, uint32_t size);
+};
+
+
+/**
+  * @brief  环形队列信息
+  */
+struct __ring_info
+{
+	uint16_t length; //每条记录的最大长度
+	uint16_t capacity; //最大条目容量
+	uint16_t amount; //当前条目数量
+};
+
+/**
+  * @brief  并发缓冲信息
+  */
+struct __parallel_info
+{
+	uint16_t length; //每条记录的最大长度
+	uint16_t capacity; //最大条目容量
+};
+
+/**
+  * @brief  存储器接口
+  */
+struct __file
+{
+	struct
+	{
+		uint32_t				(*read)(const char *name, uint32_t offset, uint32_t size, void *buff);
+		uint32_t				(*write)(const char *name, uint32_t offset, uint32_t size, const void *buff);
+		uint32_t				(*size)(const char *name);
+		
+	}							parameter;
+	
+	struct
+	{
+		uint32_t				(*read)(const char *name, uint32_t index, uint32_t size, void *buff, bool reverse);
+		uint32_t				(*append)(const char *name, uint32_t size, const void *buff);
+		uint32_t				(*truncate)(const char *name, uint32_t amount, bool reverse);
+		bool					(*info)(const char *name, struct __ring_info *ring_info);
+		bool					(*reset)(const char *name);
+		bool					(*init)(const char *name, uint32_t length);
+		
+	}							ring;
+	
+	struct
+	{
+		uint32_t				(*read)(const char *name, uint32_t index, uint32_t size, void *buff);
+		uint32_t				(*write)(const char *name, uint32_t index, uint32_t size, const void *buff);
+		bool					(*signature)(const char *name, uint32_t *signature);
+		bool					(*status)(const char *name, uint32_t index);
+		bool					(*renew)(const char *name, uint32_t index);
+		bool					(*info)(const char *name, struct __parallel_info *parallel_info);
+		bool					(*reset)(const char *name);
+		bool					(*init)(const char *name, uint32_t length);
+		
+	}							parallel;
 };
 
 /* Exported constants --------------------------------------------------------*/

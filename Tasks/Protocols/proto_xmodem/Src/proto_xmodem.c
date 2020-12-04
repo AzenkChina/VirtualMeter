@@ -62,7 +62,7 @@ static bool xfr_init(const char *name)
     }
     
     //查询文件是否存在
-    if(file.size(name) == 0)
+    if(file.parameter.size(name) == 0)
     {
         if(xfr_info)
         {
@@ -204,7 +204,7 @@ static uint8_t xfr_receive(const uint8_t *frame, uint16_t length)
     }
     
     //写文件
-    if(file.write(xfr_info->file, (xfr_info->counter * 128), 128, &frame[3]) == 0)
+    if(file.parameter.write(xfr_info->file, (xfr_info->counter * 128), 128, &frame[3]) == 0)
     {
         heap.free(xfr_info);
         xfr_info = (struct __xfr_info *)0;

@@ -2399,6 +2399,15 @@
     <group>
       <name>Mbed</name>
       <group>
+        <name>Littlefs</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Libraries\Mbed\littlefs\Src\lfs.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\Libraries\Mbed\littlefs\Src\lfs_util.c</name>
+        </file>
+      </group>
+      <group>
         <name>tls</name>
         <file>
           <name>$PROJ_DIR$\..\..\Libraries\Mbed\tls\library\aes.c</name>

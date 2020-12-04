@@ -125,11 +125,10 @@ static const uint32_t crc32tab[256] =
 
 
 
-uint16_t crc16(const void *cp, uint16_t length)
+uint16_t crc16(const void *cp, uint16_t length, uint16_t init)
 {
-    uint16_t val = 0xffff;
+    uint16_t val = init;
     const uint8_t *p = (const uint8_t *)cp;
-    
     
     if(!p)
     {
@@ -147,10 +146,10 @@ uint16_t crc16(const void *cp, uint16_t length)
 }
 
 
-uint32_t crc32(const void *cp, uint16_t length)
+uint32_t crc32(const void *cp, uint16_t length, uint32_t init)
 {
     uint16_t cnt;
-    uint32_t val = 0;
+    uint32_t val = init;
     const uint8_t *p = (const uint8_t *)cp;
     
     if(!p)

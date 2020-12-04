@@ -92,10 +92,6 @@ ShowTimeLog=1
 SumEnabled=0
 ShowTimeSum=1
 SumSortOrder=0
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -109,13 +105,15 @@ Exclusions=
 Enabled=0
 [CallStackStripe]
 ShowTiming=1
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
 Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Protocols\proto_xmodem\Src\proto_xmodem.c}.342.5" 0 0 1 "" 0 "" 0
-Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Display\Src\task_display.c}.1096.21" 0 0 1 "" 0 "" 0
-Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\..\Tasks\Display\Src\task_display.c}.471.5" 0 0 1 "" 0 "" 0
-Count=3
+Count=1
 [Aliases]
 Count=0
 SuppressDialog=0

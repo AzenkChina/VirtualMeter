@@ -416,7 +416,7 @@ static uint8_t display_change(uint8_t channel)
     disp_runs.channel = channel;
     
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].amount);
-    file.read("display", offset, sizeof(disp_runs.amount), &disp_runs.amount);
+    file.parameter.read("display", offset, sizeof(disp_runs.amount), &disp_runs.amount);
     
     disp_runs.counter.scroll = 0;
     disp_runs.index = 0;
@@ -460,7 +460,7 @@ static uint8_t display_list_show_next(void)
     
     //获取显示项索引对应的数据项标识
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
-    file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
+    file.parameter.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
     api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
@@ -507,7 +507,7 @@ static uint8_t display_list_show_last(void)
     clear_unit();
     
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
-    file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
+    file.parameter.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
     api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
@@ -550,7 +550,7 @@ static uint8_t display_list_show_index(uint8_t val)
     clear_unit();
     
     offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
-    file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
+    file.parameter.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
     
     api_stream = (struct __protocol *)api("task_protocol");
     if(!api_stream)
@@ -596,7 +596,7 @@ static uint8_t display_config_start_set(uint8_t second)
     
     disp_runs.time.start = second;
 	offset = STRUCT_OFFSET(struct __disp_param, time.start);
-	file.write("display", offset, sizeof(disp_runs.time.start), &disp_runs.time.start);
+	file.parameter.write("display", offset, sizeof(disp_runs.time.start), &disp_runs.time.start);
     
     return(disp_runs.time.start);
 }
@@ -612,7 +612,7 @@ static uint8_t display_config_scroll_set(uint8_t second)
     
     disp_runs.time.scroll = second;
 	offset = STRUCT_OFFSET(struct __disp_param, time.scroll);
-	file.write("display", offset, sizeof(disp_runs.time.scroll), &disp_runs.time.scroll);
+	file.parameter.write("display", offset, sizeof(disp_runs.time.scroll), &disp_runs.time.scroll);
     
     return(disp_runs.time.scroll);
 }
@@ -628,7 +628,7 @@ static uint8_t display_config_backlight_set(uint8_t second)
     
     disp_runs.time.backlight = second;
 	offset = STRUCT_OFFSET(struct __disp_param, time.backlight);
-	file.write("display", offset, sizeof(disp_runs.time.backlight), &disp_runs.time.backlight);
+	file.parameter.write("display", offset, sizeof(disp_runs.time.backlight), &disp_runs.time.backlight);
     
     return(disp_runs.time.backlight);
 }
@@ -644,9 +644,9 @@ static uint8_t display_config_power_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.power = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.power);
 }
@@ -663,9 +663,9 @@ static uint8_t display_config_voltage_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.voltage = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.voltage);
 }
@@ -681,9 +681,9 @@ static uint8_t display_config_current_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.current = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.current);
 }
@@ -699,9 +699,9 @@ static uint8_t display_config_energy_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.energy = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.energy);
 }
@@ -717,9 +717,9 @@ static uint8_t display_config_demand_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.demand = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.demand);
 }
@@ -735,9 +735,9 @@ static uint8_t display_config_angle_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.angle = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.angle);
 }
@@ -753,9 +753,9 @@ static uint8_t display_config_freq_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.freq = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.freq);
 }
@@ -771,9 +771,9 @@ static uint8_t display_config_pf_dot_set(uint8_t dot)
     struct __disp_dot dots;
     
 	offset = STRUCT_OFFSET(struct __disp_param, dots);
-    file.read("display", offset, sizeof(disp_runs.dots), &dots);
+    file.parameter.read("display", offset, sizeof(disp_runs.dots), &dots);
     disp_runs.dots.pf = dot;
-	file.write("display", offset, sizeof(disp_runs.dots), &dots);
+	file.parameter.write("display", offset, sizeof(disp_runs.dots), &dots);
     
     return((uint8_t)disp_runs.dots.pf);
 }
@@ -794,7 +794,7 @@ static uint16_t display_config_list_write(uint8_t channel, void *id)
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
-	file.read("display", offset, sizeof(amount), &amount);
+	file.parameter.read("display", offset, sizeof(amount), &amount);
     
     if(amount >= DISP_CONF_AMOUNT_IN_LIST)
     {
@@ -802,12 +802,12 @@ static uint16_t display_config_list_write(uint8_t channel, void *id)
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].entry[3]);
-	file.write("display", offset, 16, id);
+	file.parameter.write("display", offset, 16, id);
     
     amount += 1;
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
-	file.write("display", offset, sizeof(amount), &amount);
+	file.parameter.write("display", offset, sizeof(amount), &amount);
     
     if(channel == disp_runs.channel)
     {
@@ -833,7 +833,7 @@ static uint16_t display_config_list_read(uint8_t channel, uint16_t index, void *
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
-	file.read("display", offset, sizeof(amount), &amount);
+	file.parameter.read("display", offset, sizeof(amount), &amount);
     
     if(index >= amount)
     {
@@ -841,7 +841,7 @@ static uint16_t display_config_list_read(uint8_t channel, uint16_t index, void *
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].entry[index]);
-	file.read("display", offset, 16, id);
+	file.parameter.read("display", offset, 16, id);
     
     return(16);
 }
@@ -857,7 +857,7 @@ static uint8_t display_config_list_amount(uint8_t channel)
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
-	file.read("display", offset, sizeof(amount), &amount);
+	file.parameter.read("display", offset, sizeof(amount), &amount);
     
     return(amount);
 }
@@ -873,7 +873,7 @@ static uint8_t display_config_list_clean(uint8_t channel)
     }
     
 	offset = STRUCT_OFFSET(struct __disp_param, list[channel].amount);
-	file.write("display", offset, sizeof(amount), &amount);
+	file.parameter.write("display", offset, sizeof(amount), &amount);
     
     if(channel == disp_runs.channel)
     {
@@ -1009,16 +1009,16 @@ static void display_init(void)
         disp_runs.last_channel = DISP_CONF_CHANNEL_SCROLL;
         
         offset = STRUCT_OFFSET(struct __disp_param, dots);
-        file.read("display", offset, sizeof(disp_runs.dots), &disp_runs.dots);
+        file.parameter.read("display", offset, sizeof(disp_runs.dots), &disp_runs.dots);
         
 		offset = STRUCT_OFFSET(struct __disp_param, time);
-		file.read("display", offset, sizeof(disp_runs.time), &disp_runs.time);
+		file.parameter.read("display", offset, sizeof(disp_runs.time), &disp_runs.time);
 		
 		offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].amount);
-		file.read("display", offset, sizeof(disp_runs.amount), &disp_runs.amount);
+		file.parameter.read("display", offset, sizeof(disp_runs.amount), &disp_runs.amount);
 		
 		offset = STRUCT_OFFSET(struct __disp_param, list[disp_runs.channel].entry[disp_runs.index]);
-		file.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
+		file.parameter.read("display", offset, sizeof(disp_runs.entry), &disp_runs.entry);
         
         if(disp_runs.amount > DISP_CONF_AMOUNT_IN_LIST)
         {
@@ -1039,6 +1039,7 @@ static void display_init(void)
         lcd.show.all();
         
         status = TASK_INIT;
+		TRACE(TRACE_INFO, "Task display initialized.");
     }
 }
 
@@ -1129,8 +1130,8 @@ static void display_loop(void)
             }
 		}
         
-        //333ms刷新主窗口的显示数据
-        if(disp_runs.loop_flush > 333)
+        //499ms刷新主窗口的显示数据
+        if(disp_runs.loop_flush > 499)
         {
             disp_runs.loop_flush = 0;
             flush_data();
@@ -1145,6 +1146,7 @@ static void display_exit(void)
 {
     lcd.control.suspend();
     status = TASK_SUSPEND;
+	TRACE(TRACE_INFO, "Task display exited.");
 }
 
 /**
@@ -1190,63 +1192,65 @@ static void display_reset(void)
         dots.pf = 3;
         
         offset = STRUCT_OFFSET(struct __disp_param, dots);
-        file.write("display", offset, sizeof(dots), &dots);
+        file.parameter.write("display", offset, sizeof(dots), &dots);
         
         val = 6;
         offset = STRUCT_OFFSET(struct __disp_param, time.scroll);
-        file.write("display", offset, sizeof(val), &val);
+        file.parameter.write("display", offset, sizeof(val), &val);
         
         val = 8;
         offset = STRUCT_OFFSET(struct __disp_param, time.backlight);
-        file.write("display", offset, sizeof(val), &val);
+        file.parameter.write("display", offset, sizeof(val), &val);
         
         val = 3;
         offset = STRUCT_OFFSET(struct __disp_param, time.start);
-        file.write("display", offset, sizeof(val), &val);
+        file.parameter.write("display", offset, sizeof(val), &val);
         
         val = 6;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].amount);
-        file.write("display", offset, sizeof(val), &val);
+        file.parameter.write("display", offset, sizeof(val), &val);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].amount);
-        file.write("display", offset, sizeof(val), &val);
+        file.parameter.write("display", offset, sizeof(val), &val);
         
         descriptor[4] = 32;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[0]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[0]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 52;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[1]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[1]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 72;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[2]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[2]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 31;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[3]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[3]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 51;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[4]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[4]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         
         descriptor[4] = 71;
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[5]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[5]);
-        file.write("display", offset, sizeof(descriptor), &descriptor);
+        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
     }
 #endif // #if defined ( MAKE_RUN_FOR_DEBUG )
+	
+	TRACE(TRACE_INFO, "Task display reset.");
 }
 
 /**

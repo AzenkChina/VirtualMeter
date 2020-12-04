@@ -25,6 +25,7 @@
 #else
 
 #if defined (DEMO_STM32F091)
+#include "cpu.h"
 #include "vspi2.h"
 #include "stm32f0xx.h"
 #endif
@@ -263,9 +264,9 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     fclose(fp);
 	
 #if defined ( __linux )
-	usleep(40*1000*size/FLASH_BLOCK_SIZE);
+	usleep(20*1000*size/FLASH_BLOCK_SIZE);
 #else
-	Sleep(40*size/FLASH_BLOCK_SIZE);
+	Sleep(20*size/FLASH_BLOCK_SIZE);
 #endif
 	
     return(size);
@@ -388,9 +389,9 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     free(mem);
 	
 #if defined ( __linux )
-	usleep(60*1000*size/FLASH_BLOCK_SIZE);
+	usleep(25*1000*size/FLASH_BLOCK_SIZE);
 #else
-	Sleep(60*size/FLASH_BLOCK_SIZE);
+	Sleep(25*size/FLASH_BLOCK_SIZE);
 #endif
     
     return(size);
@@ -399,7 +400,7 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
 #if defined (DEMO_STM32F091)
 	uint32_t page = 0;
     uint8_t status;
-    uint8_t timeout = 50;
+    uint8_t timeout = 80;
     
     if(block >= FLASH_BLOCK_AMOUNT)
     {
@@ -552,6 +553,46 @@ static uint32_t flash_eraseblock(uint32_t block)
 #else
     
 #if defined (DEMO_STM32F091)
+	uint32_t page = 0;
+    uint8_t status;
+    uint8_t timeout = 40;
+    
+    if(block >= FLASH_BLOCK_AMOUNT)
+    {
+        return(0);
+    }
+    
+    page = (block << 10);
+    page |= 0x00C00000;
+    
+    devspi.select(0);
+    
+	//–¥»Î√¸¡Ó
+	devspi.octet.write(AT45_CMD_ERPG);
+    
+	//–¥»Îµÿ÷∑
+	devspi.octet.write(page>>16);
+	devspi.octet.write(page>>8);
+	devspi.octet.write(page);
+    
+	devspi.release(0);
+    
+    do
+    {
+		mdelay(1);
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        status = devspi.octet.read();
+        timeout -= 1;
+        devspi.release(0);
+    }
+    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    
+    if(((status&0x3c) != 0x34) || (!timeout))
+    {
+        return(0);
+    }
+	
     return(FLASH_BLOCK_SIZE);
 #endif
     
@@ -628,6 +669,38 @@ static uint32_t flash_eraseall(void)
 #else
     
 #if defined (DEMO_STM32F091)
+	uint32_t page = 0;
+    uint8_t status;
+    uint8_t timeout = 100;
+	uint8_t cmd[] = {AT45_CMD_ERIC};
+    
+    devspi.select(0);
+    
+	//–¥»Î√¸¡Ó
+	devspi.octet.write(cmd[0]);
+	devspi.octet.write(cmd[1]);
+	devspi.octet.write(cmd[2]);
+	devspi.octet.write(cmd[3]);
+    
+	devspi.release(0);
+    
+    do
+    {
+		mdelay(100);
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        status = devspi.octet.read();
+        timeout -= 1;
+        devspi.release(0);
+		cpu.watchdog.feed();
+    }
+    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    
+    if(((status&0x3c) != 0x34) || (!timeout))
+    {
+        return(0);
+    }
+	
     return(FLASH_CHIP_SIZE);
 #endif
     
@@ -641,7 +714,11 @@ const struct __flash flash =
 {
     .control        = 
     {
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+        .name       = "w25q64",
+#elif defined (DEMO_STM32F091)
         .name       = "at45db321",
+#endif
         .status     = flash_status,
         .init       = flash_init,
         .suspend    = flash_suspend,

@@ -372,7 +372,7 @@ static void metering_init(void)
         
         if(calibrates)
         {
-            if(file.read("calibration", 0, sizeof(struct __calibrate_data), (void *)calibrates) != sizeof(struct __calibrate_data))
+            if(file.parameter.read("calibration", 0, sizeof(struct __calibrate_data), (void *)calibrates) != sizeof(struct __calibrate_data))
             {
                 TRACE(TRACE_ERR, "Calibrate information read faild.");
             }
@@ -386,8 +386,6 @@ static void metering_init(void)
             
             heap.free(calibrates);
         }
-        
-        TRACE(TRACE_INFO, "Task metering initialized.");
 	}
 	else
 	{
@@ -397,6 +395,7 @@ static void metering_init(void)
 	}
     
     status = TASK_INIT;
+	TRACE(TRACE_INFO, "Task metering initialized.");
 }
 
 /**
@@ -433,8 +432,6 @@ static void metering_reset(void)
     
     status = TASK_NOTINIT;
     
-    TRACE(TRACE_INFO, "Task metering reset.");
-    
 #if defined ( MAKE_RUN_FOR_DEBUG )
     struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
     
@@ -456,10 +453,12 @@ static void metering_reset(void)
     
     DEV_M.calibrate.exit();
     
-    file.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+    file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
     
     heap.free(calibrates);
 #endif
+	
+	TRACE(TRACE_INFO, "Task metering reset.");
 }
 
 /**

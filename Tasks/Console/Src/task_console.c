@@ -367,7 +367,7 @@ static void console_loop(void)
 	else
 	{
 		luaL_execute(script_path);
-		memset(script_path, 0, sizeof(script_path));
+		heap.set(script_path, 0, sizeof(script_path));
 	}
 }
 

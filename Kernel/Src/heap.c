@@ -227,6 +227,21 @@ static void *heap_salloc(const char *name, uint32_t size)
 }
 
 /**
+  * @brief  
+  */
+static void *heap_szalloc(const char *name, uint32_t size)
+{
+	void *result = heap_salloc(name, size);
+	
+	if(!result)
+	{
+		memset(result, 0, size);
+	}
+	
+	return(result);
+}
+
+/**
   * @brief  专用动态内存申请函数，会在该任务退出（exit）或者复位（exit）时自动释放
   */
 static void *heap_scalloc(const char *name, uint32_t n, uint32_t size)
@@ -291,6 +306,21 @@ static void *heap_dalloc(uint32_t size)
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic pop
 #endif
+}
+
+/**
+  * @brief  
+  */
+static void *heap_dzalloc(uint32_t size)
+{
+	void *result = heap_dalloc(size);
+	
+	if(!result)
+	{
+		memset(result, 0, size);
+	}
+	
+	return(result);
 }
 
 /**
@@ -399,11 +429,11 @@ static void heap_free(void *address)
 /**
   * @brief  安全内存拷贝函数，防止内存申请记录信息 struct __mem_entry 被覆盖
   */
-static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
+static uint32_t heap_copy(void *dst, const void *src, uint32_t size)
 {
     struct __mem_entry *p = dlist;
     
-    if(!dst || !src || !count)
+    if(!dst || !src || !size)
     {
     	return(0);
 	}
@@ -416,7 +446,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 #endif
 
 		if((((unsigned long)dst) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
-		(((unsigned long)dst + count) > ((unsigned long)p)))
+		(((unsigned long)dst + size) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
 			"Heap copy address conflict.");
@@ -439,7 +469,7 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
 #endif
 
 		if((((unsigned long)dst) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
-		(((unsigned long)dst + count) > ((unsigned long)p)))
+		(((unsigned long)dst + size) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
 			"Heap copy address conflict.");
@@ -452,19 +482,19 @@ static uint32_t heap_copy(void *dst, const void *src, uint32_t count)
         p = p->next;
     }
     
-    memcpy(dst, src, count);
+    memcpy(dst, src, size);
     
-    return(count);
+    return(size);
 }
 
 /**
   * @brief  安全内存初始化函数，防止内存申请记录信息 struct __mem_entry 被覆盖
   */
-static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
+static uint32_t heap_set(void *address, uint8_t ch, uint32_t size)
 {
     struct __mem_entry *p = dlist;
     
-    if(!address || !count)
+    if(!address || !size)
     {
     	return(0);
 	}
@@ -477,7 +507,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 #endif
 
 		if((((unsigned long)address) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
-		(((unsigned long)address + count) > ((unsigned long)p)))
+		(((unsigned long)address + size) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
 			"Heap set address conflict.");
@@ -500,7 +530,7 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 #endif
 
 		if((((unsigned long)address) < ((unsigned long)p + sizeof(struct __mem_entry))) && \
-		(((unsigned long)address + count) > ((unsigned long)p)))
+		(((unsigned long)address + size) > ((unsigned long)p)))
 		{
             TRACE(TRACE_ERR,\
 			"Heap set address conflict.");
@@ -513,9 +543,9 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
         p = p->next;
     }
     
-    memset(address, ch, count);
+    memset(address, ch, size);
     
-    return(count);
+    return(size);
 }
 
 /**
@@ -524,8 +554,10 @@ static uint32_t heap_set(void *address, uint8_t ch, uint32_t count)
 struct __heap heap = 
 {
     .salloc             = heap_salloc,
+    .szalloc			= heap_szalloc,
     .scalloc            = heap_scalloc,
     .dalloc             = heap_dalloc,
+    .dzalloc			= heap_dzalloc,
     .dcalloc            = heap_dcalloc,
     .free               = heap_free,
     .copy               = heap_copy,

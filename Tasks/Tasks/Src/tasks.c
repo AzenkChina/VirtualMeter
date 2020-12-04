@@ -293,6 +293,7 @@ static void tasks_reset(void)
     }
     
     cpu.watchdog.feed();
+    disk_ctrl.idle();
     TRACE(TRACE_INFO, "Tasks reset.");
 }
 

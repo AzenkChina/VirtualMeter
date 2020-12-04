@@ -38,5 +38,6 @@ extern uint64_t dlms_lex_version(void);
 extern uint64_t dlms_lex_date(void);
 extern uint8_t dlms_lex_signature(uint8_t *signature);
 extern bool dlms_lex_check(void);
+extern void dlms_lex_init(void);
 
 #endif /* __DLSM_LEXICON_H__ */

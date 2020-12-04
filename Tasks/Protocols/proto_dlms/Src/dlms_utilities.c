@@ -100,7 +100,7 @@ uint16_t dlms_util_load_hdlc_address(void)
     
     heap.set(&hdlc, 0, sizeof(hdlc));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
                  sizeof(hdlc), \
                  (void *)&hdlc) != sizeof(hdlc))
@@ -108,7 +108,7 @@ uint16_t dlms_util_load_hdlc_address(void)
         return(0x10);
     }
     
-    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check))) != hdlc.check)
+    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)), 0) != hdlc.check)
     {
         return(0x10);
     }
@@ -130,20 +130,18 @@ uint16_t dlms_util_write_hdlc_address(uint16_t val)
         return(~val);
     }
     
-    heap.set(&hdlc, 0, sizeof(hdlc));
-    
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
                  sizeof(hdlc), \
                  (void *)&hdlc) != sizeof(hdlc))
     {
-        return(0x10);
+        heap.set(&hdlc, 0, sizeof(hdlc));
     }
     
     hdlc.address = val;
-    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)));
+    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, hdlc), \
                   sizeof(hdlc), \
                   (void *)&hdlc) != sizeof(hdlc))
@@ -163,7 +161,7 @@ uint16_t dlms_util_load_hdlc_interval(void)
     
     heap.set(&hdlc, 0, sizeof(hdlc));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
                  sizeof(hdlc), \
                  (void *)&hdlc) != sizeof(hdlc))
@@ -171,7 +169,7 @@ uint16_t dlms_util_load_hdlc_interval(void)
         return(10);
     }
     
-    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check))) != hdlc.check)
+    if(crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)), 0) != hdlc.check)
     {
         return(10);
     }
@@ -193,20 +191,18 @@ uint16_t dlms_util_write_hdlc_interval(uint16_t val)
         val = 10;
     }
     
-    heap.set(&hdlc, 0, sizeof(hdlc));
-    
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, hdlc), \
                  sizeof(hdlc), \
                  (void *)&hdlc) != sizeof(hdlc))
     {
-        return(10);
+        heap.set(&hdlc, 0, sizeof(hdlc));
     }
     
     hdlc.interval = val;
-    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)));
+    hdlc.check = crc32(&hdlc, (sizeof(hdlc) - sizeof(hdlc.check)), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, hdlc), \
                   sizeof(hdlc), \
                   (void *)&hdlc) != sizeof(hdlc))
@@ -224,7 +220,7 @@ uint8_t dlms_util_load_title(uint8_t *buffer)
 {
     uint8_t title[16];
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
               STRUCT_OFFSET(struct __dlms_params, title), \
               sizeof(title), \
               title) != sizeof(title))
@@ -259,7 +255,7 @@ uint8_t dlms_util_write_title(uint8_t *buffer)
     
     confuse(&buffer[2], 8);
     
-    file.write("dlms", \
+    file.parameter.write("dlms", \
               STRUCT_OFFSET(struct __dlms_params, passwd), \
               2+buffer[1], \
               buffer);
@@ -286,7 +282,7 @@ uint8_t dlms_util_load_passwd(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, passwd), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -296,7 +292,7 @@ uint8_t dlms_util_load_passwd(uint8_t *buffer)
         return(18);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length < 8) || (key.length > 48))
     {
         buffer[1] = 16;
@@ -329,9 +325,9 @@ uint8_t dlms_util_write_passwd(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, passwd), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -351,7 +347,7 @@ uint8_t dlms_util_load_akey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, akey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -361,7 +357,7 @@ uint8_t dlms_util_load_akey(uint8_t *buffer)
         return(18);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 16) && (key.length != 32))
     {
         buffer[1] = 16;
@@ -394,9 +390,9 @@ uint8_t dlms_util_write_akey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, akey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -416,7 +412,7 @@ uint8_t dlms_util_load_bekey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, bekey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -426,7 +422,7 @@ uint8_t dlms_util_load_bekey(uint8_t *buffer)
         return(18);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 16) && (key.length != 32))
     {
         buffer[1] = 16;
@@ -459,9 +455,9 @@ uint8_t dlms_util_write_bekey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, bekey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -481,7 +477,7 @@ uint8_t dlms_util_load_uekey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, uekey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -491,7 +487,7 @@ uint8_t dlms_util_load_uekey(uint8_t *buffer)
         return(18);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 16) && (key.length != 32))
     {
         buffer[1] = 16;
@@ -524,9 +520,9 @@ uint8_t dlms_util_write_uekey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, uekey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -546,7 +542,7 @@ uint8_t dlms_util_load_mkey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, mkey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -556,7 +552,7 @@ uint8_t dlms_util_load_mkey(uint8_t *buffer)
         return(18);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 16) && (key.length != 32))
     {
         buffer[1] = 16;
@@ -589,9 +585,9 @@ uint8_t dlms_util_write_mkey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, mkey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -611,7 +607,7 @@ uint8_t dlms_util_load_saprikey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, saprikey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -621,7 +617,7 @@ uint8_t dlms_util_load_saprikey(uint8_t *buffer)
         return(34);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 32) && (key.length != 48))
     {
         buffer[1] = 32;
@@ -654,9 +650,9 @@ uint8_t dlms_util_write_saprikey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, saprikey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -676,7 +672,7 @@ uint8_t dlms_util_load_sapubkey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, sapubkey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -686,7 +682,7 @@ uint8_t dlms_util_load_sapubkey(uint8_t *buffer)
         return(66);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 64) && (key.length != 96))
     {
         buffer[1] = 64;
@@ -719,9 +715,9 @@ uint8_t dlms_util_write_sapubkey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, sapubkey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -741,7 +737,7 @@ uint8_t dlms_util_load_ssprikey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, ssprikey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -751,7 +747,7 @@ uint8_t dlms_util_load_ssprikey(uint8_t *buffer)
         return(34);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 32) && (key.length != 48))
     {
         buffer[1] = 32;
@@ -784,9 +780,9 @@ uint8_t dlms_util_write_ssprikey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, ssprikey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -806,7 +802,7 @@ uint8_t dlms_util_load_sspubkey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, sspubkey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -816,7 +812,7 @@ uint8_t dlms_util_load_sspubkey(uint8_t *buffer)
         return(66);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 64) && (key.length != 96))
     {
         buffer[1] = 64;
@@ -849,9 +845,9 @@ uint8_t dlms_util_write_sspubkey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, sspubkey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -871,7 +867,7 @@ uint8_t dlms_util_load_capubkey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, capubkey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -881,7 +877,7 @@ uint8_t dlms_util_load_capubkey(uint8_t *buffer)
         return(66);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 64) && (key.length != 96))
     {
         buffer[1] = 64;
@@ -914,9 +910,9 @@ uint8_t dlms_util_write_capubkey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, capubkey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))
@@ -936,7 +932,7 @@ uint8_t dlms_util_load_cspubkey(uint8_t *buffer)
     
     heap.set(&key, 0, sizeof(key));
     
-    if(file.read("dlms", \
+    if(file.parameter.read("dlms", \
                  STRUCT_OFFSET(struct __dlms_params, cspubkey), \
                  sizeof(key), \
                  (void *)&key) != sizeof(key))
@@ -946,7 +942,7 @@ uint8_t dlms_util_load_cspubkey(uint8_t *buffer)
         return(66);
     }
     
-    if((crc32(key.val, sizeof(key.val)) != key.check) || \
+    if((crc32(key.val, sizeof(key.val), 0) != key.check) || \
         (key.length != 64) && (key.length != 96))
     {
         buffer[1] = 64;
@@ -979,9 +975,9 @@ uint8_t dlms_util_write_cspubkey(uint8_t *buffer)
     key.length = buffer[1];
     heap.copy(key.val, &buffer[2], key.length);
     confuse(key.val, sizeof(key.val));
-    key.check = crc32(key.val, sizeof(key.val));
+    key.check = crc32(key.val, sizeof(key.val), 0);
     
-    if(file.write("dlms", \
+    if(file.parameter.write("dlms", \
                   STRUCT_OFFSET(struct __dlms_params, cspubkey), \
                   sizeof(key), \
                   (void *)&key) != sizeof(key))

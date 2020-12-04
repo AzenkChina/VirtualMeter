@@ -63,7 +63,7 @@ static enum __timd_status timed_create(const struct __timed_conf *conf)
         
         heap.set((void *)&entries[cnt], 0, sizeof(struct __timed_entry));
         heap.copy((void *)&entries[cnt].conf, (void *)conf, sizeof(entries[cnt].conf));
-        entries[cnt].check = crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry) - sizeof(entries[cnt].check)));
+        entries[cnt].check = crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry) - sizeof(entries[cnt].check)), 0xffff);
         
         return(TIMD_SUCCESS);
     }
@@ -100,7 +100,7 @@ static enum __timd_status timed_query(const struct __timed_conf *conf)
 			continue;
         }
         
-        if(entries[cnt].check != crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry) - sizeof(entries[cnt].check))))
+        if(entries[cnt].check != crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry) - sizeof(entries[cnt].check)), 0xffff))
         {
             heap.set((void *)&entries[cnt], 0, sizeof(struct __timed_entry));
             continue;
@@ -232,7 +232,7 @@ static void timed_loop(void)
 	            continue;
 	        }
 	        
-	        if(entries[cnt].check != crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry)) - sizeof(entries[cnt].check)))
+	        if(entries[cnt].check != crc16((const uint8_t *)&entries[cnt], (sizeof(struct __timed_entry)) - sizeof(entries[cnt].check), 0xffff))
 	        {
                 heap.set((void *)&entries[cnt], 0, sizeof(struct __timed_entry));
 	            continue;

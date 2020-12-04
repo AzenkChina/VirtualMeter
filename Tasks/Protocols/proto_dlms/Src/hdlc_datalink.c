@@ -1138,7 +1138,7 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     }
     
     //将数据保存到接收缓冲中
-    memcpy((link->recv.data + link->recv.filled), hdlc_desc->info, hdlc_desc->length_info);
+    heap.copy((link->recv.data + link->recv.filled), hdlc_desc->info, hdlc_desc->length_info);
     link->recv.filled += hdlc_desc->length_info;
     
     if(hdlc_desc->segment)
@@ -1219,7 +1219,7 @@ static enum __hdlc_errors request_info(struct __hdlc_link *link, \
     frame_encode += 3;
     
     //添加应用层数据
-    memcpy((link->send.segment.data + frame_encode), link->send.data, info_length);
+    heap.copy((link->send.segment.data + frame_encode), link->send.data, info_length);
     frame_encode += info_length;
     
     //添加帧长度域
@@ -1328,7 +1328,7 @@ static enum __hdlc_errors request_rr(struct __hdlc_link *link, \
     frame_encode += 2;
 
     //添加应用层数据
-    memcpy((link->send.segment.data + frame_encode), (link->send.data + link->send.sent), info_length);
+    heap.copy((link->send.segment.data + frame_encode), (link->send.data + link->send.sent), info_length);
     link->send.sent += info_length;
     frame_encode += info_length;
 
@@ -1970,12 +1970,12 @@ uint16_t hdlc_response(uint8_t channel, uint8_t *frame, uint16_t length)
     
     if(segment_length <= length)
     {
-        memcpy(frame, hdlc_links[channel].send.segment.data, segment_length);
+        heap.copy(frame, hdlc_links[channel].send.segment.data, segment_length);
         return(segment_length);
     }
     else
     {
-        memcpy(frame, hdlc_links[channel].send.segment.data, length);
+        heap.copy(frame, hdlc_links[channel].send.segment.data, length);
         return(length);
     }
 }

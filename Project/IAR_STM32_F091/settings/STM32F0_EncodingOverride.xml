@@ -34,6 +34,10 @@
     <encoding>UTF-8</encoding>
   </override>
   <override>
+    <path>F:\Works\Codes\GitHub\VirtualMeter\Tasks\Display\Inc\config_display.h</path>
+    <encoding>UTF-8</encoding>
+  </override>
+  <override>
     <path>F:\Works\Codes\GitHub\VirtualMeter\Tasks\Protocols\proto_dlms\Src\cosem_objects_exception.c</path>
     <encoding>UTF-8</encoding>
   </override>

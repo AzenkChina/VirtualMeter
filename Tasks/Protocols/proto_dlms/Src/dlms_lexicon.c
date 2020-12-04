@@ -15,6 +15,8 @@
 #include "mbedtls/md5.h"
 
 /* Private define ------------------------------------------------------------*/
+#define MAX_LEX_CACHE_SIZE		((uint8_t)3)
+
 #pragma pack(push)
 #pragma pack(4)
 
@@ -116,8 +118,27 @@ struct __cosem_param
     union __cosem_entry_file entry[(64*1024)/sizeof(union __cosem_entry_file) - 1];
 };
 
+/**
+  * @brief  缓存的 cosem 数据项
+  */
+struct __cosem_entry_cache
+{
+	uint8_t hit;
+	
+    uint8_t                     suit;
+    enum __dlms_access_level    level;
+    enum __dlms_request_type    request;
+    struct __cosem_descriptor   descriptor;
+	
+	union __dlms_right right;
+	uint32_t oid;
+	uint32_t mid;
+};
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+static struct __cosem_entry_cache fcache[MAX_LEX_CACHE_SIZE];
+
 /**
   * @brief  本地数据项表
   */
@@ -180,6 +201,65 @@ static uint16_t fastlog2(uint16_t x)
     }
     
     return l + log_2[x];
+}
+
+/**
+  * @brief  更新 cache
+  */
+static void update_cache(const struct __cosem_request_desc *desc,
+							uint8_t suit,
+							union __dlms_right *right,
+							uint32_t *oid,
+							uint32_t *mid)
+{
+	uint8_t cnt;
+	uint8_t index = 0;
+	uint8_t min = 255;
+	
+    if((!desc) || (!right) || (!oid))
+    {
+        return;
+    }
+	
+	//查找最小值
+	for(cnt=0; cnt<MAX_LEX_CACHE_SIZE; cnt++)
+	{
+		if(fcache[cnt].hit < min)
+		{
+			min = fcache[cnt].hit;
+			index = cnt;
+		}
+	}
+	
+	//计数截短
+	if(min > 8)
+	{
+		for(cnt=0; cnt<MAX_LEX_CACHE_SIZE; cnt++)
+		{
+			fcache[cnt].hit -= (min - 4);
+		}
+	}
+	
+	//更新cache
+	fcache[index].hit = 1;
+	fcache[index].descriptor = desc->descriptor;
+	fcache[index].descriptor.classid = desc->descriptor.classid;
+	fcache[index].descriptor.index = desc->descriptor.index;
+	heap.copy(fcache[index].descriptor.obis, desc->descriptor.obis, 6);
+	fcache[index].descriptor.selector = desc->descriptor.selector;
+	fcache[index].request = desc->request;
+	fcache[index].level = desc->level;
+	fcache[index].suit = suit;
+	fcache[index].oid = *oid;
+	fcache[index].right.attr = right->attr;
+	if(mid)
+	{
+		fcache[index].mid = *mid;
+	}
+	else
+	{
+		fcache[index].mid = 0;
+	}
 }
 
 /**
@@ -417,6 +497,8 @@ static void prase_cosem_entry_low(const struct __cosem_request_desc *desc,
             right->method = METHOD_NONE;
         }
     }
+	
+	update_cache(desc, (entry->key & 0xff), right, oid, mid);
 }
 
 /**
@@ -509,6 +591,8 @@ static void prase_cosem_entry_high(const struct __cosem_request_desc *desc,
             right->method = METHOD_NONE;
         }
     }
+	
+	update_cache(desc, (entry->key & 0xff), right, oid, (uint32_t *)0);
 }
 
 /**
@@ -544,6 +628,45 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     {
         return;
     }
+	
+	//查找缓存的数据项表
+	for(cnt=0; cnt<MAX_LEX_CACHE_SIZE; cnt++)
+	{
+		if(desc->request != fcache[cnt].request)
+		{
+			continue;
+		}
+		if(desc->level != fcache[cnt].level)
+		{
+			continue;
+		}
+		if(!(desc->suit & fcache[cnt].suit))
+		{
+			continue;
+		}
+		if(desc->descriptor.classid != fcache[cnt].descriptor.classid)
+		{
+			continue;
+		}
+		if(desc->descriptor.index != fcache[cnt].descriptor.index)
+		{
+			continue;
+		}
+		if(memcmp(desc->descriptor.obis, fcache[cnt].descriptor.obis, 6))
+		{
+			continue;
+		}
+		
+		right->attr = fcache[cnt].right.attr;
+		*oid = fcache[cnt].oid;
+		*mid = fcache[cnt].mid;
+		if(fcache[cnt].hit < 255)
+		{
+			fcache[cnt].hit += 1;
+		}
+		
+		return;
+	}
     
     //生成比对键值
     key = (desc->descriptor.classid & 0xff);
@@ -575,12 +698,12 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     }
     
     //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return;
     }
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t)), 0) != \
             header.check)
     {
         return;
@@ -597,7 +720,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         cpu.watchdog.feed();
         
         //读取
-        if(file.read("lexicon", \
+        if(file.parameter.read("lexicon", \
                      STRUCT_OFFSET(struct __cosem_param, entry[position]), \
                      sizeof(entry), \
                      &entry) != sizeof(entry))
@@ -644,7 +767,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         if(desc->descriptor.classid <= 8)
         {
             //校验
-            if(crc32(&entry.low.entry, sizeof(entry.low.entry)) != entry.low.check)
+            if(crc32(&entry.low.entry, sizeof(entry.low.entry), 0) != entry.low.check)
             {
                 //校验失败
                 break;
@@ -656,7 +779,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         else
         {
             //校验
-            if(crc32(&entry.high.entry, sizeof(entry.high.entry)) != entry.high.check)
+            if(crc32(&entry.high.entry, sizeof(entry.high.entry), 0) != entry.high.check)
             {
                 //校验失败
                 break;
@@ -694,12 +817,12 @@ uint16_t dlms_lex_amount(uint8_t suit)
     }
     
     //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return(amount);
     }
-    else if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+    else if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t)), 0) != \
             header.check)
     {
         return(amount);
@@ -744,7 +867,7 @@ uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry)
     }
     
     //读取一条数据
-    if(file.read("lexicon", \
+    if(file.parameter.read("lexicon", \
                  STRUCT_OFFSET(struct __cosem_param, entry[index]), \
                  sizeof(fil), \
                  &fil) != sizeof(fil))
@@ -756,7 +879,7 @@ uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry)
     if(((fil.key >> 56) & 0xff) <= 8)
     {
         //校验数据是否有效
-        if(crc32(&fil.low.entry, sizeof(fil.low.entry)) != fil.low.check)
+        if(crc32(&fil.low.entry, sizeof(fil.low.entry), 0) != fil.low.check)
         {
             return(0);
         }
@@ -790,7 +913,7 @@ uint16_t dlms_lex_entry(uint16_t index, struct __cosem_object *entry)
     else
     {
         //校验数据是否有效
-        if(crc32(&fil.high.entry, sizeof(fil.high.entry)) != fil.high.check)
+        if(crc32(&fil.high.entry, sizeof(fil.high.entry), 0) != fil.high.check)
         {
             return(0);
         }
@@ -832,12 +955,12 @@ uint64_t dlms_lex_version(void)
 {
     struct __cosem_param_info info;
     
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
         sizeof(struct __cosem_param_info))
     {
         return(0);
     }
-    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t)), 0) != \
             info.check)
     {
         return(0);
@@ -853,12 +976,12 @@ uint64_t dlms_lex_date(void)
 {
     struct __cosem_param_info info;
     
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
         sizeof(struct __cosem_param_info))
     {
         return(0);
     }
-    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t)), 0) != \
             info.check)
     {
         return(0);
@@ -874,12 +997,12 @@ uint8_t dlms_lex_signature(uint8_t *signature)
 {
     struct __cosem_param_info info;
     
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
         sizeof(struct __cosem_param_info))
     {
         return(0);
     }
-    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t)), 0) != \
             info.check)
     {
         return(0);
@@ -904,13 +1027,13 @@ bool dlms_lex_check(void)
     uint8_t md5_output[16] = {0};
     
     //读取参数文件中的信息头，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, header), sizeof(struct __cosem_param_header), &header) != \
         sizeof(struct __cosem_param_header))
     {
         return(false);
     }
     
-    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t))) != \
+    if(crc32(&header, (sizeof(struct __cosem_param_header) - sizeof(uint32_t)), 0) != \
             header.check)
     {
         return(false);
@@ -925,13 +1048,13 @@ bool dlms_lex_check(void)
 	}
     
     //读取参数文件中的信息，并检查是否正确
-    if(file.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
+    if(file.parameter.read("lexicon", STRUCT_OFFSET(struct __cosem_param, info), sizeof(struct __cosem_param_info), &info) != \
         sizeof(struct __cosem_param_info))
     {
         return(false);
     }
     
-    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t))) != \
+    if(crc32(&info, (sizeof(struct __cosem_param_info) - sizeof(uint32_t)), 0) != \
             info.check)
     {
         return(false);
@@ -948,7 +1071,7 @@ bool dlms_lex_check(void)
         cpu.watchdog.feed();
         
         //读取
-        if(file.read("lexicon", \
+        if(file.parameter.read("lexicon", \
                      STRUCT_OFFSET(struct __cosem_param, entry[cnt]), \
                      sizeof(entry), \
                      &entry) != sizeof(entry))
@@ -971,7 +1094,7 @@ bool dlms_lex_check(void)
         if(((entry.key >> 56) & 0xff) <= 8)
         {
             //校验
-            if(crc32(&entry.low.entry, sizeof(entry.low.entry)) != entry.low.check)
+            if(crc32(&entry.low.entry, sizeof(entry.low.entry), 0) != entry.low.check)
             {
                 goto exit;
             }
@@ -979,7 +1102,7 @@ bool dlms_lex_check(void)
         else
         {
             //校验
-            if(crc32(&entry.high.entry, sizeof(entry.high.entry)) != entry.high.check)
+            if(crc32(&entry.high.entry, sizeof(entry.high.entry), 0) != entry.high.check)
             {
                 goto exit;
             }
@@ -1003,6 +1126,14 @@ bool dlms_lex_check(void)
 exit:
     mbedtls_md5_free(&ctx);
     return( false );
+}
+
+/**
+  * @brief  初始化
+  */
+void dlms_lex_init(void)
+{
+	heap.set(fcache, 0, sizeof(fcache));
 }
 
 #pragma pack(pop)

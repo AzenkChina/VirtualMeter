@@ -490,7 +490,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 			{
 				return(APPL_ENC_FAILD);
 			}
-			memset(z, 0, sizeof(z));
+			heap.set(z, 0, sizeof(z));
 			z[len_cspubkey / 2 - 1] = 1;
 			
 			mbedtls_mpi_init( &r );
@@ -535,12 +535,12 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 				goto cleanup;
 			}
 			
-			memcpy(&ctext[0], request->general.sign.transaction, 9);
-			memcpy(&ctext[9], request->general.sign.originator, 9);
-			memcpy(&ctext[18], request->general.sign.recipient, 9);
-			memcpy(&ctext[27], request->general.sign.date, 1 + request->general.sign.date[0]);
-			memcpy(&ctext[27 + 1 + request->general.sign.date[0]], request->general.sign.others, 1 + request->general.sign.others[0]);
-			memcpy(&ctext[27 + 1 + request->general.sign.date[0] + 1 + request->general.sign.others[0]], request->general.sign.content, frame_length);
+			heap.copy(&ctext[0], request->general.sign.transaction, 9);
+			heap.copy(&ctext[9], request->general.sign.originator, 9);
+			heap.copy(&ctext[18], request->general.sign.recipient, 9);
+			heap.copy(&ctext[27], request->general.sign.date, 1 + request->general.sign.date[0]);
+			heap.copy(&ctext[27 + 1 + request->general.sign.date[0]], request->general.sign.others, 1 + request->general.sign.others[0]);
+			heap.copy(&ctext[27 + 1 + request->general.sign.date[0] + 1 + request->general.sign.others[0]], request->general.sign.content, frame_length);
 			
 			if(len_cspubkey == 64)
 			{
@@ -605,7 +605,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 			}
 			else
 			{
-				memcpy(iv, (info + frame_decoded + 1), 8);
+				heap.copy(iv, (info + frame_decoded + 1), 8);
 				frame_decoded += 9;
 			}
 			
@@ -1011,6 +1011,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 			if(origin)
 			{
 				request->plain = (uint8_t *)info;
+				info_length = length;
 			}
 			
 			request->type = request->plain[1];
@@ -2312,19 +2313,19 @@ static enum __appl_result reply_normal(struct __appl_request *request, \
 		cipher_length += 3;
 		
 		//Transaction Id
-		memcpy(&buffer[cipher_length], request->general.sign.transaction, 9);
+		heap.copy(&buffer[cipher_length], request->general.sign.transaction, 9);
 		cipher_length += 9;
 		//Originator System Title
-		memcpy(&buffer[cipher_length], request->general.sign.recipient, 9);
+		heap.copy(&buffer[cipher_length], request->general.sign.recipient, 9);
 		cipher_length += 9;
 		//Recipient System Title
-		memcpy(&buffer[cipher_length], request->general.sign.originator, 9);
+		heap.copy(&buffer[cipher_length], request->general.sign.originator, 9);
 		cipher_length += 9;
 		//Date Time
 		if(request->general.sign.date)
 		{
 			//...签名时间暂时使用接收的时间
-			memcpy(&buffer[cipher_length], request->general.sign.date, 13);
+			heap.copy(&buffer[cipher_length], request->general.sign.date, 13);
 			cipher_length += 13;
 		}
 		else

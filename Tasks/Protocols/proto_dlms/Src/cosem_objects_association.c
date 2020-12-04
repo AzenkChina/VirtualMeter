@@ -259,7 +259,7 @@ static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
     uint8_t len_message;
     int ret = 0;
     
-	memset(&identifier, 0, sizeof(identifier));
+	heap.set(&identifier, 0, sizeof(identifier));
 	dlms_asso_mechname((uint8_t *)&identifier);
 	
 	switch(identifier.id)
@@ -401,7 +401,7 @@ static ObjectErrs ReplytoHLSAuthentication(ObjectPara *P)
 				return(OBJECT_ERR_LOWLEVEL);
 			}
 			
-			memset(z, 0, sizeof(z));
+			heap.set(z, 0, sizeof(z));
 			z[len_ssprikey - 1] = 1;
 			
 			mbedtls_mpi_init( &r );

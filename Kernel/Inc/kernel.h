@@ -30,7 +30,7 @@ enum __klevel
 
 /* Exported define ------------------------------------------------------------*/
 //app轮询频率，取值空间为5~1000，尽可能能被1000整除
-#define KERNEL_LOOP_FREQ                ((uint16_t)25)
+#define KERNEL_LOOP_FREQ                ((uint16_t)20)
 //休眠唤醒间隔时间，单位毫秒
 #define KERNEL_LOOP_SLEEPED             ((uint32_t)1000)
 //非休眠状态下task里 loop 函数的轮询周期

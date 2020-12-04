@@ -256,9 +256,8 @@ static void comm_init(void)
     		port_table[cnt].serial->txbuff.set(COMM_CONF_BUFF, (buff+COMM_CONF_BUFF*(1+cnt*2+1)));
     	}
 	    
-	    TRACE(TRACE_INFO, "Task comm initialized.");
-	    
 	    status = TASK_INIT;
+		TRACE(TRACE_INFO, "Task comm initialized.");
     }
 }
 
@@ -353,8 +352,8 @@ static void comm_exit(void)
 		port_table[cnt].serial->control.suspend();
 	}
     
-    TRACE(TRACE_INFO, "Task comm exited.");
     status = TASK_SUSPEND;
+	TRACE(TRACE_INFO, "Task comm exited.");
 }
 
 /**
@@ -370,8 +369,8 @@ static void comm_reset(void)
 		port_table[cnt].serial->control.suspend();
 	}
     
-    TRACE(TRACE_INFO, "Task comm reset.");
     status = TASK_NOTINIT;
+	TRACE(TRACE_INFO, "Task comm reset.");
 }
 
 /**

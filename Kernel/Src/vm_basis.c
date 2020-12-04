@@ -38,7 +38,7 @@ static int file_read(lua_State *L)
 		memset(buff, 0, count);
 	}
 	
-	result = file.read(name, offset, count, buff);
+	result = file.parameter.read(name, offset, count, buff);
     
 	lua_pushlstring(L, buff, result);
 	
@@ -64,7 +64,7 @@ static int file_write(lua_State *L)
 	count = (uint32_t)luaL_checknumber(L, 3);
 	buff = (void *)luaL_checklstring(L, 4, &len);
 	
-	result = file.write(name, offset, count, buff);
+	result = file.parameter.write(name, offset, count, buff);
     
 	lua_pushnumber(L, result);
 	return 1;
@@ -78,21 +78,7 @@ static int file_size(lua_State *L)
 	
 	name = (const char *)luaL_checklstring(L, 1, &len);
 	
-	result = file.size(name);
-    
-	lua_pushnumber(L, result);
-	return 1;
-}
-
-static int file_cluster(lua_State *L)
-{
-	size_t len;
-	const char *name;
-	uint32_t result;
-	
-	name = (const char *)luaL_checklstring(L, 1, &len);
-	
-	result = file.cluster(name);
+	result = file.parameter.size(name);
     
 	lua_pushnumber(L, result);
 	return 1;
@@ -100,12 +86,12 @@ static int file_cluster(lua_State *L)
 
 static const luaL_Tree basis_tree[] =
 {
-	{NULL,			"file",		NULL},
-	{"file",		"read",		file_read},
-	{"file",		"write",	file_write},
-	{"file",		"size",		file_size},
-	{"file",		"cluster",	file_cluster},
-	{NULL,			NULL,		NULL}
+	{NULL,				"file",			NULL},
+	{"file",			"parameter",	NULL},
+	{"parameter",		"read",			file_read},
+	{"parameter",		"write",		file_write},
+	{"parameter",		"size",			file_size},
+	{NULL,				NULL,			NULL}
 };
 
 static int vm_basis_open(lua_State *L)
