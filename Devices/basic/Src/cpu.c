@@ -13,6 +13,7 @@
 
 #if defined ( _WIN32 ) || defined ( _WIN64 )
 #include <windows.h>
+#include <sys/timeb.h>
 #elif defined ( __linux )
 #include <pthread.h>
 #include <unistd.h>
@@ -62,18 +63,32 @@ static void *ThreadTick(void *arg)
 static DWORD CALLBACK ThreadTick(PVOID pvoid)
 #endif
 {
+#if defined ( _WIN32 ) || defined ( _WIN64 )
+    struct timeb Tb;
+    uint64_t Start, End;
+#endif
+
 	while(1)
 	{
 	    if(!in_sleep)
 	    {
 #if defined ( __linux )
-            usleep(10*1000);
+            usleep(5*1000);
 #else
-            Sleep(10);
+			ftime(&Tb);
+			
+			Start = Tb.time*1000 + Tb.millitm;
+			
+			do
+			{
+				ftime(&Tb);
+				End = Tb.time*1000 + Tb.millitm;
+			}
+			while((End - Start) < 5);
 #endif
 			if(intr_status == INTR_ENABLED)
 			{
-				jitter_update(10);
+				jitter_update(5);
 			}
 	    }
 	    else
@@ -416,6 +431,7 @@ static void cpu_core_init(enum __cpu_level level)
 		pthread_attr_destroy(&thread_attr);
 #else
 		hThread = CreateThread(NULL, 0, ThreadTick, 0, 0, NULL);
+		SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST);
 		CloseHandle(hThread);
 		
 		hThread = CreateThread(NULL, 0, ThreadDog, 0, 0, NULL);

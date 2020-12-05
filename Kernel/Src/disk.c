@@ -112,7 +112,7 @@ static const struct lfs_config lfs_cfg =
 #endif
     .read_size		= 16,
     .prog_size		= 16,
-    .cache_size		= 256,
+    .cache_size		= 128,
     .lookahead_size	= 16,
     .block_cycles	= 300,
 };
