@@ -430,8 +430,10 @@ static void cpu_core_init(enum __cpu_level level)
 		pthread_create(&thread, &thread_attr, ThreadDog, NULL);
 		pthread_attr_destroy(&thread_attr);
 #else
-		hThread = CreateThread(NULL, 0, ThreadTick, 0, 0, NULL);
-		SetThreadPriority(hThread, THREAD_PRIORITY_LOWEST);
+		hThread = CreateThread(NULL, 0, ThreadTick, 0, CREATE_SUSPENDED, NULL);
+		SetThreadPriorityBoost(hThread, false);
+		SetThreadPriority(hThread, THREAD_PRIORITY_IDLE);
+		ResumeThread(hThread);
 		CloseHandle(hThread);
 		
 		hThread = CreateThread(NULL, 0, ThreadDog, 0, 0, NULL);
