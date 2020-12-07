@@ -81,6 +81,7 @@ static DWORD CALLBACK ThreadTick(PVOID pvoid)
 			
 			do
 			{
+				SwitchToThread();
 				ftime(&Tb);
 				End = Tb.time*1000 + Tb.millitm;
 			}
