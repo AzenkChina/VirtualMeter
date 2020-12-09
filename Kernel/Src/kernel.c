@@ -220,8 +220,6 @@ int main(void)
 #endif
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 )
-	SetProcessPriorityBoost(GetCurrentProcess(), false);
-    SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
     HANDLE hMutex = CreateMutexW(NULL, TRUE, L"VirtualMeter::Meter");
     DWORD Ret = GetLastError();
     

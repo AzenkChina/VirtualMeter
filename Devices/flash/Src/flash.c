@@ -669,7 +669,6 @@ static uint32_t flash_eraseall(void)
 #else
     
 #if defined (DEMO_STM32F091)
-	uint32_t page = 0;
     uint8_t status;
     uint8_t timeout = 100;
 	uint8_t cmd[] = {AT45_CMD_ERIC};

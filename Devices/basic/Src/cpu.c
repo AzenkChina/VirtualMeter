@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "stdlib.h"
+#include <sys/time.h>
 #else
 #if defined (DEMO_STM32F091)
 #include "stm32f0xx.h"
@@ -63,33 +64,41 @@ static void *ThreadTick(void *arg)
 static DWORD CALLBACK ThreadTick(PVOID pvoid)
 #endif
 {
-#if defined ( _WIN32 ) || defined ( _WIN64 )
-    struct timeb Tb;
-    uint64_t Start, End;
+#if defined ( __linux )
+	struct timeval tv;
+#else
+	struct timeb tb;
 #endif
-
+	long unsigned int Start, End;
+	
 	while(1)
 	{
 	    if(!in_sleep)
 	    {
 #if defined ( __linux )
+			gettimeofday(&tv, NULL);
+			Start = tv.tv_sec*1000000 + tv.tv_usec;
             usleep(5*1000);
-#else
-			ftime(&Tb);
-			
-			Start = Tb.time*1000 + Tb.millitm;
-			
 			do
 			{
-				SwitchToThread();
-				ftime(&Tb);
-				End = Tb.time*1000 + Tb.millitm;
+				gettimeofday(&tv, NULL);
+				End = tv.tv_sec*1000000 + tv.tv_usec;
 			}
-			while((End - Start) < 5);
+			while(!((End - Start) / 1000));
+#else
+			ftime(&tb);
+			Start = tb.time*1000000 + tb.millitm*1000;
+			Sleep(5);
+			do
+			{
+				ftime(&tb);
+				End = tb.time*1000000 + tb.millitm*1000;
+			}
+			while(!((End - Start) / 1000));
 #endif
 			if(intr_status == INTR_ENABLED)
 			{
-				jitter_update(5);
+				jitter_update(((End - Start) / 1000));
 			}
 	    }
 	    else
@@ -431,10 +440,7 @@ static void cpu_core_init(enum __cpu_level level)
 		pthread_create(&thread, &thread_attr, ThreadDog, NULL);
 		pthread_attr_destroy(&thread_attr);
 #else
-		hThread = CreateThread(NULL, 0, ThreadTick, 0, CREATE_SUSPENDED, NULL);
-		SetThreadPriorityBoost(hThread, false);
-		SetThreadPriority(hThread, THREAD_PRIORITY_IDLE);
-		ResumeThread(hThread);
+		hThread = CreateThread(NULL, 0, ThreadTick, 0, 0, NULL);
 		CloseHandle(hThread);
 		
 		hThread = CreateThread(NULL, 0, ThreadDog, 0, 0, NULL);
