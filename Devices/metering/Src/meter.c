@@ -18,7 +18,7 @@
 #include "comm_socket.h"
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #include "delay.h"
 #include "vspi1.h"
@@ -167,7 +167,7 @@ static void meter_init(enum __dev_state state)
 	status = DEVICE_INIT;
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     (void)(meter_callback);
@@ -242,7 +242,7 @@ static void meter_suspend(void)
     meter_callback = (void(*)(void *))0;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     meter_callback = (void(*)(void *))0;
     devspi.control.suspend();
 #endif
@@ -253,7 +253,7 @@ static void meter_suspend(void)
     status = DEVICE_SUSPENDED;
 }
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 /**
   * @brief  将 __metering_meta 转换为 702x 的命令字
   */
@@ -401,7 +401,7 @@ static void meter_runner(uint16_t msecond)
 
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 
 #endif
 
@@ -485,7 +485,7 @@ static int32_t meter_data_read(enum __metering_meta id)
     return(result);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t addr;
     float val;
     union {
@@ -606,7 +606,7 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
 	return(calibrate);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t loop;
     
 	if(size < sizeof(struct __calibrate_data))
@@ -699,7 +699,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
     return(true);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	if(size < sizeof(struct __calibrates))
 	{
 		return(false);
@@ -862,7 +862,7 @@ static bool meter_calibrate_status(void)
 	return(calibrate);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	return(calibrate);
 #endif
 
@@ -878,7 +878,7 @@ static bool meter_calibrate_exit(void)
 	return(true);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	return(true);
 #endif
 

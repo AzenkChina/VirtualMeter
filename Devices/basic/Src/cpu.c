@@ -20,7 +20,7 @@
 #include "stdlib.h"
 #include <sys/time.h>
 #else
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 #endif
@@ -32,7 +32,7 @@
 #define INTERRUPT_AMOUNT    ((uint8_t)1)
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 /* STM32 Demo 支持注册三个中断：系统滴答中断，SVC中断，PendSV中断，中断号分别为 0 1 2 */
 #define INTERRUPT_AMOUNT    ((uint8_t)3)
 #endif
@@ -159,7 +159,7 @@ static const char* cpu_core_details(void)
     static const char details[] = "x86 linux";
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     static const char details[] = "stm32f091 arm cortex-m0 thumb2";
 #endif
 
@@ -204,7 +204,7 @@ static void cpu_core_reset(void)
     exit(0);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     NVIC_SystemReset();
 #endif
 
@@ -230,7 +230,7 @@ static void cpu_core_sleep(void)
 	}
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     /* Allow access to RTC */
     PWR_BackupAccessCmd(ENABLE);
     /* Clear flags */
@@ -266,7 +266,7 @@ static void cpu_core_idle(uint16_t tick)
 	}
 #else
 	
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint32_t timing = jiffy.value();
 	
 	if(cpu_level == CPU_NORMAL)
@@ -294,7 +294,7 @@ static void watchdog_feed(void)
     counter = 0;
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     IWDG_ReloadCounter();
 #endif
 
@@ -307,7 +307,7 @@ static void watchdog_feed(void)
 static void cpu_entr_disable(void)
 {
     intr_status = INTR_DISABLED;
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     __disable_irq();
 #endif
 }
@@ -318,7 +318,7 @@ static void cpu_entr_disable(void)
 static void cpu_entr_enable(void)
 {
     intr_status = INTR_ENABLED;
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     __enable_irq();
 #endif
 }
@@ -458,7 +458,7 @@ static void cpu_core_init(enum __cpu_level level)
     }
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     EXTI_InitTypeDef EXTI_InitStruct;
     RTC_InitTypeDef RTC_InitStruct;
@@ -893,7 +893,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (DEMO_STM32F091)
+#elif defined (BUILD_REAL_WORLD)
 		.base           = SRAM_BASE,
 		.size           = 32 * 1024,
 #endif
@@ -905,7 +905,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (DEMO_STM32F091)
+#elif defined (BUILD_REAL_WORLD)
 		.base           = FLASH_BASE,
 		.size           = 256 * 1024,
 #endif
@@ -917,7 +917,7 @@ const struct __cpu cpu =
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 		.base           = 0,
 		.size           = 0,
-#elif defined (DEMO_STM32F091)
+#elif defined (BUILD_REAL_WORLD)
         .base           = PERIPH_BASE,
         .size           = 0xBFFFFFFF,
 #endif

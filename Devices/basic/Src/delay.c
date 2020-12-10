@@ -13,7 +13,7 @@
 #elif defined ( __linux )
 #include <unistd.h>
 #else
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 #endif
@@ -33,7 +33,7 @@ void udelay(uint16_t count)
     ;
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint16_t loop;
     
 	if(cpu.core.status() == CPU_NORMAL)
@@ -71,7 +71,7 @@ void mdelay(uint16_t count)
 	usleep(count*1000);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint32_t cnt;
 	
 	if(cpu.core.status() == CPU_NORMAL)

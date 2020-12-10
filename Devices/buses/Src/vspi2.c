@@ -10,7 +10,7 @@
 #include "vspi2.h"
 #include "delay.h"
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 
@@ -35,7 +35,7 @@ static enum __dev_status spi2_status(void)
   */
 static void spi2_init(enum __dev_state state)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     SPI_InitTypeDef SPI_InitStruct;
     
@@ -88,7 +88,7 @@ static void spi2_init(enum __dev_state state)
   */
 static void spi2_suspend(void)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     SPI_I2S_DeInit(SPI2);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, DISABLE);
 #endif
@@ -99,7 +99,7 @@ static void spi2_suspend(void)
 
 static uint8_t spi2_select(uint8_t cs)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_ResetBits(GPIOB, GPIO_Pin_12);
     udelay(300);
 #endif
@@ -109,7 +109,7 @@ static uint8_t spi2_select(uint8_t cs)
 
 static uint8_t spi2_release(uint8_t cs)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     udelay(300);
     GPIO_SetBits(GPIOB, GPIO_Pin_12);
 #endif
@@ -133,7 +133,7 @@ static uint32_t spi2_freq_set(uint32_t rate)
   */
 static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint32_t i;
     
     if(status != DEVICE_INIT)
@@ -162,7 +162,7 @@ static uint32_t spi2_read(uint32_t count, uint8_t * buffer)
   */
 static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint32_t i;
     
     if(status != DEVICE_INIT)
@@ -191,7 +191,7 @@ static uint32_t spi2_write(uint32_t count, const uint8_t *buffer)
   */
 static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t * rbuffer)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint32_t i;
     
     if(status != DEVICE_INIT)
@@ -220,7 +220,7 @@ static uint32_t spi2_readwrite(uint32_t count, const uint8_t *wbuffer, uint8_t *
   */
 static uint32_t spi2_readchar(void)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(status != DEVICE_INIT)
     {
         return(0);
@@ -242,7 +242,7 @@ static uint32_t spi2_readchar(void)
   */
 static uint32_t spi2_writechar(uint32_t ch)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(status != DEVICE_INIT)
     {
         return(0);
@@ -265,7 +265,7 @@ static uint32_t spi2_writechar(uint32_t ch)
   */
 static uint32_t spi2_readwritechar(uint32_t ch)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(status != DEVICE_INIT)
     {
         return(0);

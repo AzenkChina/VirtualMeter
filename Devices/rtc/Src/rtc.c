@@ -8,7 +8,7 @@
 #include "rtc.h"
 #include <time.h>
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include <stdbool.h>
 #include <string.h>
 #include "stm32f0xx.h"
@@ -18,12 +18,12 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #define deviic      viic1
 #endif
 
 /* Private macro -------------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #define RTC_ADDR                0x32
 
 #define RX8025_REG_SEC          0x00
@@ -45,13 +45,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 static const unsigned char rtc_days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 static bool is_leap_year(uint16_t year)
 {
 	return (!(year % 4) && (year % 100)) || !(year % 400);
@@ -79,7 +79,7 @@ static enum __dev_status rtc_status(void)
   */
 static void rtc_init(enum __dev_state state)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     deviic.control.init(state);
 #endif
     status = DEVICE_INIT;
@@ -90,7 +90,7 @@ static void rtc_init(enum __dev_state state)
   */
 static void rtc_suspend(void)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     deviic.control.suspend();
 #endif
     status = DEVICE_NOTINIT;
@@ -105,7 +105,7 @@ static uint8_t rtc_config_read(uint8_t addr, uint8_t count, uint8_t *param)
 	return(0);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	return(0);
 #endif
     
@@ -122,7 +122,7 @@ static uint8_t rtc_config_write(uint8_t addr, uint8_t count, const uint8_t *para
 	return(0);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	return(0);
 #endif
     
@@ -141,7 +141,7 @@ static uint64_t rtc_read(void)
 	return((uint64_t)stamp);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     struct tm tim;
     uint8_t date[7];
     
@@ -194,7 +194,7 @@ static uint64_t rtc_write(uint64_t stamp)
 	return(0);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     time_t t = stamp;
     struct tm *tim;
     uint8_t date[7];
@@ -233,7 +233,7 @@ const struct __rtc rtc =
         .name       = "virtual rtc",
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
         .name       = "rx8025t",
 #endif
 

@@ -105,7 +105,7 @@ static const struct lfs_config lfs_cfg =
     .block_size = 4096,
     .block_count = 1024,
 #else
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     .block_size = 512,
     .block_count = 8192,
 #endif

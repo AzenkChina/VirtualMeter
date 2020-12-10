@@ -18,7 +18,7 @@
 #include "trace.h"
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #include "delay.h"
 #endif
@@ -128,7 +128,7 @@ static void key_init(enum __dev_state state)
     }
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
@@ -188,7 +188,7 @@ static void key_runner(uint16_t msecond)
     }
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     static uint16_t id_before = 0;
     uint16_t id_sample[3];
     
@@ -276,7 +276,7 @@ static void key_runner(uint16_t msecond)
 
 static uint16_t key_get(void)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint16_t id_sample = 0;
     
     if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2) == Bit_SET)

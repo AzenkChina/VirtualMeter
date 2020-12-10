@@ -8,7 +8,7 @@
 #include "leds.h"
 #include "trace.h"
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 
@@ -31,7 +31,7 @@ static enum __dev_status led_relay_status(void)
   */
 static void led_relay_init(enum __dev_state state)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     if(state == DEVICE_NORMAL)
@@ -67,7 +67,7 @@ static enum __led_status led_relay_get(void)
     return(LED_OFF);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_7) == Bit_SET)
     {
         return(LED_OFF);
@@ -90,7 +90,7 @@ static uint8_t led_relay_set(enum __led_status value)
     return(0);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(value == LED_ON)
     {
         GPIO_ResetBits(GPIOA, GPIO_Pin_7);
@@ -119,7 +119,7 @@ static enum __dev_status led_warn_status(void)
   */
 static void led_warn_init(enum __dev_state state)
 {
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     if(state == DEVICE_NORMAL)
@@ -155,7 +155,7 @@ static enum __led_status led_warn_get(void)
     return(LED_OFF);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_3) == Bit_SET)
     {
         return(LED_OFF);
@@ -178,7 +178,7 @@ static uint8_t led_warn_set(enum __led_status value)
     return(0);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(value == LED_ON)
     {
         GPIO_ResetBits(GPIOA, GPIO_Pin_3);

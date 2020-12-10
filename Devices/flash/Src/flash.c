@@ -24,7 +24,7 @@
 #include "string.h"
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "cpu.h"
 #include "vspi2.h"
 #include "stm32f0xx.h"
@@ -46,7 +46,7 @@
 #define FLASH_CHIP_SIZE             ((uint32_t)(FLASH_BLOCK_SIZE * FLASH_BLOCK_AMOUNT))
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 //Main Memory Page Read D2H
 #define AT45_CMD_RDPG           0xD2
 //Main Memory Page to Buffer 1 Transfer
@@ -168,7 +168,7 @@ static void flash_init(enum __dev_state state)
 #endif
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOD, ENABLE);
@@ -205,7 +205,7 @@ static void flash_suspend(void)
     
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     devspi.control.suspend();
 #endif
     
@@ -272,7 +272,7 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     return(size);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint32_t addr_sent = 0;
     
     if(block >= FLASH_BLOCK_AMOUNT)
@@ -397,7 +397,7 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     return(size);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint32_t page = 0;
     uint8_t status;
     uint8_t timeout = 80;
@@ -552,7 +552,7 @@ static uint32_t flash_eraseblock(uint32_t block)
     return(FLASH_BLOCK_SIZE);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint32_t page = 0;
     uint8_t status;
     uint8_t timeout = 40;
@@ -668,7 +668,7 @@ static uint32_t flash_eraseall(void)
     return(FLASH_CHIP_SIZE);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t status;
     uint8_t timeout = 90;
 	uint8_t cmd[] = {AT45_CMD_ERIC};
@@ -715,7 +715,7 @@ const struct __flash flash =
     {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
         .name       = "w25q64",
-#elif defined (DEMO_STM32F091)
+#elif defined (BUILD_REAL_WORLD)
         .name       = "at45db321",
 #endif
         .status     = flash_status,

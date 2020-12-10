@@ -39,7 +39,7 @@
 
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #define LCD_MAX_WINDOWS             (2)//windowsÊýÁ¿
 
 #define LCD_WINDOW_MAIN             (0)//Ö÷windows

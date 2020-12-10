@@ -13,7 +13,7 @@
 #include <unistd.h>
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 
@@ -45,7 +45,7 @@ static void buz_init(enum __dev_state state)
     status = DEVICE_INIT;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     if(state == DEVICE_NORMAL)
@@ -75,7 +75,7 @@ static void buz_suspend(void)
     status = DEVICE_SUSPENDED;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     status = DEVICE_SUSPENDED;
 #endif
     
@@ -99,7 +99,7 @@ static enum __switch_status buz_get(void)
     return(SWITCH_OPEN);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_10) == Bit_SET)
     {
         return(SWITCH_CLOSE);
@@ -122,7 +122,7 @@ static uint8_t buz_set(enum __switch_status status)
     return((uint8_t)SWITCH_OPEN);
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(status == SWITCH_CLOSE)
     {
         GPIO_SetBits(GPIOE, GPIO_Pin_10);

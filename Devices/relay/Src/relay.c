@@ -18,7 +18,7 @@
 #include "trace.h"
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "stm32f0xx.h"
 #endif
 
@@ -125,7 +125,7 @@ static void relay_init(enum __dev_state state)
     }
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     if(state == DEVICE_NORMAL)
@@ -163,7 +163,7 @@ static void relay_suspend(void)
     status = DEVICE_SUSPENDED;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     status = DEVICE_SUSPENDED;
 #endif
     
@@ -181,7 +181,7 @@ static enum __switch_status relay_get(void)
 	return(relay_state);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7) == Bit_RESET)
     {
         return(SWITCH_CLOSE);
@@ -202,7 +202,7 @@ static uint8_t relay_set(enum __switch_status status)
 	return((uint8_t)relay_state);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(status == SWITCH_CLOSE)
     {
         GPIO_ResetBits(GPIOC, GPIO_Pin_7);

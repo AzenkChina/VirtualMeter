@@ -31,7 +31,7 @@ struct __calibrate_data
 };
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 /**
   * @brief  7022 寄存器
   */

@@ -317,7 +317,7 @@ else()
 	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
 	add_definitions(-D__weak=__attribute__\(\(weak\)\) -D__packed=__attribute__\(\(__packed__\)\))
-	add_definitions(-DUSE_STDPERIPH_DRIVER -DSTM32F091 -DDEMO_STM32F091)
+	add_definitions(-DUSE_STDPERIPH_DRIVER -DSTM32F091 -DBUILD_REAL_WORLD)
 endif()
 
 

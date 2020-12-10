@@ -12,7 +12,7 @@
 #include "comm_socket.h"
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #include "string.h"
 #include "stm32f0xx.h"
 #include "viic3.h"
@@ -22,13 +22,13 @@
 #endif
 
 /* Private define ------------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #define deviic      viic3
 #define GDRAM_SIZE  35
 #endif
 
 /* Private macro -------------------------------------------------------------*/
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 #define LCD_ADDR                0x3E
 
 #define LCD_SOFTRST				0xf7 //显示开启状态下软件复位
@@ -118,7 +118,7 @@ struct __win_lcd_message
 };
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 struct __lcd_params
 {
     uint8_t gdram[GDRAM_SIZE];
@@ -146,7 +146,7 @@ static SOCKET sock = INVALID_SOCKET;
 static struct __win_lcd_message lcd_message;
 #else
 
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 static struct __lcd_params params;
 
 /**
@@ -253,7 +253,7 @@ static void lcd_init(enum __dev_state state)
     }
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
     deviic.control.init(state);
@@ -312,7 +312,7 @@ static void lcd_suspend(void)
     }
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	//disable display
 	deviic.bus.write(LCD_ADDR, LCD_MODSET_OFF, 1, 0, 0);
     deviic.control.suspend();
@@ -351,7 +351,7 @@ static void lcd_runner(uint16_t msecond)
     }
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint8_t labels;
 	
 	if(status != DEVICE_INIT)
@@ -415,7 +415,7 @@ static void lcd_show_none(void)
     lcd_message.global = LCD_GLO_SHOW_NONE;
 #else
 	
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint8_t gdram[GDRAM_SIZE];
 	
 	memset(gdram, 0, sizeof(gdram));
@@ -436,7 +436,7 @@ static void lcd_show_all(void)
     lcd_message.global = LCD_GLO_SHOW_ALL;
 #else
 	
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
 	uint8_t gdram[GDRAM_SIZE];
 	
 	memset(gdram, 0xff, sizeof(gdram));
@@ -459,7 +459,7 @@ static enum __lcd_backlight lcd_backlight_open(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_ResetBits(GPIOE, GPIO_Pin_13);
     return(LCD_BACKLIGHT_ON);
 #endif
@@ -477,7 +477,7 @@ static enum __lcd_backlight lcd_backlight_close(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     GPIO_SetBits(GPIOE, GPIO_Pin_13);
     return(LCD_BACKLIGHT_OFF);
 #endif
@@ -494,7 +494,7 @@ static enum __lcd_backlight lcd_backlight_status(void)
     return(lcd_message.backlight);
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_13) == Bit_SET)
     {
         return(LCD_BACKLIGHT_OFF);
@@ -528,7 +528,7 @@ static void window_show_bin(uint8_t channel, uint16_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].value.bin = val;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits, effect;
     uint8_t number[8];
 	uint8_t gdram[GDRAM_SIZE];
@@ -995,7 +995,7 @@ static void window_show_dec(uint8_t channel, int32_t val, enum __lcd_dot dot, en
 	lcd_message.windows[channel].value.dec = val;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits, effect, minus;
     uint8_t number[8];
 	uint8_t gdram[GDRAM_SIZE];
@@ -1475,7 +1475,7 @@ static void window_show_hex(uint8_t channel, uint32_t val, enum __lcd_dot dot, e
 	lcd_message.windows[channel].value.hex = val;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits, effect;
     uint8_t number[8];
 	uint8_t gdram[GDRAM_SIZE];
@@ -1938,7 +1938,7 @@ static void window_show_date(uint8_t channel, uint64_t val, enum __lcd_date_form
 	lcd_message.windows[channel].value.date = val;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits;
 	uint8_t gdram[GDRAM_SIZE];
     time_t stamp;
@@ -2416,7 +2416,7 @@ static uint8_t window_show_msg(uint8_t channel, uint8_t from, const char *msg)
 	}
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits, strl, index, points;
 	uint8_t gdram[GDRAM_SIZE];
     
@@ -2892,7 +2892,7 @@ static void window_show_none(uint8_t channel)
 	lcd_message.windows[channel].value.dec = 0;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits;
 	uint8_t gdram[GDRAM_SIZE];
     
@@ -3000,7 +3000,7 @@ static void window_show_all(uint8_t channel)
 	lcd_message.windows[channel].value.dec = 88888888;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t tubes, bits;
 	uint8_t gdram[GDRAM_SIZE];
     
@@ -3125,7 +3125,7 @@ static void lcd_label_on(uint8_t channel, uint8_t state)
 	lcd_message.label[channel].value = state;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t gdram[GDRAM_SIZE];
     
     if(channel >= LCD_MAX_LABELS)
@@ -3396,7 +3396,7 @@ static void lcd_label_off(uint8_t channel)
 	lcd_message.label[channel].status = LCD_LAB_SHOW_OFF;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     uint8_t gdram[GDRAM_SIZE];
     
     if(channel >= LCD_MAX_LABELS)
@@ -3568,7 +3568,7 @@ static void lcd_label_flash(uint8_t channel)
 	lcd_message.label[channel].status = LCD_LAB_SHOW_FLASH;
 #else
     
-#if defined (DEMO_STM32F091)
+#if defined (BUILD_REAL_WORLD)
     if(channel >= LCD_MAX_LABELS)
     {
         return;
