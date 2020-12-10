@@ -670,7 +670,7 @@ static uint32_t flash_eraseall(void)
     
 #if defined (DEMO_STM32F091)
     uint8_t status;
-    uint8_t timeout = 100;
+    uint8_t timeout = 90;
 	uint8_t cmd[] = {AT45_CMD_ERIC};
     
     devspi.select(0);
@@ -685,7 +685,7 @@ static uint32_t flash_eraseall(void)
     
     do
     {
-		mdelay(100);
+		mdelay(1000);
         devspi.select(0);
         devspi.octet.write(AT45_CMD_SR);
         status = devspi.octet.read();
