@@ -1029,7 +1029,8 @@ static void asso_aarq_low(struct __dlms_association *asso,
                 DLMS_CONFIG_LOAD_PASSWD(asso->akey);
             }
             
-            if(memcmp(&asso->akey[2], &request->calling_authentication_value[4], asso->akey[1]) != 0)
+            if((memcmp(&asso->akey[2], &request->calling_authentication_value[4], asso->akey[1]) != 0) ||
+			   (asso->akey[1] != request->calling_authentication_value[3]))
             {
                 //¾Ü¾ø½¨Á¢Á´½Ó
                 asso->diagnose = FAILURE_CONTEXT_NAME;

@@ -237,7 +237,7 @@ uint8_t dlms_util_load_title(uint8_t *buffer)
     else
     {
         confuse(&title[2], 8);
-        heap.copy(&buffer[2], &title[2], 8);
+        heap.copy(&buffer[1], &title[1], 9);
     }
     
     return(10);
@@ -256,7 +256,7 @@ uint8_t dlms_util_write_title(uint8_t *buffer)
     confuse(&buffer[2], 8);
     
     file.parameter.write("dlms", \
-              STRUCT_OFFSET(struct __dlms_params, passwd), \
+              STRUCT_OFFSET(struct __dlms_params, title), \
               2+buffer[1], \
               buffer);
     

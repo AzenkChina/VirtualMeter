@@ -1011,7 +1011,6 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 			if(origin)
 			{
 				request->plain = (uint8_t *)info;
-				info_length = length;
 			}
 			
 			request->type = request->plain[1];
@@ -1030,13 +1029,13 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].obis = &request->plain[5];
 							request->info[0].index = &request->plain[11];
 							request->info[0].data = &request->plain[12];
-							if(info_length < 13)
+							if(length < 13)
 							{
 								return(APPL_OTHERS);
 							}
 							else
 							{
-								request->info[0].length = info_length - 12;
+								request->info[0].length = length - 12;
 							}
 							break;
 						}
@@ -1050,7 +1049,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].block += request->plain[5];
 							request->info[0].block <<= 8;
 							request->info[0].block += request->plain[6];
-							if(info_length < 7)
+							if(length < 7)
 							{
 								return(APPL_OTHERS);
 							}
@@ -1077,7 +1076,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 								request->info[nloop].index = &request->plain[ninfo + 8];
 								request->info[nloop].data = &request->plain[ninfo + 9];
 								
-								if(info_length < (ninfo + 9))
+								if(length < (ninfo + 9))
 								{
 									return(APPL_OTHERS);
 								}
@@ -1112,8 +1111,8 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].obis = &request->plain[5];
 							request->info[0].index = &request->plain[11];
 							request->info[0].data = &request->plain[13];
-							request->info[0].length = info_length - 13;
-							if((info_length < 14) || request->plain[12])
+							request->info[0].length = length - 13;
+							if((length < 14) || request->plain[12])
 							{
 								return(APPL_OTHERS);
 							}
@@ -1134,7 +1133,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].block <<= 8;
 							request->info[0].block += request->plain[17];
 							request->info[0].data = &request->plain[18 + axdr.length.decode(&request->plain[18], &request->info[0].length)];
-							if((info_length < 20) || request->plain[12])
+							if((length < 20) || request->plain[12])
 							{
 								return(APPL_OTHERS);
 							}
@@ -1152,7 +1151,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].block <<= 8;
 							request->info[0].block += request->plain[7];
 							request->info[0].data = &request->plain[8 + axdr.length.decode(&request->plain[8], &request->info[0].length)];
-							if(info_length < 10)
+							if(length < 10)
 							{
 								return(APPL_OTHERS);
 							}
@@ -1181,8 +1180,8 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							if(request->plain[12])
 							{
 								request->info[0].data = &request->plain[13];
-								request->info[0].length = info_length - 13;
-								if(info_length < 14)
+								request->info[0].length = length - 13;
+								if(length < 14)
 								{
 									return(APPL_OTHERS);
 								}
@@ -1191,7 +1190,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							{
 								request->info[0].data = (uint8_t *)0;
 								request->info[0].length = 0;
-								if(info_length < 12)
+								if(length < 12)
 								{
 									return(APPL_OTHERS);
 								}
@@ -1210,7 +1209,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].block <<= 8;
 							request->info[0].block += request->plain[7];
 							request->info[0].data = &request->plain[8 + axdr.length.decode(&request->plain[8], &request->info[0].length)];
-							if(info_length < 10)
+							if(length < 10)
 							{
 								return(APPL_OTHERS);
 							}
@@ -1231,7 +1230,7 @@ static enum __appl_result parse_dlms_frame(const uint8_t *info, \
 							request->info[0].block <<= 8;
 							request->info[0].block += request->plain[16];
 							request->info[0].data = &request->plain[17 + axdr.length.decode(&request->plain[17], &request->info[0].length)];
-							if(info_length < 19)
+							if(length < 19)
 							{
 								return(APPL_OTHERS);
 							}
