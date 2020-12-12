@@ -14,6 +14,7 @@ set(sources
  ../../Devices/rtc/Src/rtc.c
  ../../Devices/serial/Src/rs485_1.c
  ../../Devices/serial/Src/rs485_2.c
+ ../../Devices/serial/Src/optical.c
  ../../Devices/battery/Src/battery.c
  ../../Devices/leds/Src/leds.c
  ../../Devices/buzzer/Src/buzzer.c

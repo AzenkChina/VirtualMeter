@@ -15,6 +15,7 @@
 /** 在这里添加通信端口头文件 */
 #include "rs485_1.h"
 #include "rs485_2.h"
+#include "optical.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -39,6 +40,7 @@ static const struct __port_entry port_table[] =
 	/** 端口类型 端口结构体指针 */
 	{PORT_HDLC, &rs485_1},
 	{PORT_HDLC, &rs485_2},
+	{PORT_HDLC, &optical},
 };
 
 /* Private macro -------------------------------------------------------------*/
