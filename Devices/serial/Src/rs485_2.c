@@ -385,9 +385,9 @@ static void rs485_txbuff_remove(void)
   */
 static uint16_t rs485_timeout_config(uint16_t msecond)
 {
-	if(msecond < 100)
+	if(msecond < 10)
 	{
-		msecond = 100;
+		msecond = 10;
 	}
 	
 	serial_state.timeout_config = msecond;

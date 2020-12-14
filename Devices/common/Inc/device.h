@@ -203,7 +203,7 @@ struct __uart
 };
 
 /**
-  * @brief  serial备驱动模型
+  * @brief  serial设备驱动模型
   */
 struct __serial
 {
@@ -245,6 +245,18 @@ struct __serial
     }                               timeout;
     
     const struct __uart			*uart; //serial对应的usart
+};
+
+/**
+  * @brief  可插拔模块设备驱动模型
+  */
+struct __module
+{
+	struct __serial				serial;
+	bool						(*linked)(void);//判断是否上行链路已连接
+	bool						(*detect)(void);//判断是否模块已连接
+	void						(*config)(bool);//更新CFG引脚状态
+	void						(*reset)(void);//复位模块
 };
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )

@@ -12,18 +12,12 @@
   */
 enum __port_type
 {
-	PORT_TCP = 0,
-	PORT_UDP = 1,
-	PORT_FTP = 2,
-	PORT_SMTP = 3,
-	PORT_SMS = 4,
-	PORT_HDLC = 5,
-	PORT_MBUS = 6,
-	PORT_ZIGBEE = 7,
-
-	PORT_GPRS = 200,
-	PORT_PLC = 201,
-	PORT_GPRS_PLC = 202,
+	PORT_TTL = 0,
+	PORT_RS232 = 1,
+	PORT_RS485 = 2,
+	PORT_RS422 = 3,
+	PORT_OPTICAL = 4,
+	PORT_MODULE = 5,
 };
 
 /**
@@ -43,8 +37,11 @@ struct __comm
 {
     struct
     {
+		uint8_t						(*channel)(void); //获取当前通道
         enum __port_type			(*type)(uint8_t channel); //获取端口类型 
+		uint16_t					(*protocol)(uint8_t channel); //获取端口支持的协议 
         enum __port_status			(*status)(uint8_t channel); //获取端口状态 
+		bool						(*link)(uint8_t channel); //端口链路是否正常 
         
     }                               attrib;
     
@@ -75,6 +72,16 @@ struct __comm
         enum __stop					(*get)(uint8_t channel); //获取当前停止位
         
     }                                stop;
+	
+	struct
+	{
+		bool						(*add)(void (*callback)(uint8_t, bool)); //添加回调
+		bool						(*remove)(void (*callback)(uint8_t, bool)); //删除回调
+		
+	}								monitor;
+	
+	void							(*config)(bool state); //模块配置信息变化
+	void							(*reset)(uint8_t channel); //复位端口
 };
 
 

@@ -16,6 +16,7 @@
 #include "info.h"
 #include "stdbool.h"
 #include "string.h"
+#include "types_comm.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -315,6 +316,18 @@ static uint16_t xmodem_stream_in(uint8_t channel, const uint8_t *frame, uint16_t
 {
 	uint8_t sum;
 	uint64_t address;
+	
+	struct __comm *comm = api("task_comm");
+	
+	if(!comm)
+	{
+		return(0);
+	}
+	
+	if(!(comm->attrib.protocol(channel) | PF_XMODEM))
+	{
+		return(0);
+	}
 	
 	address = frame[frame_length - 9]; sum = frame[frame_length - 9];
 	address <<= 8;

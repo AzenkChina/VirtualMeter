@@ -5,10 +5,11 @@
  **/
 
 /* Includes ------------------------------------------------------------------*/
-#include "rs485_1.h"
+#include "module.h"
 #include "string.h"
-#include "vuart1.h"
+#include "vuart4.h"
 #include "cpu.h"
+#include "delay.h"
 #include "trace.h"
 
 #if defined (BUILD_REAL_WORLD)
@@ -17,7 +18,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define UART_USED			vuart1
+#define UART_USED			vuart4
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -61,7 +62,7 @@ static void recv_callback(uint8_t ch)
 	
 	if(serial_state.rx_w_index >= serial_state.rx_buff_size)
 	{
-		TRACE(TRACE_WARN, "RS485 #1 rx buffer overflowed.");
+		TRACE(TRACE_WARN, "Optical rx buffer overflowed.");
 		return;
 	}
 	
@@ -73,7 +74,7 @@ static void recv_callback(uint8_t ch)
 /**
   * @brief  
   */
-static enum __dev_status rs485_status(void)
+static enum __dev_status module_status(void)
 {
     return(status);
 }
@@ -81,7 +82,7 @@ static enum __dev_status rs485_status(void)
 /**
   * @brief  
   */
-static void rs485_init(enum __dev_state state)
+static void module_init(enum __dev_state state)
 {
 #if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
@@ -105,16 +106,35 @@ static void rs485_init(enum __dev_state state)
 	{
 #if defined (BUILD_REAL_WORLD)
         RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-        
-        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_15;
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+		
+		//DECT
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
         GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
         GPIO_Init(GPIOA, &GPIO_InitStruct);
-        GPIO_SetBits(GPIOA, GPIO_Pin_15);
+		GPIO_SetBits(GPIOA, GPIO_Pin_0);
+		
+		//RST CFG
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_4;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOE, &GPIO_InitStruct);
+		GPIO_SetBits(GPIOE, GPIO_Pin_2 | GPIO_Pin_4);
+		
+		//LINK
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_3;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+        GPIO_Init(GPIOE, &GPIO_InitStruct);
+		
+		module.reset();
 #endif
-        UART_USED.handler.filling(recv_callback);
+		UART_USED.handler.filling(recv_callback);
 	}
     
     status = DEVICE_INIT;
@@ -123,7 +143,7 @@ static void rs485_init(enum __dev_state state)
 /**
   * @brief  
   */
-static void rs485_suspend(void)
+static void module_suspend(void)
 {
 	UART_USED.handler.remove();
 	UART_USED.control.suspend();
@@ -150,7 +170,7 @@ static void rs485_suspend(void)
 /**
   * @brief  
   */
-static void rs485_runner(uint16_t msecond)
+static void module_runner(uint16_t msecond)
 {
     //接收没有超时
 	if(serial_state.timeout_rx_counter < serial_state.timeout_config)
@@ -202,9 +222,6 @@ static void rs485_runner(uint16_t msecond)
         //串口状态已空闲，如果总线状态忙，则复位总线状态
 		if(serial_state.status == BUS_TRANSFER)
 		{
-#if defined (BUILD_REAL_WORLD)
-            GPIO_SetBits(GPIOA, GPIO_Pin_15);
-#endif
             serial_state.status = BUS_IDLE;
 			serial_state.tx_data_size = 0;
 		}
@@ -212,9 +229,6 @@ static void rs485_runner(uint16_t msecond)
         //有数据等待传输
 		if(serial_state.tx_data_size)
 		{
-#if defined (BUILD_REAL_WORLD)
-            GPIO_ResetBits(GPIOA, GPIO_Pin_15);
-#endif
 			serial_state.status = BUS_TRANSFER;
 			UART_USED.write(serial_state.tx_data_size, serial_state.tx_buff);
 		}
@@ -224,7 +238,7 @@ static void rs485_runner(uint16_t msecond)
 /**
   * @brief  
   */
-static uint16_t rs485_read(uint16_t max_size, uint8_t *buffer)
+static uint16_t module_read(uint16_t max_size, uint8_t *buffer)
 {
 	uint16_t length = serial_state.rx_frame_length;
 	
@@ -254,7 +268,7 @@ static uint16_t rs485_read(uint16_t max_size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_write(uint16_t count)
+static uint16_t module_write(uint16_t count)
 {
 	if(!(serial_state.tx_buff))
 	{
@@ -281,7 +295,7 @@ static uint16_t rs485_write(uint16_t count)
 /**
   * @brief  
   */
-static enum __bus_status rs485_bus_status(void)
+static enum __bus_status module_bus_status(void)
 {
 	return(serial_state.status);
 }
@@ -289,7 +303,7 @@ static enum __bus_status rs485_bus_status(void)
 /**
   * @brief  
   */
-static void rs485_rxbuff_set(uint16_t size, uint8_t *buffer)
+static void module_rxbuff_set(uint16_t size, uint8_t *buffer)
 {
 	enum __interrupt_status intr_status = cpu.interrupt.status();
 	
@@ -313,7 +327,7 @@ static void rs485_rxbuff_set(uint16_t size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_rxbuff_get(uint8_t **buffer)
+static uint16_t module_rxbuff_get(uint8_t **buffer)
 {
 	*buffer = serial_state.rx_buff;
 	
@@ -323,7 +337,7 @@ static uint16_t rs485_rxbuff_get(uint8_t **buffer)
 /**
   * @brief  
   */
-static void rs485_rxbuff_remove(void)
+static void module_rxbuff_remove(void)
 {
 	enum __interrupt_status intr_status = cpu.interrupt.status();
 	
@@ -348,7 +362,7 @@ static void rs485_rxbuff_remove(void)
 /**
   * @brief  
   */
-static void rs485_txbuff_set(uint16_t size, uint8_t *buffer)
+static void module_txbuff_set(uint16_t size, uint8_t *buffer)
 {
 	serial_state.status = BUS_IDLE;
 	serial_state.tx_buff = (uint8_t *)buffer;
@@ -360,7 +374,7 @@ static void rs485_txbuff_set(uint16_t size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_txbuff_get(uint8_t **buffer)
+static uint16_t module_txbuff_get(uint8_t **buffer)
 {
 	*buffer = serial_state.tx_buff;
 	
@@ -370,7 +384,7 @@ static uint16_t rs485_txbuff_get(uint8_t **buffer)
 /**
   * @brief  
   */
-static void rs485_txbuff_remove(void)
+static void module_txbuff_remove(void)
 {
 	serial_state.status = BUS_IDLE;
 	serial_state.tx_buff = (uint8_t *)0;;
@@ -383,7 +397,7 @@ static void rs485_txbuff_remove(void)
 /**
   * @brief  
   */
-static uint16_t rs485_timeout_config(uint16_t msecond)
+static uint16_t module_timeout_config(uint16_t msecond)
 {
 	if(msecond < 10)
 	{
@@ -398,7 +412,7 @@ static uint16_t rs485_timeout_config(uint16_t msecond)
 /**
   * @brief  
   */
-static uint16_t rs485_timeout_read(void)
+static uint16_t module_timeout_read(void)
 {
 	return(serial_state.timeout_config);
 }
@@ -406,7 +420,7 @@ static uint16_t rs485_timeout_read(void)
 /**
   * @brief  
   */
-static enum __serial_mode rs485_mode_set(enum __serial_mode mode)
+static enum __serial_mode module_mode_set(enum __serial_mode mode)
 {
 	serial_state.mode = mode;
 	
@@ -416,59 +430,169 @@ static enum __serial_mode rs485_mode_set(enum __serial_mode mode)
 /**
   * @brief  
   */
-static enum __serial_mode rs485_mode_get(void)
+static enum __serial_mode module_mode_get(void)
 {
     return(serial_state.mode);
 }
 
+/**
+  * @brief  
+  */
+static bool module_linked(void)
+{
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return(true);
+#else
+#if defined (BUILD_REAL_WORLD)
+	static bool linked = false;
+	
+	if(linked == false)
+	{
+		if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) == Bit_RESET)
+		{
+			udelay(100);
+			if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) == Bit_RESET)
+			{
+				linked = true;
+			}
+		}
+	}
+	else
+	{
+		if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) == Bit_SET)
+		{
+			udelay(100);
+			if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) == Bit_SET)
+			{
+				linked = false;
+			}
+		}
+	}
+	
+	return(linked);
+#endif
+#endif
+}
 
+/**
+  * @brief  
+  */
+static bool module_detect(void)
+{
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return(true);
+#else
+#if defined (BUILD_REAL_WORLD)
+	if(module_linked())
+	{
+		return(true);
+	}
+	
+	GPIO_ResetBits(GPIOA, GPIO_Pin_0);
+	
+	mdelay(20);
+	
+    if(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) == Bit_RESET)
+    {
+		GPIO_SetBits(GPIOA, GPIO_Pin_0);
+		return(true);
+    }
+	
+	GPIO_SetBits(GPIOA, GPIO_Pin_0);
+	return(false);
+#endif
+#endif
+}
 
+/**
+  * @brief  
+  */
+static void module_config(bool state)
+{
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return;
+#else
+#if defined (BUILD_REAL_WORLD)
+	if(state)
+	{
+		GPIO_ResetBits(GPIOE, GPIO_Pin_4);
+	}
+	else
+	{
+		GPIO_SetBits(GPIOE, GPIO_Pin_4);
+	}
+#endif
+#endif
+}
+
+/**
+  * @brief  
+  */
+static void module_reset(void)
+{
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
+	return;
+#else
+#if defined (BUILD_REAL_WORLD)
+	GPIO_ResetBits(GPIOE, GPIO_Pin_2);
+	mdelay(250);
+	GPIO_SetBits(GPIOE, GPIO_Pin_2);
+#endif
+#endif
+}
 
 
 /**
   * @brief  
   */
-const struct __serial rs485_1 = 
+const struct __module module = 
 {
-    .control        = 
-    {
-        .name       = "rs485_1",
-        .status     = rs485_status,
-        .init       = rs485_init,
-        .suspend    = rs485_suspend,
-    },
-    
-	.runner			= rs485_runner,
-	.read			= rs485_read,
-	.write			= rs485_write,
-	.status			= rs485_bus_status,
+	.serial				= 
+	{
+		.control        = 
+		{
+			.name       = "module port",
+			.status     = module_status,
+			.init       = module_init,
+			.suspend    = module_suspend,
+		},
+		
+		.runner			= module_runner,
+		.read			= module_read,
+		.write			= module_write,
+		.status			= module_bus_status,
+		
+		.rxbuff			= 
+		{
+			.get		= module_rxbuff_get,
+			.set		= module_rxbuff_set,
+			.remove		= module_rxbuff_remove,
+		},
+		
+		.txbuff			= 
+		{
+			.get		= module_txbuff_get,
+			.set		= module_txbuff_set,
+			.remove		= module_txbuff_remove,
+		},
+		
+		.mode			= 
+		{
+			.get		= module_mode_get,
+			.set		= module_mode_set,
+		},
+		
+		.timeout		=  
+		{
+			.get		= module_timeout_read,
+			.set		= module_timeout_config,
+		},
+		
+		.uart			= &UART_USED,
+	},
 	
-    .rxbuff			= 
-    {
-		.get		= rs485_rxbuff_get,
-		.set		= rs485_rxbuff_set,
-		.remove		= rs485_rxbuff_remove,
-    },
-	
-    .txbuff			= 
-    {
-		.get		= rs485_txbuff_get,
-		.set		= rs485_txbuff_set,
-		.remove		= rs485_txbuff_remove,
-    },
-	
-    .mode			= 
-    {
-		.get		= rs485_mode_get,
-		.set		= rs485_mode_set,
-    },
-    
-    .timeout		=  
-    {
-		.get		= rs485_timeout_read,
-		.set		= rs485_timeout_config,
-    },
-    
-    .uart			= &UART_USED,
+	.linked				= module_linked,
+	.detect				= module_detect,
+	.config				= module_config,
+	.reset				= module_reset,
 };
-

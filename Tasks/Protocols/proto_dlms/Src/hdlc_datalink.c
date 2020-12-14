@@ -15,6 +15,8 @@
 #include "dlms_association.h"
 #include "types_comm.h"
 
+#include "types_protocol.h"
+
 /* Private define ------------------------------------------------------------*/
 //HDLCÅäÖÃ²ÎÊý
 
@@ -1693,11 +1695,6 @@ uint8_t hdlc_get_linked_channel(void)
     {
         if(hdlc_links[cnt].link_status == LINK_CONNECTED)
         {
-			if(comm->attrib.type(cnt) != PORT_HDLC)
-			{
-				continue;
-			}
-			
             return(cnt);
         }
     }

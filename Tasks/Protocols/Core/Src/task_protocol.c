@@ -13,6 +13,7 @@
 /** 在这里添加协议栈头文件 */
 #include "proto_dlms.h"
 #include "proto_xmodem.h"
+#include "proto_atcmd.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -26,6 +27,7 @@ static const struct __protocol_registrable *proto_table[] =
 {
 	&proto_dlms,
     &proto_xmodem,
+	&proto_atcmd,
 };
 
 /* Private macro -------------------------------------------------------------*/

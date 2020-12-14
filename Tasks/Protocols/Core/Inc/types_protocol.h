@@ -12,15 +12,16 @@
   */
 enum  __protocol_family 
 {
-    PF_NONE = 0,
-    PF_IEC1107,
-    PF_DLMS,
-    PF_DLT645,
-    PF_DLT698,
-    PF_MODBUS,
-    PF_XMODEM,
-    
-    PF_ALL = 0xff,
+    PF_NONE		= 0,
+    PF_IEC1107	= 0x0001,
+    PF_DLMS		= 0x0002,
+    PF_DLT645	= 0x0004,
+    PF_DLT698	= 0x0008,
+    PF_MODBUS	= 0x0010,
+    PF_XMODEM	= 0x0020,
+    PF_ATCMD	= 0x0040,
+	
+    PF_ALL		= 0xffff,
 };
 
 /**

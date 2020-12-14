@@ -16,6 +16,7 @@
 #include "rs485_1.h"
 #include "rs485_2.h"
 #include "optical.h"
+#include "module.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -24,11 +25,23 @@
 struct __port_entry
 {
 	enum __port_type					port_type;
+	uint16_t							pf;
 	const struct __serial				*serial;
+};
+
+/**
+  * @brief  端口插拔事件
+  */
+struct __port_callback
+{
+    void			(*callback)(uint8_t, bool);
+	unsigned long	check;
 };
 
 
 /* Private define ------------------------------------------------------------*/
+#define MAX_CALLBACKS		((uint8_t)2)
+
 /* Private variables ---------------------------------------------------------*/
 static enum __task_status status = TASK_NOTINIT;
 
@@ -37,10 +50,11 @@ static enum __task_status status = TASK_NOTINIT;
   */
 static const struct __port_entry port_table[] = 
 {
-	/** 端口类型 端口结构体指针 */
-	{PORT_HDLC, &rs485_1},
-	{PORT_HDLC, &rs485_2},
-	{PORT_HDLC, &optical},
+	/** 端口类型		支持的协议								端口结构体指针 */
+	{PORT_MODULE,	(uint16_t)(PF_DLMS | PF_ATCMD),				(struct __serial *)&module},
+	{PORT_RS485,	(uint16_t)(PF_DLMS | PF_XMODEM),			&rs485_1},
+	{PORT_RS485,	(uint16_t)(PF_DLMS | PF_XMODEM),			&rs485_2},
+	{PORT_OPTICAL,	(uint16_t)(PF_DLMS),						&optical},
 };
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,9 +62,20 @@ static const struct __port_entry port_table[] =
 
 /* Private variables ---------------------------------------------------------*/
 static uint8_t *buff = (uint8_t *)0;
+static volatile uint8_t current = 0xff;
+static bool detected[PORT_AMOUNT] = {true};
+static struct __port_callback callbacks[MAX_CALLBACKS];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/**
+  * @brief  获取当前通道
+  */
+static uint8_t serial_channel(void)
+{
+	return(current);
+}
+
 /**
   * @brief  获取端口类型 
   */
@@ -62,6 +87,19 @@ static enum __port_type serial_porttype(uint8_t channel)
     }
     
     return(port_table[channel].port_type);
+}
+
+/**
+  * @brief  获取端口支持的协议
+  */
+static uint16_t serial_port_protocol(uint8_t channel)
+{
+    if(channel >= PORT_AMOUNT)
+    {
+        return(0);
+    }
+    
+    return(port_table[channel].pf);
 }
 
 /**
@@ -80,6 +118,25 @@ static enum __port_status serial_portstatus(uint8_t channel)
     }
     
     return(PORT_IDLE);
+}
+
+/**
+  * @brief  获取链路连接状态 
+  */
+static bool serial_link(uint8_t channel)
+{
+    if(channel >= PORT_AMOUNT)
+    {
+        return(false);
+    }
+	
+	//只有模块端口才有链路状态
+	if(port_table[channel].port_type == PORT_MODULE)
+	{
+		return(((struct __module *)(port_table[channel].serial))->linked());
+	}
+	
+	return(true);
 }
 
 /**
@@ -187,14 +244,125 @@ static enum __stop serial_stop_get(uint8_t channel)
 }
 
 /**
+  * @brief   添加模块插拔回调
+  */
+static bool serial_monitor_add(void (*callback)(uint8_t, bool))
+{
+	uint8_t n;
+	
+	if(!callback)
+	{
+		return(false);
+	}
+	
+	for(n=0; n<MAX_CALLBACKS; n++)
+	{
+		if((unsigned long)callbacks[n].callback != callbacks[n].check)
+		{
+			callbacks[n].callback = 0;
+			callbacks[n].check = 0;
+		}
+		
+		if(callbacks[n].callback == callback)
+		{
+			return(true);
+		}
+	}
+	
+	for(n=0; n<MAX_CALLBACKS; n++)
+	{
+		if((!callbacks[n].callback) || (!callbacks[n].check))
+		{
+			callbacks[n].callback = callback;
+			callbacks[n].check = (unsigned long)callback;
+			return(true);
+		}
+	}
+	
+	return(false);
+}
+
+/**
+  * @brief   删除模块插拔回调
+  */
+static bool serial_monitor_remove(void (*callback)(uint8_t, bool))
+{
+	uint8_t n;
+	
+	if(!callback)
+	{
+		return(false);
+	}
+	
+	for(n=0; n<MAX_CALLBACKS; n++)
+	{
+		if((unsigned long)callbacks[n].callback != callbacks[n].check)
+		{
+			callbacks[n].callback = 0;
+			callbacks[n].check = 0;
+		}
+		
+		if(callbacks[n].callback == callback)
+		{
+			callbacks[n].callback = 0;
+			callbacks[n].check = 0;
+			return(true);
+		}
+	}
+	
+	return(false);
+}
+
+
+/**
+  * @brief  配置信息改变
+  */
+static void serial_config(bool state)
+{
+	uint8_t cnt;
+	
+	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
+	{
+		if(port_table[cnt].port_type != PORT_MODULE)
+		{
+			continue;
+		}
+		
+		((struct __module *)(port_table[cnt].serial))->config(state);
+	}
+}
+
+/**
+  * @brief  复位
+  */
+static void serial_reset(uint8_t channel)
+{
+    if(channel >= PORT_AMOUNT)
+    {
+        return;
+    }
+	
+	//模块端口硬复位
+	if(port_table[channel].port_type == PORT_MODULE)
+	{
+		((struct __module *)(port_table[channel].serial))->reset();
+	}
+	
+	//...TODO 重新初始化端口
+}
+
+/**
   * @brief  
   */
 static const struct __comm comm = 
 {
     .attrib				= 
     {
+		.channel		= serial_channel,
 		.type			= serial_porttype,
+		.protocol		= serial_port_protocol,
 		.status			= serial_portstatus,
+		.link			= serial_link,
     },
     
     .timeout            = 
@@ -220,6 +388,15 @@ static const struct __comm comm =
         .set            = serial_stop_set,
         .get            = serial_stop_get,
     },
+	
+	.monitor			=
+	{
+		.add			= serial_monitor_add,
+		.remove			= serial_monitor_remove,
+	},
+	
+	.config				= serial_config,
+	.reset				= serial_reset,
 };
 
 
@@ -236,6 +413,7 @@ static void comm_init(void)
 {
 	uint8_t cnt;
 	
+	heap.set(callbacks, 0, sizeof(callbacks));
     buff = (uint8_t *)0;
     
 	//只有正常上电状态下才运行，其它状态下不运行
@@ -268,7 +446,9 @@ static void comm_init(void)
   */
 static void comm_loop(void)
 {
-	uint8_t cnt_port;
+	static uint16_t periods = 0;
+	uint8_t n;
+	uint8_t cnt;
 	uint16_t length;
 	
 	uint8_t *pbuff;
@@ -283,26 +463,66 @@ static void comm_loop(void)
     }
     
     //给驱动提供时钟
-	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
+	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
 	{
-		port_table[cnt_port].serial->runner(KERNEL_PERIOD);
+		port_table[cnt].serial->runner(KERNEL_PERIOD);
+	}
+	
+	//定时检测模块插拔状态
+	periods += KERNEL_PERIOD;
+	
+	if(periods > 3000)
+	{
+		periods = 0;
+		
+		for(cnt=0; cnt<PORT_AMOUNT; cnt++)
+		{
+			if(port_table[cnt].port_type != PORT_MODULE)
+			{
+				continue;
+			}
+			
+			if(((struct __module *)(port_table[cnt].serial))->detect() == detected[cnt])
+			{
+				continue;
+			}
+			
+			detected[cnt] = ((struct __module *)(port_table[cnt].serial))->detect();
+			
+			for(n=0; n<MAX_CALLBACKS; n++)
+			{
+				if(!callbacks[n].callback)
+				{
+					continue;
+				}
+				if((unsigned long)callbacks[n].callback != callbacks[n].check)
+				{
+					callbacks[n].callback = 0;
+					callbacks[n].check = 0;
+					continue;
+				}
+				callbacks[n].callback(cnt, detected[cnt]);
+			}
+		}
 	}
     
     //获取协议栈接口
     api_stream = (struct __protocol *)api("task_protocol");
     
     //从总线读取数据帧
-	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
+	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
 	{
 		//从总线读取
-		length = port_table[cnt_port].serial->read(COMM_CONF_BUFF, buff);
+		length = port_table[cnt].serial->read(COMM_CONF_BUFF, buff);
         
 	    if(length)
 	    {
             //数据发送到协议栈
             if(api_stream)
             {
-                api_stream->stream.in(cnt_port, buff, length);
+				current = cnt;
+                api_stream->stream.in(cnt, buff, length);
+				current = 0xff;
             }
 		}
 	}
@@ -313,16 +533,16 @@ static void comm_loop(void)
     }
     
     //往总线写入数据帧
-	for(cnt_port=0; cnt_port<PORT_AMOUNT; cnt_port++)
+	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
 	{
 		//如果这个总线忙，则跳过 
-        if(port_table[cnt_port].serial->status() != BUS_IDLE)
+        if(port_table[cnt].serial->status() != BUS_IDLE)
         {
             continue;
         }
         
         //获取这个总线的发送缓冲和缓冲长度 
-        pbuff_length = port_table[cnt_port].serial->txbuff.get(&pbuff);
+        pbuff_length = port_table[cnt].serial->txbuff.get(&pbuff);
         
         if((!pbuff_length) || (!pbuff))
         {
@@ -330,11 +550,13 @@ static void comm_loop(void)
         }
         
         //从协议栈读取数据
-        length = api_stream->stream.out(cnt_port, pbuff, pbuff_length);
-        
+		current = cnt;
+        length = api_stream->stream.out(cnt, pbuff, pbuff_length);
+        current = 0xff;
+		
         if(length)
         {
-            port_table[cnt_port].serial->write(length);
+            port_table[cnt].serial->write(length);
         }
 	}
     

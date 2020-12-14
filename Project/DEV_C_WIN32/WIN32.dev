@@ -4,7 +4,7 @@ Name=VirtualMeter
 Type=1
 Ver=2
 ObjFiles=
-Includes=..\..\Libraries\Check\Inc;..\..\Libraries\Info\Inc;..\..\Libraries\Mbed\tls;..\..\Libraries\Mbed\littlefs\Inc;..\..\Libraries\Convert\Inc;..\..\Libraries\Lua\Inc;..\..\Libraries\trace\Inc;..\..\Devices\common\Inc;..\..\Devices\battery\Inc;..\..\Devices\basic\Inc;..\..\Devices\leds\Inc;..\..\Devices\eeprom\Inc;..\..\Devices\buzzer\Inc;..\..\Devices\buses\Inc;..\..\Devices\keys\Inc;..\..\Devices\lcd\Inc;..\..\Devices\rtc\Inc;..\..\Devices\sensor\Inc;..\..\Devices\serial\Inc;..\..\Devices\metering\Inc;..\..\Devices\relay\Inc;..\..\Devices\flash\Inc;..\..\Kernel\Inc;..\..\Tasks\Tasks\Inc;..\..\Tasks\Comm\Inc;..\..\Tasks\Protocols\Core\Inc;..\..\Tasks\Protocols\proto_1107\Inc;..\..\Tasks\Protocols\proto_dlms\Inc;..\..\Tasks\Protocols\proto_dlt645\Inc;..\..\Tasks\Protocols\proto_dlt698\Inc;..\..\Tasks\Protocols\proto_modbus\Inc;..\..\Tasks\Protocols\proto_xmodem\Inc;..\..\Tasks\Timed\Inc;..\..\Tasks\Calendar\Inc;..\..\Tasks\Console\Inc;..\..\Tasks\Display\Inc;..\..\Tasks\Disconnect\Inc;..\..\Tasks\Keyboard\Inc;..\..\Tasks\Logger\Inc;..\..\Tasks\Metering\Inc;..\..\Tasks\Utilities\Inc
+Includes=..\..\Libraries\Check\Inc;..\..\Libraries\Info\Inc;..\..\Libraries\Mbed\tls;..\..\Libraries\Mbed\littlefs\Inc;..\..\Libraries\Convert\Inc;..\..\Libraries\Lua\Inc;..\..\Libraries\trace\Inc;..\..\Devices\common\Inc;..\..\Devices\battery\Inc;..\..\Devices\basic\Inc;..\..\Devices\leds\Inc;..\..\Devices\eeprom\Inc;..\..\Devices\buzzer\Inc;..\..\Devices\buses\Inc;..\..\Devices\keys\Inc;..\..\Devices\lcd\Inc;..\..\Devices\rtc\Inc;..\..\Devices\sensor\Inc;..\..\Devices\serial\Inc;..\..\Devices\metering\Inc;..\..\Devices\relay\Inc;..\..\Devices\flash\Inc;..\..\Kernel\Inc;..\..\Tasks\Tasks\Inc;..\..\Tasks\Comm\Inc;..\..\Tasks\Protocols\Core\Inc;..\..\Tasks\Protocols\proto_1107\Inc;..\..\Tasks\Protocols\proto_atcmd\Inc;..\..\Tasks\Protocols\proto_dlms\Inc;..\..\Tasks\Protocols\proto_dlt645\Inc;..\..\Tasks\Protocols\proto_dlt698\Inc;..\..\Tasks\Protocols\proto_modbus\Inc;..\..\Tasks\Protocols\proto_xmodem\Inc;..\..\Tasks\Timed\Inc;..\..\Tasks\Calendar\Inc;..\..\Tasks\Console\Inc;..\..\Tasks\Display\Inc;..\..\Tasks\Disconnect\Inc;..\..\Tasks\Keyboard\Inc;..\..\Tasks\Logger\Inc;..\..\Tasks\Metering\Inc;..\..\Tasks\Utilities\Inc
 Libs=
 PrivateResource=WIN32_private.rc
 ResourceIncludes=
@@ -24,12 +24,12 @@ HostApplication=
 UseCustomMakefile=0
 CustomMakefile=
 CommandLine=
-Folders=Devices,Devices/basic,Devices/battery,Devices/buses,Devices/buzzer,Devices/comm,Devices/eeprom,Devices/flash,Devices/keys,Devices/lcd,Devices/leds,Devices/metering,Devices/relay,Devices/rtc,Devices/sensor,Devices/serial,Devices/serial/console,Devices/serial/infrared,Devices/serial/module,Devices/serial/rs485,Docs,Kernel,Libraries,Libraries/Check,Libraries/Convert,Libraries/Info,Libraries/Lua,Libraries/Mbed,Libraries/Mbed/Littlefs,Libraries/Mbed/tls,Libraries/Trace,Tasks,Tasks/Calendar,Tasks/Calendar/Common,Tasks/Calendar/Daylight,Tasks/Calendar/Realtime,Tasks/Calendar/tableDay,Tasks/Calendar/tableMonth,Tasks/Calendar/tableSpecial,Tasks/Calendar/tableWeek,Tasks/Comm,Tasks/Console,Tasks/Disconnect,Tasks/Display,Tasks/Keyboard,Tasks/Logger,Tasks/Metering,Tasks/Protocols,Tasks/Protocols/Core,Tasks/Protocols/proto_1107,Tasks/Protocols/proto_dlms,Tasks/Protocols/proto_dlt645,Tasks/Protocols/proto_dlt698,Tasks/Protocols/proto_modbus,Tasks/Protocols/proto_xmodem,Tasks/Tasks,Tasks/Timed,Tasks/Utilities
+Folders=Devices,Devices/basic,Devices/battery,Devices/buses,Devices/buzzer,Devices/comm,Devices/eeprom,Devices/flash,Devices/keys,Devices/lcd,Devices/leds,Devices/metering,Devices/relay,Devices/rtc,Devices/sensor,Devices/serial,Devices/serial/console,Devices/serial/infrared,Devices/serial/module,Devices/serial/rs485,Docs,Kernel,Libraries,Libraries/Check,Libraries/Convert,Libraries/Info,Libraries/Lua,Libraries/Mbed,Libraries/Mbed/Littlefs,Libraries/Mbed/tls,Libraries/Trace,Tasks,Tasks/Calendar,Tasks/Calendar/Common,Tasks/Calendar/Daylight,Tasks/Calendar/Realtime,Tasks/Calendar/tableDay,Tasks/Calendar/tableMonth,Tasks/Calendar/tableSpecial,Tasks/Calendar/tableWeek,Tasks/Comm,Tasks/Console,Tasks/Disconnect,Tasks/Display,Tasks/Keyboard,Tasks/Logger,Tasks/Metering,Tasks/Protocols,Tasks/Protocols/Core,Tasks/Protocols/proto_1107,Tasks/Protocols/proto_atcmd,Tasks/Protocols/proto_dlms,Tasks/Protocols/proto_dlt645,Tasks/Protocols/proto_dlt698,Tasks/Protocols/proto_modbus,Tasks/Protocols/proto_xmodem,Tasks/Tasks,Tasks/Timed,Tasks/Utilities
 IncludeVersionInfo=1
 SupportXPThemes=0
 CompilerSet=1
 CompilerSettings=0000000000000000001000000
-UnitCount=188
+UnitCount=191
 
 [VersionInfo]
 Major=1
@@ -1831,9 +1831,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit190]
-FileName=..\..\Libraries\Mbed\lfs\Src\lfs_port.c
+FileName=..\..\Devices\serial\Src\module.c
 CompileCpp=0
-Folder=Libraries/Mbed/lfs
+Folder=Devices/serial/module
 Compile=1
 Link=1
 Priority=1000
@@ -1841,9 +1841,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit191]
-FileName=..\..\Libraries\LibTom\Math\bn_mp_prime_rabin_miller_trials.c
+FileName=..\..\Tasks\Protocols\proto_atcmd\Src\proto_atcmd.c
 CompileCpp=0
-Folder=Libraries/LibTom/Math
+Folder=Tasks/Protocols/proto_atcmd
 Compile=1
 Link=1
 Priority=1000
@@ -6671,9 +6671,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit189]
-FileName=..\..\Tasks\Protocols\proto_dlms\Src\cosem_objects_exception.c
+FileName=..\..\Devices\serial\Src\optical.c
 CompileCpp=0
-Folder=Tasks/Protocols/proto_dlms
+Folder=Devices/serial/infrared
 Compile=1
 Link=1
 Priority=1000

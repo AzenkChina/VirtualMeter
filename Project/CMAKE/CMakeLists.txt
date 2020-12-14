@@ -15,6 +15,7 @@ set(sources
  ../../Devices/serial/Src/rs485_1.c
  ../../Devices/serial/Src/rs485_2.c
  ../../Devices/serial/Src/optical.c
+ ../../Devices/serial/Src/module.c
  ../../Devices/battery/Src/battery.c
  ../../Devices/leds/Src/leds.c
  ../../Devices/buzzer/Src/buzzer.c
@@ -151,6 +152,7 @@ set(sources
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_exception.c
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_imagetransfer.c
  ../../Tasks/Protocols/proto_dlms/Src/cosem_objects_security_setup.c
+ ../../Tasks/Protocols/proto_atcmd/Src/proto_atcmd.c
  ../../Tasks/Protocols/proto_xmodem/Src/proto_xmodem.c)
 
 set(includes 
@@ -180,6 +182,7 @@ set(includes
  ../../Tasks/Comm/Inc
  ../../Tasks/Protocols/Core/Inc
  ../../Tasks/Protocols/proto_1107/Inc
+ ../../Tasks/Protocols/proto_atcmd/Inc
  ../../Tasks/Protocols/proto_dlms/Inc
  ../../Tasks/Protocols/proto_dlt645/Inc
  ../../Tasks/Protocols/proto_dlt698/Inc

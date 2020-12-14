@@ -14,6 +14,7 @@
 #include "dlms_lexicon.h"
 #include "dlms_utilities.h"
 #include "hdlc_datalink.h"
+#include "types_comm.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -154,6 +155,18 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 
 static uint16_t dlms_stream_in(uint8_t channel, const uint8_t *frame, uint16_t frame_length)
 {
+	struct __comm *comm = api("task_comm");
+	
+	if(!comm)
+	{
+		return(0);
+	}
+	
+	if(!(comm->attrib.protocol(channel) | PF_DLMS))
+	{
+		return(0);
+	}
+	
     if(hdlc_matched(frame, frame_length))
     {
         return(hdlc_request(channel, frame, frame_length));
