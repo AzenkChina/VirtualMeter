@@ -59,6 +59,12 @@ static void recv_callback(uint8_t ch)
 		return;
 	}
 	
+	//void self receive
+	if(serial_state.status == BUS_TRANSFER)
+	{
+		return;
+	}
+	
 	if(serial_state.rx_w_index >= serial_state.rx_buff_size)
 	{
 		TRACE(TRACE_WARN, "Optical rx buffer overflowed.");
@@ -73,7 +79,7 @@ static void recv_callback(uint8_t ch)
 /**
   * @brief  
   */
-static enum __dev_status rs485_status(void)
+static enum __dev_status optical_status(void)
 {
     return(status);
 }
@@ -81,7 +87,7 @@ static enum __dev_status rs485_status(void)
 /**
   * @brief  
   */
-static void rs485_init(enum __dev_state state)
+static void optical_init(enum __dev_state state)
 {
 #if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
@@ -105,14 +111,25 @@ static void rs485_init(enum __dev_state state)
 	{
 #if defined (BUILD_REAL_WORLD)
         RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-        
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+		
+		//CVIR
         GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6;
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+        GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
+        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+        GPIO_Init(GPIOA, &GPIO_InitStruct);
+		GPIO_SetBits(GPIOA, GPIO_Pin_6);
+		
+		//CVTXD
+        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
         GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-        GPIO_Init(GPIOA, &GPIO_InitStruct);
-		GPIO_ResetBits(GPIOA, GPIO_Pin_6);
+        GPIO_Init(GPIOE, &GPIO_InitStruct);
+		GPIO_ResetBits(GPIOE, GPIO_Pin_9);
 #endif
 		UART_USED.handler.filling(recv_callback);
 	}
@@ -123,7 +140,7 @@ static void rs485_init(enum __dev_state state)
 /**
   * @brief  
   */
-static void rs485_suspend(void)
+static void optical_suspend(void)
 {
 	UART_USED.handler.remove();
 	UART_USED.control.suspend();
@@ -150,7 +167,7 @@ static void rs485_suspend(void)
 /**
   * @brief  
   */
-static void rs485_runner(uint16_t msecond)
+static void optical_runner(uint16_t msecond)
 {
     //接收没有超时
 	if(serial_state.timeout_rx_counter < serial_state.timeout_config)
@@ -218,7 +235,7 @@ static void rs485_runner(uint16_t msecond)
 /**
   * @brief  
   */
-static uint16_t rs485_read(uint16_t max_size, uint8_t *buffer)
+static uint16_t optical_read(uint16_t max_size, uint8_t *buffer)
 {
 	uint16_t length = serial_state.rx_frame_length;
 	
@@ -248,7 +265,7 @@ static uint16_t rs485_read(uint16_t max_size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_write(uint16_t count)
+static uint16_t optical_write(uint16_t count)
 {
 	if(!(serial_state.tx_buff))
 	{
@@ -275,7 +292,7 @@ static uint16_t rs485_write(uint16_t count)
 /**
   * @brief  
   */
-static enum __bus_status rs485_bus_status(void)
+static enum __bus_status optical_bus_status(void)
 {
 	return(serial_state.status);
 }
@@ -283,7 +300,7 @@ static enum __bus_status rs485_bus_status(void)
 /**
   * @brief  
   */
-static void rs485_rxbuff_set(uint16_t size, uint8_t *buffer)
+static void optical_rxbuff_set(uint16_t size, uint8_t *buffer)
 {
 	enum __interrupt_status intr_status = cpu.interrupt.status();
 	
@@ -307,7 +324,7 @@ static void rs485_rxbuff_set(uint16_t size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_rxbuff_get(uint8_t **buffer)
+static uint16_t optical_rxbuff_get(uint8_t **buffer)
 {
 	*buffer = serial_state.rx_buff;
 	
@@ -317,7 +334,7 @@ static uint16_t rs485_rxbuff_get(uint8_t **buffer)
 /**
   * @brief  
   */
-static void rs485_rxbuff_remove(void)
+static void optical_rxbuff_remove(void)
 {
 	enum __interrupt_status intr_status = cpu.interrupt.status();
 	
@@ -342,7 +359,7 @@ static void rs485_rxbuff_remove(void)
 /**
   * @brief  
   */
-static void rs485_txbuff_set(uint16_t size, uint8_t *buffer)
+static void optical_txbuff_set(uint16_t size, uint8_t *buffer)
 {
 	serial_state.status = BUS_IDLE;
 	serial_state.tx_buff = (uint8_t *)buffer;
@@ -354,7 +371,7 @@ static void rs485_txbuff_set(uint16_t size, uint8_t *buffer)
 /**
   * @brief  
   */
-static uint16_t rs485_txbuff_get(uint8_t **buffer)
+static uint16_t optical_txbuff_get(uint8_t **buffer)
 {
 	*buffer = serial_state.tx_buff;
 	
@@ -364,7 +381,7 @@ static uint16_t rs485_txbuff_get(uint8_t **buffer)
 /**
   * @brief  
   */
-static void rs485_txbuff_remove(void)
+static void optical_txbuff_remove(void)
 {
 	serial_state.status = BUS_IDLE;
 	serial_state.tx_buff = (uint8_t *)0;;
@@ -377,7 +394,7 @@ static void rs485_txbuff_remove(void)
 /**
   * @brief  
   */
-static uint16_t rs485_timeout_config(uint16_t msecond)
+static uint16_t optical_timeout_config(uint16_t msecond)
 {
 	if(msecond < 100)
 	{
@@ -392,7 +409,7 @@ static uint16_t rs485_timeout_config(uint16_t msecond)
 /**
   * @brief  
   */
-static uint16_t rs485_timeout_read(void)
+static uint16_t optical_timeout_read(void)
 {
 	return(serial_state.timeout_config);
 }
@@ -400,7 +417,7 @@ static uint16_t rs485_timeout_read(void)
 /**
   * @brief  
   */
-static enum __serial_mode rs485_mode_set(enum __serial_mode mode)
+static enum __serial_mode optical_mode_set(enum __serial_mode mode)
 {
 	serial_state.mode = mode;
 	
@@ -410,7 +427,7 @@ static enum __serial_mode rs485_mode_set(enum __serial_mode mode)
 /**
   * @brief  
   */
-static enum __serial_mode rs485_mode_get(void)
+static enum __serial_mode optical_mode_get(void)
 {
     return(serial_state.mode);
 }
@@ -427,40 +444,40 @@ const struct __serial optical =
     .control        = 
     {
         .name       = "optical",
-        .status     = rs485_status,
-        .init       = rs485_init,
-        .suspend    = rs485_suspend,
+        .status     = optical_status,
+        .init       = optical_init,
+        .suspend    = optical_suspend,
     },
     
-	.runner			= rs485_runner,
-	.read			= rs485_read,
-	.write			= rs485_write,
-	.status			= rs485_bus_status,
+	.runner			= optical_runner,
+	.read			= optical_read,
+	.write			= optical_write,
+	.status			= optical_bus_status,
 	
     .rxbuff			= 
     {
-		.get		= rs485_rxbuff_get,
-		.set		= rs485_rxbuff_set,
-		.remove		= rs485_rxbuff_remove,
+		.get		= optical_rxbuff_get,
+		.set		= optical_rxbuff_set,
+		.remove		= optical_rxbuff_remove,
     },
 	
     .txbuff			= 
     {
-		.get		= rs485_txbuff_get,
-		.set		= rs485_txbuff_set,
-		.remove		= rs485_txbuff_remove,
+		.get		= optical_txbuff_get,
+		.set		= optical_txbuff_set,
+		.remove		= optical_txbuff_remove,
     },
 	
     .mode			= 
     {
-		.get		= rs485_mode_get,
-		.set		= rs485_mode_set,
+		.get		= optical_mode_get,
+		.set		= optical_mode_set,
     },
     
     .timeout		=  
     {
-		.get		= rs485_timeout_read,
-		.set		= rs485_timeout_config,
+		.get		= optical_timeout_read,
+		.set		= optical_timeout_config,
     },
     
     .uart			= &UART_USED,
