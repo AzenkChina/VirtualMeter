@@ -29,7 +29,6 @@ static enum __dev_status status = DEVICE_NOTINIT;
 static struct __serial_state
 {
 	enum __bus_status			status;//总线状态
-	enum __serial_mode			mode;//总线工作模式（输入，输出，自动）
 	
 	uint8_t						*rx_buff;//接收缓冲
 	uint16_t					rx_buff_size;//接收缓冲大小
@@ -89,7 +88,6 @@ static void rs485_init(enum __dev_state state)
 	UART_USED.control.init(state);
 	
     serial_state.status = BUS_IDLE;
-    serial_state.mode = SERIAL_AUTO;
     serial_state.rx_buff = (uint8_t *)0;
     serial_state.rx_buff_size = 0;
     serial_state.rx_w_index = 0;
@@ -129,7 +127,6 @@ static void rs485_suspend(void)
 	UART_USED.control.suspend();
 	
 	serial_state.status = BUS_IDLE;
-	serial_state.mode = SERIAL_AUTO;
 	serial_state.rx_buff = (uint8_t *)0;
 	serial_state.rx_buff_size = 0;
 	serial_state.rx_w_index = 0;
@@ -385,9 +382,9 @@ static void rs485_txbuff_remove(void)
   */
 static uint16_t rs485_timeout_config(uint16_t msecond)
 {
-	if(msecond < 10)
+	if((msecond < 10) || (msecond > 3000))
 	{
-		msecond = 10;
+		msecond = 100;
 	}
 	
 	serial_state.timeout_config = msecond;
@@ -402,26 +399,6 @@ static uint16_t rs485_timeout_read(void)
 {
 	return(serial_state.timeout_config);
 }
-
-/**
-  * @brief  
-  */
-static enum __serial_mode rs485_mode_set(enum __serial_mode mode)
-{
-	serial_state.mode = mode;
-	
-	return(serial_state.mode);
-}
-
-/**
-  * @brief  
-  */
-static enum __serial_mode rs485_mode_get(void)
-{
-    return(serial_state.mode);
-}
-
-
 
 
 
@@ -455,12 +432,6 @@ const struct __serial rs485_1 =
 		.get		= rs485_txbuff_get,
 		.set		= rs485_txbuff_set,
 		.remove		= rs485_txbuff_remove,
-    },
-	
-    .mode			= 
-    {
-		.get		= rs485_mode_get,
-		.set		= rs485_mode_set,
     },
     
     .timeout		=  

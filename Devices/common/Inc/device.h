@@ -94,7 +94,6 @@ enum __baud
 	BDRT_4800 = 48,
 	BDRT_9600 = 96,
 	BDRT_19200 = 192,
-	BDRT_38400 = 384,
 };
 
 /**
@@ -116,16 +115,6 @@ enum __stop
     STOP_ONE = 0,
 	STOP_ONE5,
 	STOP_TWO,
-};
-
-/**
-  * @brief  串行总线工作模式 
-  */
-enum __serial_mode
-{
-    SERIAL_IN = 0, //仅输入
-    SERIAL_OUT, //仅输出
-    SERIAL_AUTO, //自动（双向）
 };
 
 
@@ -229,13 +218,6 @@ struct __serial
         void                        (*remove)(void); //删除缓冲区
         
     }                               txbuff;
-    
-    struct
-    {
-        enum __serial_mode			(*get)(void); //读取当前工作模式
-        enum __serial_mode			(*set)(enum __serial_mode mode); //设置工作模式
-        
-    }                               mode;
     
     struct
     {

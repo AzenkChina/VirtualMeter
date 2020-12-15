@@ -85,6 +85,7 @@ static const struct __file_entry file_entry[] =
     {"calibration",	        512,            CT_SECURE},		//电表校准信息
     {"information",	        512,            CT_NORMAL},		//电表基本信息
     {"measurements",        8*1024,         CT_SECURE},		//电表计量数据
+	{"comm",				256,			CT_SECURE},		//通信端口参数
     {"dlms",                2*1024,         CT_SECURE},		//DLMS协议参数
     {"lexicon",             64*1024,        CT_SECURE},		//电表数据项词典
     {"disconnect",          512,            CT_SECURE},		//继电器参数

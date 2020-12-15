@@ -20,6 +20,17 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**
+  * @brief  端口参数
+  */
+struct __port_parameter
+{
+	uint16_t			timeout;
+	uint8_t				baudrate;
+	uint8_t				parity;
+	uint8_t				stop;
+};
+
+/**
   * @brief  端口记录
   */
 struct __port_entry
@@ -144,10 +155,30 @@ static bool serial_link(uint8_t channel)
   */
 static uint16_t serial_timeout_set(uint8_t channel, uint16_t msecond)
 {
+	struct __port_parameter parameter;
+	
     if(channel >= PORT_AMOUNT)
     {
         return(0);
     }
+	
+	if(file.parameter.read("comm", \
+				 (sizeof(parameter) * channel), \
+				 sizeof(parameter), \
+				 (void *)&parameter) != sizeof(parameter))
+	{
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+	}
+	
+	parameter.timeout = msecond;
+	
+	file.parameter.write("comm", \
+	 (sizeof(parameter) * channel), \
+	 sizeof(parameter), \
+	 (void *)&parameter);
     
     return(port_table[channel].serial->timeout.set(msecond));
 }
@@ -170,10 +201,30 @@ static uint16_t serial_timeout_get(uint8_t channel)
   */
 static enum __baud serial_baudrate_set(uint8_t channel, enum __baud baudrate)
 {
+	struct __port_parameter parameter;
+	
     if(channel >= PORT_AMOUNT)
     {
         return((enum __baud)0xff);
     }
+	
+	if(file.parameter.read("comm", \
+				 (sizeof(parameter) * channel), \
+				 sizeof(parameter), \
+				 (void *)&parameter) != sizeof(parameter))
+	{
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+	}
+	
+	parameter.baudrate = baudrate;
+	
+	file.parameter.write("comm", \
+	 (sizeof(parameter) * channel), \
+	 sizeof(parameter), \
+	 (void *)&parameter);
     
     return(port_table[channel].serial->uart->baudrate.set(baudrate));
 }
@@ -196,10 +247,30 @@ static enum __baud serial_baudrate_get(uint8_t channel)
   */
 static enum __parity serial_parity_set(uint8_t channel, enum __parity parity)
 {
+	struct __port_parameter parameter;
+	
     if(channel >= PORT_AMOUNT)
     {
         return((enum __parity)0xff);
     }
+	
+	if(file.parameter.read("comm", \
+				 (sizeof(parameter) * channel), \
+				 sizeof(parameter), \
+				 (void *)&parameter) != sizeof(parameter))
+	{
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+	}
+	
+	parameter.parity = parity;
+	
+	file.parameter.write("comm", \
+	 (sizeof(parameter) * channel), \
+	 sizeof(parameter), \
+	 (void *)&parameter);
     
     return(port_table[channel].serial->uart->parity.set(parity));
 }
@@ -222,10 +293,30 @@ static enum __parity serial_parity_get(uint8_t channel)
   */
 static enum __stop serial_stop_set(uint8_t channel, enum __stop stop)
 {
+	struct __port_parameter parameter;
+	
     if(channel >= PORT_AMOUNT)
     {
         return((enum __stop)0xff);
     }
+	
+	if(file.parameter.read("comm", \
+				 (sizeof(parameter) * channel), \
+				 sizeof(parameter), \
+				 (void *)&parameter) != sizeof(parameter))
+	{
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+	}
+	
+	parameter.stop = stop;
+	
+	file.parameter.write("comm", \
+	 (sizeof(parameter) * channel), \
+	 sizeof(parameter), \
+	 (void *)&parameter);
     
     return(port_table[channel].serial->uart->stop.set(stop));
 }
@@ -412,6 +503,7 @@ static const struct __comm comm =
 static void comm_init(void)
 {
 	uint8_t cnt;
+	struct __port_parameter parameter;
 	
 	heap.set(callbacks, 0, sizeof(callbacks));
     buff = (uint8_t *)0;
@@ -431,9 +523,22 @@ static void comm_init(void)
     	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
     	{
     		port_table[cnt].serial->control.init(DEVICE_NORMAL);
-    		port_table[cnt].serial->timeout.set(50);
     		port_table[cnt].serial->rxbuff.set(COMM_CONF_BUFF, (buff+COMM_CONF_BUFF*(1+cnt*2+0)));
     		port_table[cnt].serial->txbuff.set(COMM_CONF_BUFF, (buff+COMM_CONF_BUFF*(1+cnt*2+1)));
+			
+			if(file.parameter.read("comm", \
+						 (sizeof(parameter) * cnt), \
+						 sizeof(parameter), \
+						 (void *)&parameter) != sizeof(parameter))
+			{
+				port_table[cnt].serial->timeout.set(50);
+				continue;
+			}
+			
+			port_table[cnt].serial->timeout.set(parameter.timeout);
+			port_table[cnt].serial->uart->baudrate.set((enum __baud)parameter.baudrate);
+			port_table[cnt].serial->uart->parity.set((enum __parity)parameter.parity);
+			port_table[cnt].serial->uart->stop.set((enum __stop)parameter.stop);
     	}
 	    
 	    status = TASK_INIT;
@@ -592,6 +697,25 @@ static void comm_reset(void)
 	{
 		port_table[cnt].serial->control.suspend();
 	}
+	
+#if defined ( MAKE_RUN_FOR_DEBUG )
+	{
+		struct __port_parameter parameter;
+		
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+		
+		for(cnt=0; cnt<PORT_AMOUNT; cnt++)
+		{
+			file.parameter.write("comm", \
+						 (sizeof(parameter) * cnt), \
+						 sizeof(parameter), \
+						 (void *)&parameter);
+		}
+	}
+#endif
     
     status = TASK_NOTINIT;
 	TRACE(TRACE_INFO, "Task comm reset.");

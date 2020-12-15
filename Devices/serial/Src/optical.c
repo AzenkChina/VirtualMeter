@@ -9,6 +9,7 @@
 #include "string.h"
 #include "vuart3.h"
 #include "cpu.h"
+#include "delay.h"
 #include "trace.h"
 
 #if defined (BUILD_REAL_WORLD)
@@ -29,7 +30,6 @@ static enum __dev_status status = DEVICE_NOTINIT;
 static struct __serial_state
 {
 	enum __bus_status			status;//总线状态
-	enum __serial_mode			mode;//总线工作模式（输入，输出，自动）
 	
 	uint8_t						*rx_buff;//接收缓冲
 	uint16_t					rx_buff_size;//接收缓冲大小
@@ -95,7 +95,6 @@ static void optical_init(enum __dev_state state)
 	UART_USED.control.init(state);
 	
     serial_state.status = BUS_IDLE;
-    serial_state.mode = SERIAL_AUTO;
     serial_state.rx_buff = (uint8_t *)0;
     serial_state.rx_buff_size = 0;
     serial_state.rx_w_index = 0;
@@ -129,7 +128,7 @@ static void optical_init(enum __dev_state state)
         GPIO_InitStruct.GPIO_Speed = GPIO_Speed_Level_1;
         GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
         GPIO_Init(GPIOE, &GPIO_InitStruct);
-		GPIO_ResetBits(GPIOE, GPIO_Pin_9);
+		GPIO_SetBits(GPIOE, GPIO_Pin_9);
 #endif
 		UART_USED.handler.filling(recv_callback);
 	}
@@ -146,7 +145,6 @@ static void optical_suspend(void)
 	UART_USED.control.suspend();
 	
 	serial_state.status = BUS_IDLE;
-	serial_state.mode = SERIAL_AUTO;
 	serial_state.rx_buff = (uint8_t *)0;
 	serial_state.rx_buff_size = 0;
 	serial_state.rx_w_index = 0;
@@ -219,6 +217,9 @@ static void optical_runner(uint16_t msecond)
         //串口状态已空闲，如果总线状态忙，则复位总线状态
 		if(serial_state.status == BUS_TRANSFER)
 		{
+#if defined (BUILD_REAL_WORLD)
+			GPIO_SetBits(GPIOE, GPIO_Pin_9);
+#endif
             serial_state.status = BUS_IDLE;
 			serial_state.tx_data_size = 0;
 		}
@@ -226,6 +227,10 @@ static void optical_runner(uint16_t msecond)
         //有数据等待传输
 		if(serial_state.tx_data_size)
 		{
+#if defined (BUILD_REAL_WORLD)
+			GPIO_ResetBits(GPIOE, GPIO_Pin_9);
+			udelay(100);
+#endif
 			serial_state.status = BUS_TRANSFER;
 			UART_USED.write(serial_state.tx_data_size, serial_state.tx_buff);
 		}
@@ -396,9 +401,9 @@ static void optical_txbuff_remove(void)
   */
 static uint16_t optical_timeout_config(uint16_t msecond)
 {
-	if(msecond < 10)
+	if((msecond < 10) || (msecond > 3000))
 	{
-		msecond = 10;
+		msecond = 100;
 	}
 	
 	serial_state.timeout_config = msecond;
@@ -413,26 +418,6 @@ static uint16_t optical_timeout_read(void)
 {
 	return(serial_state.timeout_config);
 }
-
-/**
-  * @brief  
-  */
-static enum __serial_mode optical_mode_set(enum __serial_mode mode)
-{
-	serial_state.mode = mode;
-	
-	return(serial_state.mode);
-}
-
-/**
-  * @brief  
-  */
-static enum __serial_mode optical_mode_get(void)
-{
-    return(serial_state.mode);
-}
-
-
 
 
 
@@ -466,12 +451,6 @@ const struct __serial optical =
 		.get		= optical_txbuff_get,
 		.set		= optical_txbuff_set,
 		.remove		= optical_txbuff_remove,
-    },
-	
-    .mode			= 
-    {
-		.get		= optical_mode_get,
-		.set		= optical_mode_set,
     },
     
     .timeout		=  
