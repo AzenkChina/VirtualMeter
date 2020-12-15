@@ -428,6 +428,8 @@ static void serial_config(bool state)
   */
 static void serial_reset(uint8_t channel)
 {
+	struct __port_parameter parameter;
+	
     if(channel >= PORT_AMOUNT)
     {
         return;
@@ -439,7 +441,22 @@ static void serial_reset(uint8_t channel)
 		((struct __module *)(port_table[channel].serial))->reset();
 	}
 	
-	//...TODO 重新初始化端口
+	//模块通信参数初始化
+	if(file.parameter.read("comm", \
+				 (sizeof(parameter) * channel), \
+				 sizeof(parameter), \
+				 (void *)&parameter) != sizeof(parameter))
+	{
+		parameter.timeout = 50;
+		parameter.baudrate = BDRT_9600;
+		parameter.parity = PARI_NONE;
+		parameter.stop = STOP_ONE;
+	}
+	
+	port_table[channel].serial->timeout.set(parameter.timeout);
+	port_table[channel].serial->uart->baudrate.set((enum __baud)parameter.baudrate);
+	port_table[channel].serial->uart->parity.set((enum __parity)parameter.parity);
+	port_table[channel].serial->uart->stop.set((enum __stop)parameter.stop);
 }
 
 /**
@@ -680,7 +697,13 @@ static void comm_exit(void)
 	{
 		port_table[cnt].serial->control.suspend();
 	}
-    
+	
+	if(buff)
+	{
+		heap.free(buff);
+		buff = (uint8_t *)0;
+	}
+	
     status = TASK_SUSPEND;
 	TRACE(TRACE_INFO, "Task comm exited.");
 }
@@ -696,6 +719,12 @@ static void comm_reset(void)
 	for(cnt=0; cnt<PORT_AMOUNT; cnt++)
 	{
 		port_table[cnt].serial->control.suspend();
+	}
+	
+	if(buff)
+	{
+		heap.free(buff);
+		buff = (uint8_t *)0;
 	}
 	
 #if defined ( MAKE_RUN_FOR_DEBUG )
