@@ -389,7 +389,7 @@ static void flush_data(void)
         return;
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
+    if(!api_stream->read(PF_DLMS, disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return;
     }
@@ -468,7 +468,7 @@ static uint8_t display_list_show_next(void)
         return(disp_runs.index);
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
+    if(!api_stream->read(PF_DLMS, disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }
@@ -515,7 +515,7 @@ static uint8_t display_list_show_last(void)
         return(disp_runs.index);
     }
 	
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
+    if(!api_stream->read(PF_DLMS, disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }
@@ -558,7 +558,7 @@ static uint8_t display_list_show_index(uint8_t val)
         return(disp_runs.index);
     }
     
-    if(!api_stream->read(disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
+    if(!api_stream->read(PF_DLMS, disp_runs.entry.descriptor, buff, sizeof(buff), &mid))
     {
         return(disp_runs.index);
     }

@@ -71,7 +71,7 @@ static enum __task_status dlms_status(void)
 
 
 
-static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
+static uint16_t dlms_read(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
 {
     struct __cosem_request_desc desc;
     union __dlms_right right;
@@ -79,6 +79,11 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
     uint8_t input[8];
     ObjectPara P;
     struct __cosem_descriptor cosem_descriptor;
+	
+	if(!(pf & PF_DLMS))
+	{
+		return(0);
+	}
     
     heap.set(&P, 0, sizeof(P));
 	OBJ_IO_INIT(&P, input, sizeof(input), buff, size);
@@ -113,7 +118,7 @@ static uint16_t dlms_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uin
 	return(P.Output.Filled);
 }
 
-static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
+static uint16_t dlms_write(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size)
 {
     struct __cosem_request_desc desc;
     union __dlms_right right;
@@ -122,6 +127,11 @@ static uint16_t dlms_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
     ObjectPara P;
     struct __cosem_descriptor cosem_descriptor;
     
+	if(!(pf & PF_DLMS))
+	{
+		return(0);
+	}
+	
     heap.set(&P, 0, sizeof(P));
 	OBJ_IO_INIT(&P, buff, size, output, sizeof(output));
     
@@ -162,7 +172,7 @@ static uint16_t dlms_stream_in(uint8_t channel, const uint8_t *frame, uint16_t f
 		return(0);
 	}
 	
-	if(!(comm->attrib.protocol(channel) | PF_DLMS))
+	if(!(comm->attrib.protocol(channel) & PF_DLMS))
 	{
 		return(0);
 	}

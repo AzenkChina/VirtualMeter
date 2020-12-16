@@ -7,6 +7,7 @@
 #include "device.h"
 
 /* Exported types ------------------------------------------------------------*/
+#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 /**
   * @brief  校准基础
   */
@@ -19,7 +20,6 @@ struct __calibrate_param
 	uint32_t qpulse; //无功电能脉冲系数
 };
 
-#if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 /**
   * @brief  校准值
   */
@@ -33,6 +33,25 @@ struct __calibrate_data
 
 #if defined (BUILD_REAL_WORLD)
 /**
+  * @brief  校准基础
+  */
+struct __calibrate_param
+{
+	uint32_t step; //校准步骤
+	
+	struct
+	{
+		uint32_t voltage; //校准电压mV
+		uint32_t current; //校准电流mA
+		uint32_t ppulse; //有功电能脉冲系数
+		uint32_t qpulse; //无功电能脉冲系数
+		
+	} base;
+	
+	int32_t value[4]; //校准参数 传误差时读数放大1000000倍，传电压电流时单位为 mV mA
+};
+
+/**
   * @brief  7022 寄存器
   */
 struct __calibrate_register
@@ -42,11 +61,26 @@ struct __calibrate_register
 };
 
 /**
+  * @brief  校准基础
+  */
+struct __calibrate_base
+{
+	uint32_t voltage; //校准电压
+	uint32_t current; //校准电流
+	uint32_t pulse; //脉冲系数
+	uint32_t nrate; //N
+	uint32_t hfconst;//HFconst
+	
+	uint32_t check;
+};
+
+/**
   * @brief  7022 校准值
   */
 struct __calibrate_data
 {
 	struct __calibrate_register reg[59];
+	struct __calibrate_base base;
 	
 	uint32_t check;
 };

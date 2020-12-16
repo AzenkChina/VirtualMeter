@@ -20,7 +20,7 @@
 enum __metering_status
 {
     M_ENERGY_STOP = 0,//电能不计量
-    M_ENERGY_START,//电能计量
+    M_ENERGY_START = 0xff,//电能计量
 };
 
 /**

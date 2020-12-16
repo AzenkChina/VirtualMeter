@@ -31,8 +31,8 @@ struct __protocol
 {
     enum  __protocol_family         pf;
     
-    uint16_t                        (*read)(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *mid);
-    uint16_t                        (*write)(uint8_t *descriptor, uint8_t *buff, uint16_t size);
+    uint16_t                        (*read)(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *mid);
+    uint16_t                        (*write)(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size);
     
     struct
     {

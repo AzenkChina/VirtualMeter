@@ -677,6 +677,8 @@ enum __metering_meta
     R_YUBUC	 = 0x29, //Ub与Uc的电压夹角
 
     R_FREQ	 = 0x2A, //频率
+	
+	R_I0	 = 0x2B,//零线电流
 };
 
 /**

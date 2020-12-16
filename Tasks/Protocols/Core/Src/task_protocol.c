@@ -109,7 +109,7 @@ static enum __task_status proto_status(void)
 /**
   * @brief  协议栈 读取一个数据项
   */
-static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *mid)
+static uint16_t proto_read(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *mid)
 {
 	uint8_t cnt;
     uint16_t length;
@@ -118,7 +118,7 @@ static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, ui
 	{
     	if(proto_table[cnt]->protocol.read)
     	{
-			length = proto_table[cnt]->protocol.read(descriptor, buff, size, mid);
+			length = proto_table[cnt]->protocol.read(pf, descriptor, buff, size, mid);
 		}
         else
         {
@@ -137,7 +137,7 @@ static uint16_t proto_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, ui
 /**
   * @brief  协议栈 设置一个数据项
   */
-static uint16_t proto_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
+static uint16_t proto_write(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size)
 {
 	uint8_t cnt;
     uint16_t length;
@@ -146,7 +146,7 @@ static uint16_t proto_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
 	{
     	if(proto_table[cnt]->protocol.write)
     	{
-			length = proto_table[cnt]->protocol.write(descriptor, buff, size);
+			length = proto_table[cnt]->protocol.write(pf, descriptor, buff, size);
 		}
         else
         {

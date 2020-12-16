@@ -9,10 +9,34 @@
 #include "task_metering.h"
 #include "types_metering.h"
 #include "config_metering.h"
+#include "crc.h"
 
 #include "meter.h"
 
 /* Private typedef -----------------------------------------------------------*/
+/**
+  * @brief  计量参数
+  */
+struct __metering_parameter
+{
+	uint32_t active_div; //有功脉冲常数
+	uint32_t reactive_div; //无功脉冲常数
+	
+	uint32_t current_num; //电流变比分子
+	uint32_t current_denum; //电流变比分母
+	
+	uint32_t voltage_num; //电流变比分子
+	uint32_t voltage_denum; //电流变比分母
+	
+	uint8_t demand_period; //滑差时间
+	uint8_t demand_multiple;//滑差时间倍数
+	
+	uint8_t energy_switch;//电能计量开关
+	uint8_t rate;//当前费率
+	
+	uint32_t check;
+};
+
 /* Private define ------------------------------------------------------------*/
 #define DEV_M			meter
 
@@ -23,6 +47,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 static enum __task_status status = TASK_NOTINIT;
+
+static struct __metering_parameter mp;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -84,6 +110,11 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
                 read = DEV_M.read(R_IC);
 				*val = read;
 			}
+			else if(id.phase == M_PHASE_N)
+			{
+                read = DEV_M.read(R_IT);
+				*val = read;
+			}
 			else
 			{
 				*val = 0;
@@ -110,96 +141,326 @@ static int64_t metering_primary(struct __meta_identifier id, int64_t val)
 
 
 
+static void config_check(void)
+{
+	uint32_t check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(check != mp.check)
+	{
+		if(file.parameter.read("calibration", \
+								STRUCT_SIZE(struct __calibrates, data), \
+								sizeof(mp), \
+								(void *)&mp) != sizeof(mp))
+		{
+			TRACE(TRACE_ERR, "Task metering config_check 1.");
+			
+			mp.active_div = 10000;
+			mp.reactive_div = 10000;
+			mp.current_num = 1;
+			mp.current_denum = 1;
+			mp.voltage_num = 1;
+			mp.voltage_denum = 1;
+			mp.demand_period = 5;
+			mp.demand_multiple = 3;
+			mp.energy_switch = 0xff;
+			mp.rate = 1;
+			mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+			
+			file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+		}
+		else
+		{
+			check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+			if(check != mp.check)
+			{
+				TRACE(TRACE_ERR, "Task metering config_check 2.");
+				
+				mp.active_div = 10000;
+				mp.reactive_div = 10000;
+				mp.current_num = 1;
+				mp.current_denum = 1;
+				mp.voltage_num = 1;
+				mp.voltage_denum = 1;
+				mp.demand_period = 5;
+				mp.demand_multiple = 3;
+				mp.energy_switch = 0xff;
+				mp.rate = 1;
+				mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+				
+				file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+			}
+		}
+	}
+}
+
 static uint8_t config_rate_read(void)
 {
-	return(0);
+	config_check();
+	return(mp.rate);
 }
 
 static uint8_t config_rate_change(uint8_t rate)
 {
-	return(0);
+	config_check();
+	mp.rate = rate % (MAX_RATE + 1);
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, rate), \
+							sizeof(mp.rate), \
+							(void *)&(mp.rate)) != sizeof(mp.rate))
+	{
+		TRACE(TRACE_ERR, "Task metering config_rate_change.");
+	}
+	
+	return(mp.rate);
 }
 
 static uint8_t config_rate_max(void)
 {
-	return(0);
+	config_check();
+	return(MAX_RATE);
 }
-
 
 static uint32_t config_current_ratio_get(void)
 {
-	return(0);
+	config_check();
+	if(!mp.current_denum)
+	{
+		mp.current_denum = 1;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.current_num / mp.current_denum);
 }
 
 static uint32_t config_current_ratio_set(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.current_num = val;
+	mp.current_denum = 1;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, current_num), \
+							sizeof(mp.current_num), \
+							(void *)&(mp.current_num)) != sizeof(mp.current_num))
+	{
+		TRACE(TRACE_ERR, "Task metering config_current_ratio_set 1.");
+	}
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, current_denum), \
+							sizeof(mp.current_denum), \
+							(void *)&(mp.current_denum)) != sizeof(mp.current_denum))
+	{
+		TRACE(TRACE_ERR, "Task metering config_current_ratio_set 2.");
+	}
+	
+	return(mp.current_num);
 }
 
 static uint32_t config_current_ratio_get_num(void)
 {
-	return(0);
+	config_check();
+	return(mp.current_num);
 }
 
 static uint32_t config_current_ratio_set_num(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.current_num = val;
+	
+	if(!mp.current_denum)
+	{
+		mp.current_denum = 1;
+	}
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, current_num), \
+							sizeof(mp.current_num), \
+							(void *)&(mp.current_num)) != sizeof(mp.current_num))
+	{
+		TRACE(TRACE_ERR, "Task metering config_current_ratio_set_num.");
+	}
+	return(mp.current_num);
 }
 
 static uint32_t config_current_ratio_get_denum(void)
 {
-	return(0);
+	config_check();
+	if(!mp.current_denum)
+	{
+		mp.current_denum = 1;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.current_denum);
 }
 
 static uint32_t config_current_ratio_set_denum(uint32_t val)
 {
-	return(0);
+	config_check();
+	if(!val)
+	{
+		val = 1;
+	}
+	mp.current_denum = val;
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, current_denum), \
+							sizeof(mp.current_denum), \
+							(void *)&(mp.current_denum)) != sizeof(mp.current_denum))
+	{
+		TRACE(TRACE_ERR, "Task metering config_current_ratio_set_denum.");
+	}
+	return(mp.current_denum);
 }
 
 
 static uint32_t config_voltage_ratio_get(void)
 {
-	return(0);
+	config_check();
+	if(!mp.voltage_denum)
+	{
+		mp.voltage_denum = 1;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.voltage_num / mp.voltage_denum);
 }
 
 static uint32_t config_voltage_ratio_set(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.voltage_num = val;
+	mp.voltage_denum = 1;
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, voltage_num), \
+							sizeof(mp.voltage_num), \
+							(void *)&(mp.voltage_num)) != sizeof(mp.voltage_num))
+	{
+		TRACE(TRACE_ERR, "Task metering config_voltage_ratio_set 1.");
+	}
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, voltage_denum), \
+							sizeof(mp.voltage_denum), \
+							(void *)&(mp.voltage_denum)) != sizeof(mp.voltage_denum))
+	{
+		TRACE(TRACE_ERR, "Task metering config_voltage_ratio_set 2.");
+	}
+	
+	return(mp.voltage_num);
 }
 
 static uint32_t config_voltage_ratio_get_num(void)
 {
-	return(0);
+	config_check();
+	return(mp.voltage_num);
 }
 
 static uint32_t config_voltage_ratio_set_num(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.voltage_num = val;
+	
+	if(!mp.voltage_denum)
+	{
+		mp.voltage_denum = 1;
+	}
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, voltage_num), \
+							sizeof(mp.voltage_num), \
+							(void *)&(mp.voltage_num)) != sizeof(mp.voltage_num))
+	{
+		TRACE(TRACE_ERR, "Task metering config_voltage_ratio_set_num.");
+	}
+	return(mp.voltage_num);
 }
 
 static uint32_t config_voltage_ratio_get_denum(void)
 {
-	return(0);
+	config_check();
+	if(!mp.voltage_denum)
+	{
+		mp.voltage_denum = 1;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.voltage_denum);
 }
 
 static uint32_t config_voltage_ratio_set_denum(uint32_t val)
 {
-	return(0);
+	config_check();
+	if(!val)
+	{
+		val = 1;
+	}
+	mp.voltage_denum = val;
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, voltage_denum), \
+							sizeof(mp.voltage_denum), \
+							(void *)&(mp.voltage_denum)) != sizeof(mp.voltage_denum))
+	{
+		TRACE(TRACE_ERR, "Task metering config_voltage_ratio_set_denum.");
+	}
+	return(mp.voltage_denum);
 }
 
 static enum __metering_status config_energy_start(void)
 {
+	config_check();
+	mp.energy_switch = 0xff;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, energy_switch), \
+							sizeof(mp.energy_switch), \
+							(void *)&(mp.energy_switch)) != sizeof(mp.energy_switch))
+	{
+		TRACE(TRACE_ERR, "Task metering config_energy_start.");
+	}
 	return(M_ENERGY_START);
 }
 
 static enum __metering_status config_energy_stop(void)
 {
-	return(M_ENERGY_START);
+	config_check();
+	mp.energy_switch = 0;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, energy_switch), \
+							sizeof(mp.energy_switch), \
+							(void *)&(mp.energy_switch)) != sizeof(mp.energy_switch))
+	{
+		TRACE(TRACE_ERR, "Task metering config_energy_stop.");
+	}
+	return(M_ENERGY_STOP);
 }
 
 static enum __metering_status config_energy_status(void)
 {
-	return(M_ENERGY_START);
+	config_check();
+	if(mp.energy_switch)
+	{
+		return(M_ENERGY_START);
+	}
+	else
+	{
+		return(M_ENERGY_STOP);
+	}
 }
 
 static void config_energy_clear(void)
@@ -208,25 +469,68 @@ static void config_energy_clear(void)
 }
 
 
-
 static uint8_t config_demand_get_period(void)
 {
-	return(0);
+	config_check();
+	if(!mp.demand_period)
+	{
+		mp.demand_period = 1;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.demand_period);
 }
 
 static uint8_t config_demand_set_period(uint8_t minute)
 {
-	return(0);
+	config_check();
+	mp.demand_period = minute;
+	if(!mp.demand_period)
+	{
+		mp.demand_period = 1;
+	}
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, demand_period), \
+							sizeof(mp.demand_period), \
+							(void *)&(mp.demand_period)) != sizeof(mp.demand_period))
+	{
+		TRACE(TRACE_ERR, "Task metering config_demand_set_period.");
+	}
+	return(mp.demand_period);
 }
 
 static uint8_t config_demand_get_multiple(void)
 {
-	return(0);
+	config_check();
+	if(!mp.demand_multiple)
+	{
+		mp.demand_multiple = 5;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	}
+	return(mp.demand_multiple);
 }
 
 static uint8_t config_demand_set_multiple(uint8_t val)
 {
-	return(0);
+	config_check();
+	mp.demand_multiple = val;
+	if(!mp.demand_multiple)
+	{
+		mp.demand_multiple = 5;
+	}
+	
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, demand_multiple), \
+							sizeof(mp.demand_multiple), \
+							(void *)&(mp.demand_multiple)) != sizeof(mp.demand_multiple))
+	{
+		TRACE(TRACE_ERR, "Task metering config_demand_set_multiple.");
+	}
+	return(mp.demand_multiple);
 }
 
 static void config_demand_clear_current(void)
@@ -242,33 +546,100 @@ static void config_demand_clear_max(void)
 
 static uint32_t config_active_div_get(void)
 {
-	return(0);
+	config_check();
+	return(mp.active_div);
 }
 
 static uint32_t config_active_div_set(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.active_div = val;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, active_div), \
+							sizeof(mp.active_div), \
+							(void *)&(mp.active_div)) != sizeof(mp.active_div))
+	{
+		TRACE(TRACE_ERR, "Task metering config_active_div_set.");
+	}
+	return(mp.active_div);
 }
 
 
 static uint32_t config_reactive_div_get(void)
 {
-	return(0);
+	config_check();
+	return(mp.reactive_div);
 }
 
 static uint32_t config_reactive_div_set(uint32_t val)
 {
-	return(0);
+	config_check();
+	mp.reactive_div = val;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, reactive_div), \
+							sizeof(mp.reactive_div), \
+							(void *)&(mp.reactive_div)) != sizeof(mp.reactive_div))
+	{
+		TRACE(TRACE_ERR, "Task metering config_reactive_div_set.");
+	}
+	return(mp.reactive_div);
 }
+
 
 static void config_calibration_enter(void *args)
 {
+#if defined (BUILD_REAL_WORLD)
+	struct __calibrate_param *param = args;
+    struct __calibrates *calibrates = heap.dzalloc(sizeof(struct __calibrates));
     
+    if(!calibrates)
+    {
+        return;
+    }
+    
+	//读出校准数据
+	file.parameter.read("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+    
+	//更新校准步骤与信息
+	calibrates->param.step = param->step;
+    calibrates->param.base.voltage = param->base.voltage;
+    calibrates->param.base.current = param->base.current;
+    calibrates->param.base.ppulse = mp.active_div;
+    calibrates->param.base.qpulse = mp.reactive_div;
+	memcpy(calibrates->param.value, param->value, sizeof(calibrates->param.value));
+	
+	//开始校准
+    DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	
+	//写回校准数据
+    file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+    
+    heap.free(calibrates);
+#else
+    struct __calibrates *calibrates = heap.dzalloc(sizeof(struct __calibrates));
+    
+    if(!calibrates)
+    {
+        return;
+    }
+	
+	//开始校准
+    DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	
+	//写回校准数据
+    file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+    
+    heap.free(calibrates);
+#endif
 }
 
 static void config_calibration_exit(void)
 {
-    
+    DEV_M.calibrate.exit();
 }
 
 
@@ -433,31 +804,111 @@ static void metering_reset(void)
     status = TASK_NOTINIT;
     
 #if defined ( MAKE_RUN_FOR_DEBUG )
-    struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
-    
-    if(!calibrates)
-    {
-        return;
-    }
-    
-    heap.set(calibrates, 0, sizeof(struct __calibrates));
-    
-    calibrates->param.voltage = 220000;
-    calibrates->param.current = 1500;
-    calibrates->param.ppulse = 10000;
-    calibrates->param.qpulse = 10000;
-    
-    DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-    
-    while(DEV_M.calibrate.status() != true);
-    
-    DEV_M.calibrate.exit();
-    
-    file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-    
-    heap.free(calibrates);
-#endif
+#if defined (BUILD_REAL_WORLD)
+	struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
 	
+	if(!calibrates)
+	{
+		return;
+	}
+	
+	heap.set(&mp, 0, sizeof(mp));
+	mp.active_div = 6400;
+	mp.reactive_div = 6400;
+	mp.current_num = 1;
+	mp.current_denum = 1;
+	mp.voltage_num = 1;
+	mp.voltage_denum = 1;
+	mp.demand_period = 5;
+	mp.demand_multiple = 3;
+	mp.energy_switch = 0xff;
+	mp.rate = 1;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+	
+	heap.set(calibrates, 0, sizeof(struct __calibrates));
+	
+	calibrates->param.step = 1;
+	calibrates->param.base.voltage = 220000;
+	calibrates->param.base.current = 1500;
+	calibrates->param.base.ppulse = mp.active_div;
+	calibrates->param.base.qpulse = mp.reactive_div;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 2;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 3;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 4;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 5;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 6;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 7;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 8;
+	calibrates->param.value[0] = 220000;
+	calibrates->param.value[1] = 220000;
+	calibrates->param.value[2] = 220000;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	calibrates->param.step = 9;
+	calibrates->param.value[0] = 1500;
+	calibrates->param.value[1] = 1500;
+	calibrates->param.value[2] = 1500;
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	
+	DEV_M.calibrate.exit();
+	
+	heap.free(calibrates);
+#else
+	struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
+	
+	if(!calibrates)
+	{
+		return;
+	}
+	
+	heap.set(&mp, 0, sizeof(mp));
+	mp.active_div = 6400;
+	mp.reactive_div = 6400;
+	mp.current_num = 1;
+	mp.current_denum = 1;
+	mp.voltage_num = 1;
+	mp.voltage_denum = 1;
+	mp.demand_period = 5;
+	mp.demand_multiple = 3;
+	mp.energy_switch = 0xff;
+	mp.rate = 1;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+	
+	heap.set(calibrates, 0, sizeof(struct __calibrates));
+	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
+	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
+	DEV_M.calibrate.exit();
+	
+	heap.free(calibrates);
+#endif
+#endif
+
 	TRACE(TRACE_INFO, "Task metering reset.");
 }
 

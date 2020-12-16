@@ -296,16 +296,26 @@ static enum __task_status xmodem_status(void)
 /**
   * @brief  
   */
-static uint16_t xmodem_read(uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
+static uint16_t xmodem_read(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size, uint32_t *id)
 {
+	if(!(pf & PF_XMODEM))
+	{
+		return(0);
+	}
+	
 	return(0);
 }
 
 /**
   * @brief  
   */
-static uint16_t xmodem_write(uint8_t *descriptor, uint8_t *buff, uint16_t size)
+static uint16_t xmodem_write(enum  __protocol_family pf, uint8_t *descriptor, uint8_t *buff, uint16_t size)
 {
+	if(!(pf & PF_XMODEM))
+	{
+		return(0);
+	}
+	
     return(0);
 }
 
@@ -324,7 +334,7 @@ static uint16_t xmodem_stream_in(uint8_t channel, const uint8_t *frame, uint16_t
 		return(0);
 	}
 	
-	if(!(comm->attrib.protocol(channel) | PF_XMODEM))
+	if(!(comm->attrib.protocol(channel) & PF_XMODEM))
 	{
 		return(0);
 	}
