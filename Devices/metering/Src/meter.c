@@ -1053,6 +1053,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		{
 			//Pr
 			value = (double)(((struct __calibrates *)args)->data.base.voltage) * (double)(((struct __calibrates *)args)->data.base.current);
+			value /= 1000;
 			//Pr-Ps
 			value -= ((double)Urms[n] / 10);
 			//1/Ps
@@ -1129,6 +1130,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		{
 			//Pr
 			value = (double)(((struct __calibrates *)args)->data.base.voltage) * (double)(((struct __calibrates *)args)->data.base.current);
+			value /= 1000;
 			//Pr-Ps
 			value -= ((double)Urms[n] / 10);
 			//(Pr-Ps) / Pr
