@@ -115,6 +115,20 @@ struct __metering
         
         struct
         {
+            struct
+            {
+                uint32_t                    (*get)(void); //读取校准电压
+                uint32_t                    (*set)(uint32_t val); //设置校准电压
+                
+            }                               voltage;
+            
+            struct
+            {
+                uint32_t                    (*get)(void); //读取校准电流
+                uint32_t                    (*set)(uint32_t val); //设置校准电流
+                
+            }                               current;
+			
             void                            (*enter)(void *args); //开始校准
             void                            (*exit)(void); //退出校准
             

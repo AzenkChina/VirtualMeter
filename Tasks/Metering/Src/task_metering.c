@@ -19,6 +19,9 @@
   */
 struct __metering_parameter
 {
+	uint32_t voltage; //校准电压
+	uint32_t current; //校准电流
+	
 	uint32_t active_div; //有功脉冲常数
 	uint32_t reactive_div; //无功脉冲常数
 	
@@ -154,8 +157,10 @@ static void config_check(void)
 		{
 			TRACE(TRACE_ERR, "Task metering config_check 1.");
 			
-			mp.active_div = 10000;
-			mp.reactive_div = 10000;
+			mp.voltage = 220000;
+			mp.current = 1500;
+			mp.active_div = 6400;
+			mp.reactive_div = 6400;
 			mp.current_num = 1;
 			mp.current_denum = 1;
 			mp.voltage_num = 1;
@@ -175,8 +180,10 @@ static void config_check(void)
 			{
 				TRACE(TRACE_ERR, "Task metering config_check 2.");
 				
-				mp.active_div = 10000;
-				mp.reactive_div = 10000;
+				mp.voltage = 220000;
+				mp.current = 1500;
+				mp.active_div = 6400;
+				mp.reactive_div = 6400;
 				mp.current_num = 1;
 				mp.current_denum = 1;
 				mp.voltage_num = 1;
@@ -190,6 +197,19 @@ static void config_check(void)
 				file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
 			}
 		}
+	}
+	
+	if(!mp.voltage || !mp.current || !mp.active_div || !mp.reactive_div)
+	{
+		TRACE(TRACE_ERR, "Task metering config_check 3.");
+		
+		mp.voltage = 220000;
+		mp.current = 1500;
+		mp.active_div = 6400;
+		mp.reactive_div = 6400;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+		
+		file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
 	}
 }
 
@@ -589,28 +609,71 @@ static uint32_t config_reactive_div_set(uint32_t val)
 	return(mp.reactive_div);
 }
 
+static uint32_t config_calibration_voltage_get(void)
+{
+	config_check();
+	return(mp.voltage);
+}
+
+static uint32_t config_calibration_voltage_set(uint32_t val)
+{
+	config_check();
+	mp.voltage = val;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, voltage), \
+							sizeof(mp.voltage), \
+							(void *)&(mp.voltage)) != sizeof(mp.voltage))
+	{
+		TRACE(TRACE_ERR, "Task metering config_calibration_voltage_set.");
+	}
+	return(mp.voltage);
+}
+
+static uint32_t config_calibration_current_get(void)
+{
+	config_check();
+	return(mp.current);
+}
+
+static uint32_t config_calibration_current_set(uint32_t val)
+{
+	config_check();
+	mp.current = val;
+	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(file.parameter.write("calibration", \
+							STRUCT_SIZE(struct __calibrates, data) + STRUCT_OFFSET(struct __metering_parameter, current), \
+							sizeof(mp.current), \
+							(void *)&(mp.current)) != sizeof(mp.current))
+	{
+		TRACE(TRACE_ERR, "Task metering config_calibration_current_set.");
+	}
+	return(mp.current);
+}
 
 static void config_calibration_enter(void *args)
 {
-#if defined (BUILD_REAL_WORLD)
-	struct __calibrate_param *param = args;
+	uint8_t *step = args;
     struct __calibrates *calibrates = heap.dzalloc(sizeof(struct __calibrates));
     
     if(!calibrates)
     {
         return;
     }
+	
+	config_check();
     
 	//读出校准数据
 	file.parameter.read("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
     
 	//更新校准步骤与信息
-	calibrates->param.step = param->step;
-    calibrates->param.base.voltage = param->base.voltage;
-    calibrates->param.base.current = param->base.current;
-    calibrates->param.base.ppulse = mp.active_div;
-    calibrates->param.base.qpulse = mp.reactive_div;
-	memcpy(calibrates->param.value, param->value, sizeof(calibrates->param.value));
+	calibrates->param.step = *step;
+    calibrates->param.voltage = mp.voltage;
+    calibrates->param.current = mp.current;
+    calibrates->param.ppulse = mp.active_div;
+    calibrates->param.qpulse = mp.reactive_div;
 	
 	//开始校准
     DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
@@ -619,22 +682,6 @@ static void config_calibration_enter(void *args)
     file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
     
     heap.free(calibrates);
-#else
-    struct __calibrates *calibrates = heap.dzalloc(sizeof(struct __calibrates));
-    
-    if(!calibrates)
-    {
-        return;
-    }
-	
-	//开始校准
-    DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	
-	//写回校准数据
-    file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-    
-    heap.free(calibrates);
-#endif
 }
 
 static void config_calibration_exit(void)
@@ -719,6 +766,18 @@ static const struct __metering metering =
         
         .calibration                        = 
         {
+            .voltage						=
+            {
+                .get                        = config_calibration_voltage_get,
+                .set                        = config_calibration_voltage_set,
+            },
+            
+            .current						=
+            {
+                .get                        = config_calibration_current_get,
+                .set                        = config_calibration_current_set,
+            },
+			
             .enter                          = config_calibration_enter,
             .exit                           = config_calibration_exit,
         },
@@ -738,6 +797,14 @@ static void metering_init(void)
     if(system_status() == SYSTEM_RUN)
     {
         DEV_M.control.init(DEVICE_NORMAL);
+		
+		if(file.parameter.read("calibration", \
+								STRUCT_SIZE(struct __calibrates, data), \
+								sizeof(mp), \
+								(void *)&mp) != sizeof(mp))
+		{
+			TRACE(TRACE_ERR, "Calibrate information read faild.");
+		}
         
         calibrates = heap.dalloc(sizeof(struct __calibrate_data));
         
@@ -804,15 +871,9 @@ static void metering_reset(void)
     status = TASK_NOTINIT;
     
 #if defined ( MAKE_RUN_FOR_DEBUG )
-#if defined (BUILD_REAL_WORLD)
-	struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
-	
-	if(!calibrates)
-	{
-		return;
-	}
-	
 	heap.set(&mp, 0, sizeof(mp));
+	mp.voltage = 220000;
+	mp.current = 1500;
 	mp.active_div = 6400;
 	mp.reactive_div = 6400;
 	mp.current_num = 1;
@@ -827,13 +888,20 @@ static void metering_reset(void)
 	
 	file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
 	
-	heap.set(calibrates, 0, sizeof(struct __calibrates));
+	
+	
+	struct __calibrates *calibrates = heap.dzalloc(sizeof(struct __calibrates));
+	
+	if(!calibrates)
+	{
+		return;
+	}
 	
 	calibrates->param.step = 1;
-	calibrates->param.base.voltage = 220000;
-	calibrates->param.base.current = 1500;
-	calibrates->param.base.ppulse = mp.active_div;
-	calibrates->param.base.qpulse = mp.reactive_div;
+	calibrates->param.voltage = mp.voltage;
+	calibrates->param.current = mp.current;
+	calibrates->param.ppulse = mp.active_div;
+	calibrates->param.qpulse = mp.reactive_div;
 	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
 	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
 	
@@ -861,52 +929,9 @@ static void metering_reset(void)
 	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
 	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
 	
-	calibrates->param.step = 8;
-	calibrates->param.value[0] = 220000;
-	calibrates->param.value[1] = 220000;
-	calibrates->param.value[2] = 220000;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 9;
-	calibrates->param.value[0] = 1500;
-	calibrates->param.value[1] = 1500;
-	calibrates->param.value[2] = 1500;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
 	DEV_M.calibrate.exit();
 	
 	heap.free(calibrates);
-#else
-	struct __calibrates *calibrates = heap.dalloc(sizeof(struct __calibrates));
-	
-	if(!calibrates)
-	{
-		return;
-	}
-	
-	heap.set(&mp, 0, sizeof(mp));
-	mp.active_div = 6400;
-	mp.reactive_div = 6400;
-	mp.current_num = 1;
-	mp.current_denum = 1;
-	mp.voltage_num = 1;
-	mp.voltage_denum = 1;
-	mp.demand_period = 5;
-	mp.demand_multiple = 3;
-	mp.energy_switch = 0xff;
-	mp.rate = 1;
-	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-	file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
-	
-	heap.set(calibrates, 0, sizeof(struct __calibrates));
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	DEV_M.calibrate.exit();
-	
-	heap.free(calibrates);
-#endif
 #endif
 
 	TRACE(TRACE_INFO, "Task metering reset.");

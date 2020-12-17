@@ -134,6 +134,12 @@ struct __disp_runs
     uint16_t loop_record;
     //轮询主屏幕数据刷新
     uint16_t loop_flush;
+    //插入显示定时（毫秒）
+    uint16_t insert_millisecond;
+	//插入显示是否为数据项
+	uint8_t                 is_entry;
+    //插入的数据项
+    struct __disp_entry		insert_entry;
 };
 
 /* Private define ------------------------------------------------------------*/
@@ -575,12 +581,47 @@ static uint8_t display_list_current(void)
 
 static uint8_t display_list_insert_message(uint8_t second, const char *msg)
 {
-	return(0);
+	if(!second || !msg)
+	{
+		return(0);
+	}
+	
+	if(second > 60)
+	{
+		second = 60;
+	}
+	
+	disp_runs.insert_millisecond = second * 1000;
+	
+    if(system_status() == SYSTEM_RUN)
+    {
+        lcd.backlight.open();
+    }
+    
+    clear_unit();
+    
+	lcd.show.none();
+    lcd.window.show.msg(LCD_WINDOW_MAIN, 7, msg);
+	
+	return(second);
 }
 
 static uint8_t display_list_insert_instance(uint8_t second, void *id)
 {
-	return(0);
+	if(!second || !id)
+	{
+		return(0);
+	}
+	
+	if(second > 60)
+	{
+		second = 60;
+	}
+	
+	disp_runs.insert_millisecond = second * 1000;
+	heap.copy(&disp_runs.insert_entry, id, sizeof(disp_runs.insert_entry));
+	
+	return(second);
 }
 
 
@@ -1048,12 +1089,12 @@ static void display_init(void)
   */
 static void display_loop(void)
 {
+	struct __disp_entry entry;
+	
     if((system_status() == SYSTEM_RUN) || (system_status() == SYSTEM_WAKEUP))
     {
         status = TASK_RUN;
         lcd.runner(KERNEL_PERIOD);
-        
-        disp_runs.loop_record += KERNEL_PERIOD;
         
         //全显完成之后才开始定时刷新
         if(disp_runs.counter.start >= disp_runs.time.start)
@@ -1061,15 +1102,54 @@ static void display_loop(void)
             disp_runs.loop_flush += KERNEL_PERIOD;
         }
         
-        //唤醒状态下，直接关闭背光
-        if(lcd.backlight.status() && (system_status() == SYSTEM_WAKEUP))
+        //非正常运行状态下，直接关闭背光
+        if(lcd.backlight.status() && (system_status() != SYSTEM_RUN))
         {
             disp_runs.counter.backlight = 0;
             
             lcd.backlight.close();
         }
         
-        
+		//处理插入显示
+		if(disp_runs.insert_millisecond)
+		{
+			if(system_status() == SYSTEM_RUN)
+			{
+				lcd.backlight.open();
+			}
+			
+			if(disp_runs.insert_millisecond > KERNEL_PERIOD)
+			{
+				disp_runs.insert_millisecond -= KERNEL_PERIOD;
+			}
+			else
+			{
+				disp_runs.insert_millisecond = 0;
+				disp_runs.loop_record = 2000;
+			}
+			
+			if(!disp_runs.is_entry)
+			{
+				return;
+			}
+			
+			//499ms刷新主窗口的显示数据
+			if(disp_runs.loop_flush > 499)
+			{
+				heap.copy(&entry, &disp_runs.entry.descriptor, sizeof(entry));
+				heap.copy(&disp_runs.entry.descriptor, &disp_runs.insert_entry.descriptor, sizeof(disp_runs.entry.descriptor));
+				
+				disp_runs.loop_flush = 0;
+				flush_data();
+				
+				heap.copy(&disp_runs.entry.descriptor, &entry, sizeof(entry));
+			}
+			
+			return;
+		}
+		
+		disp_runs.loop_record += KERNEL_PERIOD;
+		
         //秒延时
 		if(disp_runs.loop_record > 999)
 		{
