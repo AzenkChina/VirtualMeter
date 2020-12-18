@@ -978,8 +978,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		devspi.select(0);
 		devspi.octet.write(0x80 + cali->data.reg[41].address);
 		devspi.octet.write(0);
-		devspi.octet.write((cali->data.reg[41].address >> 8) & 0xff);
-		devspi.octet.write((cali->data.reg[41].address >> 0) & 0xff);
+		devspi.octet.write((cali->data.reg[41].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[41].value >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 		
