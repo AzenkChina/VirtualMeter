@@ -624,13 +624,15 @@ static int32_t meter_data_read(enum __metering_meta id)
   */
 static bool meter_calibrate_load(uint32_t size, const void *param)
 {
+	struct __calibrate_data *cali = (struct __calibrate_data *)param;
+	
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(size < sizeof(struct __calibrate_data))
 	{
 		return(false);
 	}
 	
-	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
+	if(cali->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
 	{
 		return(false);
 	}
@@ -647,12 +649,12 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
 		return(false);
 	}
 	
-	if(((struct __calibrate_data *)param)->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
+	if(cali->check != crc32(param, (sizeof(struct __calibrate_data) - sizeof(uint32_t)), 0))
 	{
 		return(false);
 	}
 	
-	calibase = ((struct __calibrate_data *)param)->base;
+	calibase = cali->base;
 	calibase.check = crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0);
     
     //清校表数据
@@ -677,10 +679,10 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
     for(loop=0; loop<59; loop++)
     {
         devspi.select(0);
-        devspi.octet.write(0x80 + (((struct __calibrate_data *)param)->reg[loop].address & 0x7f));
+        devspi.octet.write(0x80 + (cali->reg[loop].address & 0x7f));
         devspi.octet.write(0);
-        devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 8) & 0xff);
-        devspi.octet.write((((struct __calibrate_data *)param)->reg[loop].value >> 0) & 0xff);
+        devspi.octet.write((cali->reg[loop].value >> 8) & 0xff);
+        devspi.octet.write((cali->reg[loop].value >> 0) & 0xff);
         devspi.release(0);
         mdelay(1);
     }
@@ -717,18 +719,17 @@ static bool meter_calibrate_load(uint32_t size, const void *param)
   */
 static bool meter_calibrate_enter(uint32_t size, void *args)
 {
+	struct __calibrates *cali = (struct __calibrates *)args;
+	
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	if(size < sizeof(struct __calibrates))
 	{
 		return(false);
 	}
 	
-	memset((void *)&(((struct __calibrates *)args)->data), \
-           0, \
-           sizeof(((struct __calibrates *)args)->data));
+	memset((void *)&(cali->data), 0, sizeof(cali->data));
     
-	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
-                                                      sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t), 0);
+	cali->data.check = crc32((const void *)&(cali->data), sizeof(cali->data) - sizeof(uint32_t), 0);
     
     calibrate = 0xff;
     
@@ -746,205 +747,203 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	{
 		double value;
 		
-		memset((void *)&(((struct __calibrates *)args)->data), \
-			   0, \
-			   sizeof(((struct __calibrates *)args)->data));
+		memset((void *)&(cali->data), 0, sizeof(cali->data));
 		
 		//有效值offset（每个表型校正一次）
-		((struct __calibrates *)args)->data.reg[6].address = 0x24;
-		((struct __calibrates *)args)->data.reg[6].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[7].address = 0x25;
-		((struct __calibrates *)args)->data.reg[7].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[8].address = 0x26;
-		((struct __calibrates *)args)->data.reg[8].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[9].address = 0x27;
-		((struct __calibrates *)args)->data.reg[9].value = 0x0007;
-		((struct __calibrates *)args)->data.reg[10].address = 0x28;
-		((struct __calibrates *)args)->data.reg[10].value = 0x0007;
-		((struct __calibrates *)args)->data.reg[11].address = 0x29;
-		((struct __calibrates *)args)->data.reg[11].value = 0x0007;
+		cali->data.reg[6].address = 0x24;
+		cali->data.reg[6].value = 0x0000;
+		cali->data.reg[7].address = 0x25;
+		cali->data.reg[7].value = 0x0000;
+		cali->data.reg[8].address = 0x26;
+		cali->data.reg[8].value = 0x0000;
+		cali->data.reg[9].address = 0x27;
+		cali->data.reg[9].value = 0x0007;
+		cali->data.reg[10].address = 0x28;
+		cali->data.reg[10].value = 0x0007;
+		cali->data.reg[11].address = 0x29;
+		cali->data.reg[11].value = 0x0007;
 		
 		//ADC offset（每个表型校正一次）
-		((struct __calibrates *)args)->data.reg[12].address = 0x2a;
-		((struct __calibrates *)args)->data.reg[12].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[13].address = 0x2b;
-		((struct __calibrates *)args)->data.reg[13].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[14].address = 0x2c;
-		((struct __calibrates *)args)->data.reg[14].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[15].address = 0x2d;
-		((struct __calibrates *)args)->data.reg[15].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[16].address = 0x2e;
-		((struct __calibrates *)args)->data.reg[16].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[17].address = 0x2f;
-		((struct __calibrates *)args)->data.reg[17].value = 0x0000;
+		cali->data.reg[12].address = 0x2a;
+		cali->data.reg[12].value = 0x0000;
+		cali->data.reg[13].address = 0x2b;
+		cali->data.reg[13].value = 0x0000;
+		cali->data.reg[14].address = 0x2c;
+		cali->data.reg[14].value = 0x0000;
+		cali->data.reg[15].address = 0x2d;
+		cali->data.reg[15].value = 0x0000;
+		cali->data.reg[16].address = 0x2e;
+		cali->data.reg[16].value = 0x0000;
+		cali->data.reg[17].address = 0x2f;
+		cali->data.reg[17].value = 0x0000;
 		
 		//功率offset（可选每台表都需要校正）
-		((struct __calibrates *)args)->data.reg[0].address = 0x13;
-		((struct __calibrates *)args)->data.reg[0].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[1].address = 0x14;
-		((struct __calibrates *)args)->data.reg[1].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[2].address = 0x15;
-		((struct __calibrates *)args)->data.reg[2].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[3].address = 0x21;
-		((struct __calibrates *)args)->data.reg[3].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[4].address = 0x22;
-		((struct __calibrates *)args)->data.reg[4].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[5].address = 0x23;
-		((struct __calibrates *)args)->data.reg[5].value = 0x0000;
+		cali->data.reg[0].address = 0x13;
+		cali->data.reg[0].value = 0x0000;
+		cali->data.reg[1].address = 0x14;
+		cali->data.reg[1].value = 0x0000;
+		cali->data.reg[2].address = 0x15;
+		cali->data.reg[2].value = 0x0000;
+		cali->data.reg[3].address = 0x21;
+		cali->data.reg[3].value = 0x0000;
+		cali->data.reg[4].address = 0x22;
+		cali->data.reg[4].value = 0x0000;
+		cali->data.reg[5].address = 0x23;
+		cali->data.reg[5].value = 0x0000;
 		
 		//功率增益补偿（每台表都需要校正）
-		((struct __calibrates *)args)->data.reg[18].address = 0x04;
-		((struct __calibrates *)args)->data.reg[18].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[19].address = 0x05;
-		((struct __calibrates *)args)->data.reg[19].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[20].address = 0x06;
-		((struct __calibrates *)args)->data.reg[20].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[21].address = 0x07;
-		((struct __calibrates *)args)->data.reg[21].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[22].address = 0x08;
-		((struct __calibrates *)args)->data.reg[22].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[23].address = 0x09;
-		((struct __calibrates *)args)->data.reg[23].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[24].address = 0x0a;
-		((struct __calibrates *)args)->data.reg[24].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[25].address = 0x0b;
-		((struct __calibrates *)args)->data.reg[25].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[26].address = 0x0c;
-		((struct __calibrates *)args)->data.reg[26].value = 0x0000;
+		cali->data.reg[18].address = 0x04;
+		cali->data.reg[18].value = 0x0000;
+		cali->data.reg[19].address = 0x05;
+		cali->data.reg[19].value = 0x0000;
+		cali->data.reg[20].address = 0x06;
+		cali->data.reg[20].value = 0x0000;
+		cali->data.reg[21].address = 0x07;
+		cali->data.reg[21].value = 0x0000;
+		cali->data.reg[22].address = 0x08;
+		cali->data.reg[22].value = 0x0000;
+		cali->data.reg[23].address = 0x09;
+		cali->data.reg[23].value = 0x0000;
+		cali->data.reg[24].address = 0x0a;
+		cali->data.reg[24].value = 0x0000;
+		cali->data.reg[25].address = 0x0b;
+		cali->data.reg[25].value = 0x0000;
+		cali->data.reg[26].address = 0x0c;
+		cali->data.reg[26].value = 0x0000;
 		
 		//相位校正（每台表都需要校正）
-		((struct __calibrates *)args)->data.reg[27].address = 0x0d;
-		((struct __calibrates *)args)->data.reg[27].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[28].address = 0x0e;
-		((struct __calibrates *)args)->data.reg[28].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[29].address = 0x0f;
-		((struct __calibrates *)args)->data.reg[29].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[30].address = 0x10;
-		((struct __calibrates *)args)->data.reg[30].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[31].address = 0x11;
-		((struct __calibrates *)args)->data.reg[31].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[32].address = 0x12;
-		((struct __calibrates *)args)->data.reg[32].value = 0x0000;
+		cali->data.reg[27].address = 0x0d;
+		cali->data.reg[27].value = 0x0000;
+		cali->data.reg[28].address = 0x0e;
+		cali->data.reg[28].value = 0x0000;
+		cali->data.reg[29].address = 0x0f;
+		cali->data.reg[29].value = 0x0000;
+		cali->data.reg[30].address = 0x10;
+		cali->data.reg[30].value = 0x0000;
+		cali->data.reg[31].address = 0x11;
+		cali->data.reg[31].value = 0x0000;
+		cali->data.reg[32].address = 0x12;
+		cali->data.reg[32].value = 0x0000;
 		
 		//电压增益校正（每台表都需要校正）
-		((struct __calibrates *)args)->data.reg[33].address = 0x17;
-		((struct __calibrates *)args)->data.reg[33].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[34].address = 0x18;
-		((struct __calibrates *)args)->data.reg[34].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[35].address = 0x19;
-		((struct __calibrates *)args)->data.reg[35].value = 0x0000;
+		cali->data.reg[33].address = 0x17;
+		cali->data.reg[33].value = 0x0000;
+		cali->data.reg[34].address = 0x18;
+		cali->data.reg[34].value = 0x0000;
+		cali->data.reg[35].address = 0x19;
+		cali->data.reg[35].value = 0x0000;
 		
 		//电流增益校正（每台表都需要校正）
-		((struct __calibrates *)args)->data.reg[36].address = 0x1a;
-		((struct __calibrates *)args)->data.reg[36].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[37].address = 0x1b;
-		((struct __calibrates *)args)->data.reg[37].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[38].address = 0x1c;
-		((struct __calibrates *)args)->data.reg[38].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[39].address = 0x20;
-		((struct __calibrates *)args)->data.reg[39].value = 0x0000;
+		cali->data.reg[36].address = 0x1a;
+		cali->data.reg[36].value = 0x0000;
+		cali->data.reg[37].address = 0x1b;
+		cali->data.reg[37].value = 0x0000;
+		cali->data.reg[38].address = 0x1c;
+		cali->data.reg[38].value = 0x0000;
+		cali->data.reg[39].address = 0x20;
+		cali->data.reg[39].value = 0x0000;
 		
 		//控制参数
-		((struct __calibrates *)args)->data.reg[40].address = 0x01;//模式配置寄存器
-		((struct __calibrates *)args)->data.reg[40].value = 0xbd7f;
-		((struct __calibrates *)args)->data.reg[41].address = 0x02;//ADC增益配置（电压2倍，电流1倍，零线8倍）
-		((struct __calibrates *)args)->data.reg[41].value = 0x0102;
-		((struct __calibrates *)args)->data.reg[42].address = 0x03;//EMU单元配置
-		((struct __calibrates *)args)->data.reg[42].value = 0x79c4;
-		((struct __calibrates *)args)->data.reg[43].address = 0x16;//基波无功相位校正
-		((struct __calibrates *)args)->data.reg[43].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[47].address = 0x30;//中断使能
-		((struct __calibrates *)args)->data.reg[47].value = 0x0001;
-		((struct __calibrates *)args)->data.reg[48].address = 0x31;//模拟模块使能
-		((struct __calibrates *)args)->data.reg[48].value = 0x3837;
-		((struct __calibrates *)args)->data.reg[49].address = 0x32;//全通道增益
-		((struct __calibrates *)args)->data.reg[49].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[50].address = 0x33;//脉冲加倍
-		((struct __calibrates *)args)->data.reg[50].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[51].address = 0x35;//IO状态
-		((struct __calibrates *)args)->data.reg[51].value = 0x000f;
-		((struct __calibrates *)args)->data.reg[53].address = 0x37;//相位补偿区域，不分段校表，填0
-		((struct __calibrates *)args)->data.reg[53].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[58].address = 0x6b;//Toffset校正
-		((struct __calibrates *)args)->data.reg[58].value = 0x0000;
-		((struct __calibrates *)args)->data.reg[55].address = 0x6d;//Vrefgain的补偿曲线系数 TCcoffA
-		((struct __calibrates *)args)->data.reg[55].value = 0xff00;
-		((struct __calibrates *)args)->data.reg[56].address = 0x6e;//Vrefgain的补偿曲线系数 TCcoffB
-		((struct __calibrates *)args)->data.reg[56].value = 0x0db8;
-		((struct __calibrates *)args)->data.reg[57].address = 0x6f;//Vrefgain的补偿曲线系数 TCcoffC
-		((struct __calibrates *)args)->data.reg[57].value = 0xd1da;
-		((struct __calibrates *)args)->data.reg[54].address = 0x70;//算法控制
-		((struct __calibrates *)args)->data.reg[54].value = 0x0002;
+		cali->data.reg[40].address = 0x01;//模式配置寄存器
+		cali->data.reg[40].value = 0xbd7f;
+		cali->data.reg[41].address = 0x02;//ADC增益配置（电压2倍，电流1倍，零线8倍）
+		cali->data.reg[41].value = 0x0102;
+		cali->data.reg[42].address = 0x03;//EMU单元配置
+		cali->data.reg[42].value = 0x79c4;
+		cali->data.reg[43].address = 0x16;//基波无功相位校正
+		cali->data.reg[43].value = 0x0000;
+		cali->data.reg[47].address = 0x30;//中断使能
+		cali->data.reg[47].value = 0x0001;
+		cali->data.reg[48].address = 0x31;//模拟模块使能
+		cali->data.reg[48].value = 0x3837;
+		cali->data.reg[49].address = 0x32;//全通道增益
+		cali->data.reg[49].value = 0x0000;
+		cali->data.reg[50].address = 0x33;//脉冲加倍
+		cali->data.reg[50].value = 0x0000;
+		cali->data.reg[51].address = 0x35;//IO状态
+		cali->data.reg[51].value = 0x000f;
+		cali->data.reg[53].address = 0x37;//相位补偿区域，不分段校表，填0
+		cali->data.reg[53].value = 0x0000;
+		cali->data.reg[58].address = 0x6b;//Toffset校正
+		cali->data.reg[58].value = 0x0000;
+		cali->data.reg[55].address = 0x6d;//Vrefgain的补偿曲线系数 TCcoffA
+		cali->data.reg[55].value = 0xff00;
+		cali->data.reg[56].address = 0x6e;//Vrefgain的补偿曲线系数 TCcoffB
+		cali->data.reg[56].value = 0x0db8;
+		cali->data.reg[57].address = 0x6f;//Vrefgain的补偿曲线系数 TCcoffC
+		cali->data.reg[57].value = 0xd1da;
+		cali->data.reg[54].address = 0x70;//算法控制
+		cali->data.reg[54].value = 0x0002;
 		
 		//基本信息
-		((struct __calibrates *)args)->data.base.voltage = ((struct __calibrates *)args)->param.voltage;
-		((struct __calibrates *)args)->data.base.current = ((struct __calibrates *)args)->param.current;
-		((struct __calibrates *)args)->data.base.pulse = ((struct __calibrates *)args)->param.ppulse;
+		cali->data.base.voltage = cali->param.voltage;
+		cali->data.base.current = cali->param.current;
+		cali->data.base.pulse = cali->param.ppulse;
 		//比例系数N定义：额定电流Ib输入到芯片端取样电压为50mV时，对应的电流有效值寄存器值为
 		//Vrms，Vrms/2^13约等于60，此时N=60/Ib， Ib=1.5A，N=60/1.5=40，Ib=6A，N=60/6=10
 		//同理，当输入到芯片端取样电压为25mV时，Vrms/2^13约等于30，Ib=1.5A，N=30/1.5=20，Ib=6A，
 		//N=30/6=5。可根据当前Ib电流的实际值，计算N值。
-		//根据硬件电路此处Ib=1.5A 取样电压50mV
-		((struct __calibrates *)args)->data.base.nrate = 40;
-		((struct __calibrates *)args)->data.base.check = 0;
+		//根据硬件电路此处Ib=1.5A 取样电压51mV
+		cali->data.base.nrate = 40;
+		cali->data.base.check = 0;
 		
 		//计算 HFConst
 		//HFConst＝INT[25920000000*G*G*Vu*Vi/(EC*Un*Ib)]，其中G=1.163，INT为取整计算
 		value = 35058588480; //25920000000*G*G
-		value *= ((struct __calibrates *)args)->param.voltage;//Vu(分压电阻为1500:1，输入放大器增益为2)
+		value *= cali->param.voltage;//Vu(分压电阻为1500:1，输入放大器增益为2)
 		value *= 2;
 		value /= 1500;
-		value *= ((struct __calibrates *)args)->param.current;//Vi(电流1.5A时采样信号为50mV)
-		value *= 50;
+		value *= cali->param.current;//Vi(互感器变比为1500:5，二次侧电阻为10.2欧姆，电流1.5A时采样信号为51mV)
+		value *= 51;
 		value /= 1500;
-		value /= ((struct __calibrates *)args)->param.ppulse;//EC
-		value /= ((struct __calibrates *)args)->param.voltage;//Un
-		value /= ((struct __calibrates *)args)->param.current;//Ib
+		value /= cali->param.ppulse;//EC
+		value /= cali->param.voltage;//Un
+		value /= cali->param.current;//Ib
 		
-		((struct __calibrates *)args)->data.reg[45].address = 0x1e;//高频脉冲常数
-		((struct __calibrates *)args)->data.reg[45].value = (uint16_t)value;
+		cali->data.reg[45].address = 0x1e;//高频脉冲常数
+		cali->data.reg[45].value = (uint16_t)value;
 		
-		((struct __calibrates *)args)->data.base.hfconst = (uint16_t)value;
-		calibase = ((struct __calibrates *)args)->data.base;
+		cali->data.base.hfconst = (uint16_t)value;
+		calibase = cali->data.base;
 		calibase.check = crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0);
 		
 		//计算起动电流 Istartup
 		//Istartup=INT[0.8*Io*2^13]
 		//其中Io=Ib*N*比例设置点
-		value = ((struct __calibrates *)args)->param.current;//Ib
-		value *= ((struct __calibrates *)args)->data.base.nrate;//N
+		value = cali->param.current;//Ib
+		value *= cali->data.base.nrate;//N
 		value *= 8192;//2^13
 		value /= 1000;//0.1% 启动电流 千分之一Ib
 		value *= 0.8;//0.8
 		value /= 1000;
-		((struct __calibrates *)args)->data.reg[44].address = 0x1d;
-		((struct __calibrates *)args)->data.reg[44].value = (uint16_t)value;
+		cali->data.reg[44].address = 0x1d;
+		cali->data.reg[44].value = (uint16_t)value;
 		
 		//计算起动功率 Pstartup
 		//Pstartup=INT[0.6*Ub*Ib*HFconst*EC*k‰*2^23/(2.592*10^10)]
 		//其中额定电压Ub，基本电流Ib，启动电流点k‰
-		value = ((struct __calibrates *)args)->param.voltage;//Ub
-		value *= ((struct __calibrates *)args)->param.current;//Ib
-		value *= ((struct __calibrates *)args)->param.ppulse;//EC
-		value *= ((struct __calibrates *)args)->data.base.hfconst;//HFconst
+		value = cali->param.voltage;//Ub
+		value *= cali->param.current;//Ib
+		value *= cali->param.ppulse;//EC
+		value *= cali->data.base.hfconst;//HFconst
 		value *= 0.6;//0.6
 		value /= 1000;//k‰ 0.1%
 		value *= 8388608;//2^23
 		value /= 25920000000;//2.592*10^10
 		value /= 1000;
 		value /= 1000;
-		((struct __calibrates *)args)->data.reg[52].address = 0x36;
-		((struct __calibrates *)args)->data.reg[52].value = (uint16_t)value;
+		cali->data.reg[52].address = 0x36;
+		cali->data.reg[52].value = (uint16_t)value;
 		
 		//计算失压阈值 FailVoltage
 		//FailVoltage=Un*2^5*D
 		//D表示失压电压百分比
-		value = ((struct __calibrates *)args)->param.voltage;//Ub
+		value = cali->param.voltage;//Ub
 		value *= 32;//2^5
 		value *= 0.6;//60%
 		value /= 1000;
-		((struct __calibrates *)args)->data.reg[46].address = 0x1f;
-		((struct __calibrates *)args)->data.reg[46].value = (uint16_t)value;
+		cali->data.reg[46].address = 0x1f;
+		cali->data.reg[46].value = (uint16_t)value;
 		
 		cpu.watchdog.feed();
 		
@@ -968,16 +967,25 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		
 		//模式配置寄存器(0x01)写入：0xB97E
 		devspi.select(0);
-		devspi.octet.write(0x80 + 0x01);
+		devspi.octet.write(0x80 + cali->data.reg[40].address);
 		devspi.octet.write(0);
 		devspi.octet.write((0xb97e >> 8) & 0xff);
 		devspi.octet.write((0xb97e >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 		
+		//ADC增益配置（电压2倍，电流1倍，零线8倍）
+		devspi.select(0);
+		devspi.octet.write(0x80 + cali->data.reg[41].address);
+		devspi.octet.write(0);
+		devspi.octet.write((cali->data.reg[41].address >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[41].address >> 0) & 0xff);
+		devspi.release(0);
+		mdelay(1);
+		
 		//EMU 单元配置寄存器(0x03)写入：0xF804
 		devspi.select(0);
-		devspi.octet.write(0x80 + 0x03);
+		devspi.octet.write(0x80 + cali->data.reg[42].address);
 		devspi.octet.write(0);
 		devspi.octet.write((0xf804 >> 8) & 0xff);
 		devspi.octet.write((0xf804 >> 0) & 0xff);
@@ -986,42 +994,33 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		
 		//模拟模块使能寄存器(0x31)写入：0x3427
 		devspi.select(0);
-		devspi.octet.write(0x80 + 0x31);
+		devspi.octet.write(0x80 + cali->data.reg[48].address);
 		devspi.octet.write(0);
 		devspi.octet.write((0x3427 >> 8) & 0xff);
 		devspi.octet.write((0x3427 >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 		
-		//ADC增益配置（电压2倍，电流1倍，零线8倍）
-		devspi.select(0);
-		devspi.octet.write(0x80 + 0x02);
-		devspi.octet.write(0);
-		devspi.octet.write((0x0102 >> 8) & 0xff);
-		devspi.octet.write((0x0102 >> 0) & 0xff);
-		devspi.release(0);
-		mdelay(1);
-		
 		//设置高频脉冲常数
 		devspi.select(0);
-		devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[45].address);
+		devspi.octet.write(0x80 + cali->data.reg[45].address);
 		devspi.octet.write(0);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[45].value >> 8) & 0xff);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[45].value >> 0) & 0xff);
+		devspi.octet.write((cali->data.reg[45].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[45].value >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 		
 		//设置相位补偿区域
 		devspi.select(0);
-		devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[53].address);
+		devspi.octet.write(0x80 + cali->data.reg[53].address);
 		devspi.octet.write(0);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[53].value >> 8) & 0xff);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[53].value >> 0) & 0xff);
+		devspi.octet.write((cali->data.reg[53].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[53].value >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 	}
 	//步骤二 功率增益校正
-	else if(((struct __calibrates *)args)->param.step == 2)
+	else if(cali->param.step == 2)
 	{
 		//Pgain = -err% / (1 + err%)
 		//err% = (Ps - Pr) / Pr
@@ -1052,7 +1051,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		for(uint8_t n=0; n<3; n++)
 		{
 			//Pr
-			value = (double)(((struct __calibrates *)args)->data.base.voltage) * (double)(((struct __calibrates *)args)->data.base.current);
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
 			value /= 1000;
 			//Pr-Ps
 			value -= ((double)Urms[n] / 10);
@@ -1068,37 +1067,37 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 				value = 65536 + value * 32768;
 			}
 			
-			((struct __calibrates *)args)->data.reg[18+n].value = (uint16_t)value;//P
-			((struct __calibrates *)args)->data.reg[21+n].value = (uint16_t)value;//Q
-			((struct __calibrates *)args)->data.reg[24+n].value = (uint16_t)value;//S
+			cali->data.reg[18+n].value = (uint16_t)value;//P
+			cali->data.reg[21+n].value = (uint16_t)value;//Q
+			cali->data.reg[24+n].value = (uint16_t)value;//S
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[18+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[18+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[18+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[18+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[18+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[18+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[21+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[21+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[21+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[21+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[21+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[21+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[24+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[24+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[24+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[24+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[24+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[24+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 		}
 	}
 	//步骤三 相位校正
-	else if(((struct __calibrates *)args)->param.step == 3)
+	else if(cali->param.step == 3)
 	{
 		//Q = -err% / 1.732
 		//err% = (Ps - Pr) / Pr
@@ -1129,12 +1128,12 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		for(uint8_t n=0; n<3; n++)
 		{
 			//Pr
-			value = (double)(((struct __calibrates *)args)->data.base.voltage) * (double)(((struct __calibrates *)args)->data.base.current);
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
 			value /= 1000;
 			//Pr-Ps
 			value -= ((double)Urms[n] / 10);
 			//(Pr-Ps) / Pr
-			value /= (double)(((struct __calibrates *)args)->data.base.voltage) * (double)(((struct __calibrates *)args)->data.base.current);
+			value /= (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
 			//(Pr-Ps) / Pr / 1.732
 			value /= 1.732;
 			
@@ -1147,33 +1146,33 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 				value = 65536 + value * 32768;
 			}
 			
-			((struct __calibrates *)args)->data.reg[27+n].value = (uint16_t)value;
-			((struct __calibrates *)args)->data.reg[30+n].value = (uint16_t)value;
+			cali->data.reg[27+n].value = (uint16_t)value;
+			cali->data.reg[30+n].value = (uint16_t)value;
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[27+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[27+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[27+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[27+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[27+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[27+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[30+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[30+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[30+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 		}
 	}
 	//步骤四 小信号精度校正
-	else if(((struct __calibrates *)args)->param.step == 4)
+	else if(cali->param.step == 4)
 	{
 		//...5%Ib
 	}
 	//步骤五 电压校正
-	else if(((struct __calibrates *)args)->param.step == 5)
+	else if(cali->param.step == 5)
 	{
 		//实际输入电压有效值Ur
 		//测量电压有效值Urms=DataU/2^13
@@ -1204,7 +1203,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		
 		for(uint8_t n=0; n<3; n++)
 		{
-			value = ((double)(((struct __calibrates *)args)->data.base.voltage) / ((double)Urms[n] / 10)) - 1;
+			value = ((double)(cali->data.base.voltage) / ((double)Urms[n] / 10)) - 1;
 			if(value >= 0)
 			{
 				value = value * 32768;
@@ -1216,16 +1215,16 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			((struct __calibrates *)args)->data.reg[33+n].value = (uint16_t)value;
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[33+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[33+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[33+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[33+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[33+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[33+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 		}
 	}
 	//步骤六 电流校正
-	else if(((struct __calibrates *)args)->param.step == 6)
+	else if(cali->param.step == 6)
 	{
 		//已知：实际输入电流有效值Ir
 		//测量电压有效值Irms=(DataI/2^13)/N
@@ -1256,7 +1255,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		
 		for(uint8_t n=0; n<3; n++)
 		{
-			value = ((double)(((struct __calibrates *)args)->data.base.current) / ((double)Irms[n] / 10)) - 1;
+			value = ((double)(cali->data.base.current) / ((double)Irms[n] / 10)) - 1;
 			if(value >= 0)
 			{
 				value = value * 32768;
@@ -1265,19 +1264,19 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			{
 				value = 65536 + value * 32768;
 			}
-			((struct __calibrates *)args)->data.reg[36+n].value = (uint16_t)value;
+			cali->data.reg[36+n].value = (uint16_t)value;
 			
 			devspi.select(0);
-			devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[36+n].address);
+			devspi.octet.write(0x80 + cali->data.reg[36+n].address);
 			devspi.octet.write(0);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[36+n].value >> 8) & 0xff);
-			devspi.octet.write((((struct __calibrates *)args)->data.reg[36+n].value >> 0) & 0xff);
+			devspi.octet.write((cali->data.reg[36+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[36+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
 		}
 	}
 	//步骤七 零线电流校正
-	else if(((struct __calibrates *)args)->param.step == 7)
+	else if(cali->param.step == 7)
 	{
 		//已知：实际输入电流有效值Ir
 		//测量电压有效值Irms=(DataI/2^13)/N
@@ -1295,7 +1294,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			cpu.watchdog.feed();
 		}
 		
-		value = ((double)(((struct __calibrates *)args)->data.base.current) / ((double)Irms / 10)) - 1;
+		value = ((double)(cali->data.base.current) / ((double)Irms / 10)) - 1;
 		if(value >= 0)
 		{
 			value = value * 32768;
@@ -1304,7 +1303,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		{
 			value = 65536 + value * 32768;
 		}
-		((struct __calibrates *)args)->data.reg[39].value = (uint16_t)value;
+		cali->data.reg[39].value = (uint16_t)value;
 		
 		//使能写参数
 		devspi.select(0);
@@ -1316,10 +1315,10 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		mdelay(1);
 		
 		devspi.select(0);
-		devspi.octet.write(0x80 + ((struct __calibrates *)args)->data.reg[39].address);
+		devspi.octet.write(0x80 + cali->data.reg[39].address);
 		devspi.octet.write(0);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[39].value >> 8) & 0xff);
-		devspi.octet.write((((struct __calibrates *)args)->data.reg[39].value >> 0) & 0xff);
+		devspi.octet.write((cali->data.reg[39].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[39].value >> 0) & 0xff);
 		devspi.release(0);
 		mdelay(1);
 	}
@@ -1351,8 +1350,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	cpu.watchdog.feed();
 	
 	//填充校验
-	((struct __calibrates *)args)->data.check = crc32((const void *)&(((struct __calibrates *)args)->data), \
-								sizeof(((struct __calibrates *)args)->data) - sizeof(uint32_t), 0);
+	((struct __calibrates *)args)->data.check = crc32((const void *)&(cali->data), \
+								sizeof(cali->data) - sizeof(uint32_t), 0);
     calibrate = 0xff;
     return(calibrate);
 #endif

@@ -37,7 +37,7 @@ struct __calibrate_data
   */
 struct __calibrate_register
 {
-	uint16_t address;
+	uint8_t address;
 	uint16_t value;
 };
 
