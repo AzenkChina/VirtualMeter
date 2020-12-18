@@ -743,12 +743,26 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 	}
 	
 	//步骤一 初始化
-	if(((struct __calibrates *)args)->param.step == 1)
+	if(cali->param.step == 1)
 	{
 		double value;
 		
 		memset((void *)&(cali->data), 0, sizeof(cali->data));
 		
+		//功率offset（可选每台表都需要校正）
+		cali->data.reg[0].address = 0x13;
+		cali->data.reg[0].value = 0x0000;
+		cali->data.reg[1].address = 0x14;
+		cali->data.reg[1].value = 0x0000;
+		cali->data.reg[2].address = 0x15;
+		cali->data.reg[2].value = 0x0000;
+		cali->data.reg[3].address = 0x21;
+		cali->data.reg[3].value = 0x0000;
+		cali->data.reg[4].address = 0x22;
+		cali->data.reg[4].value = 0x0000;
+		cali->data.reg[5].address = 0x23;
+		cali->data.reg[5].value = 0x0000;
+
 		//有效值offset（每个表型校正一次）
 		cali->data.reg[6].address = 0x24;
 		cali->data.reg[6].value = 0x0000;
@@ -776,20 +790,6 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		cali->data.reg[16].value = 0x0000;
 		cali->data.reg[17].address = 0x2f;
 		cali->data.reg[17].value = 0x0000;
-		
-		//功率offset（可选每台表都需要校正）
-		cali->data.reg[0].address = 0x13;
-		cali->data.reg[0].value = 0x0000;
-		cali->data.reg[1].address = 0x14;
-		cali->data.reg[1].value = 0x0000;
-		cali->data.reg[2].address = 0x15;
-		cali->data.reg[2].value = 0x0000;
-		cali->data.reg[3].address = 0x21;
-		cali->data.reg[3].value = 0x0000;
-		cali->data.reg[4].address = 0x22;
-		cali->data.reg[4].value = 0x0000;
-		cali->data.reg[5].address = 0x23;
-		cali->data.reg[5].value = 0x0000;
 		
 		//功率增益补偿（每台表都需要校正）
 		cali->data.reg[18].address = 0x04;
@@ -864,17 +864,17 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		cali->data.reg[51].value = 0x000f;
 		cali->data.reg[53].address = 0x37;//相位补偿区域，不分段校表，填0
 		cali->data.reg[53].value = 0x0000;
-		cali->data.reg[58].address = 0x6b;//Toffset校正
-		cali->data.reg[58].value = 0x0000;
+		cali->data.reg[54].address = 0x70;//算法控制
+		cali->data.reg[54].value = 0x0002;
 		cali->data.reg[55].address = 0x6d;//Vrefgain的补偿曲线系数 TCcoffA
 		cali->data.reg[55].value = 0xff00;
 		cali->data.reg[56].address = 0x6e;//Vrefgain的补偿曲线系数 TCcoffB
 		cali->data.reg[56].value = 0x0db8;
 		cali->data.reg[57].address = 0x6f;//Vrefgain的补偿曲线系数 TCcoffC
 		cali->data.reg[57].value = 0xd1da;
-		cali->data.reg[54].address = 0x70;//算法控制
-		cali->data.reg[54].value = 0x0002;
-		
+		cali->data.reg[58].address = 0x6b;//Toffset校正
+		cali->data.reg[58].value = 0x0000;
+
 		//基本信息
 		cali->data.base.voltage = cali->param.voltage;
 		cali->data.base.current = cali->param.current;
@@ -1019,7 +1019,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		devspi.release(0);
 		mdelay(1);
 	}
-	//步骤二 功率增益校正
+	//步骤二 功率增益校正 1.0 100%Ib 100%Un
 	else if(cali->param.step == 2)
 	{
 		//Pgain = -err% / (1 + err%)
@@ -1027,14 +1027,14 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		//=> Pgain = (Pr - Ps) / Ps
 		double value;
 		
-		int32_t Urms[3] = {0, 0, 0};
+		int32_t Prms[3] = {0, 0, 0};
 		
 		//读当前计量功率
 		for(uint8_t n=0; n<10; n++)
 		{
-			Urms[0] += meter_data_read(R_PA);
-			Urms[1] += meter_data_read(R_PB);
-			Urms[2] += meter_data_read(R_PC);
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
 			mdelay(500);
 			cpu.watchdog.feed();
 		}
@@ -1052,11 +1052,11 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		{
 			//Pr
 			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
-			value /= 1000;
+			value /= 1000;//mW
 			//Pr-Ps
-			value -= ((double)Urms[n] / 10);
+			value -= ((double)Prms[n] / 10);
 			//1/Ps
-			value /= ((double)Urms[n] / 10);
+			value /= ((double)Prms[n] / 10);
 			
 			if(value >= 0)
 			{
@@ -1096,7 +1096,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			mdelay(1);
 		}
 	}
-	//步骤三 相位校正
+	//步骤三 相位校正 0.5L 100% Ib Un
 	else if(cali->param.step == 3)
 	{
 		//Q = -err% / 1.732
@@ -1104,14 +1104,14 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		//=> Q = (Pr - Ps) / Pr / 1.732
 		double value;
 		
-		int32_t Urms[3] = {0, 0, 0};
+		int32_t Prms[3] = {0, 0, 0};
 		
 		//读当前计量功率
 		for(uint8_t n=0; n<10; n++)
 		{
-			Urms[0] += meter_data_read(R_PA);
-			Urms[1] += meter_data_read(R_PB);
-			Urms[2] += meter_data_read(R_PC);
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
 			mdelay(500);
 			cpu.watchdog.feed();
 		}
@@ -1128,12 +1128,12 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		for(uint8_t n=0; n<3; n++)
 		{
 			//Pr
-			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
-			value /= 1000;
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;
+			value /= 1000;//mW
 			//Pr-Ps
-			value -= ((double)Urms[n] / 10);
+			value -= ((double)Prms[n] / 10);
 			//(Pr-Ps) / Pr
-			value /= (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
+			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
 			//(Pr-Ps) / Pr / 1.732
 			value /= 1.732;
 			
@@ -1166,12 +1166,88 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			mdelay(1);
 		}
 	}
-	//步骤四 小信号精度校正
+	//步骤四 （可选）小电流相位校正 0.5L 20%Ib 100%Un
 	else if(cali->param.step == 4)
 	{
-		//...5%Ib
+		//Q = -err% / 1.732
+		//err% = (Ps - Pr) / Pr
+		//=> Q = (Pr - Ps) / Pr / 1.732
+		double value;
+		
+		int32_t Prms[3] = {0, 0, 0};
+		
+		//读当前计量功率
+		for(uint8_t n=0; n<10; n++)
+		{
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
+			mdelay(500);
+			cpu.watchdog.feed();
+		}
+		
+		//使能写参数
+		devspi.select(0);
+		devspi.octet.write(0xc9);
+		devspi.octet.write(0);
+		devspi.octet.write(0);
+		devspi.octet.write(0x5a);
+		devspi.release(0);
+		mdelay(1);
+		
+		for(uint8_t n=0; n<3; n++)
+		{
+			//Pr
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;//0.5L时有功为1.0的1/2
+			value /= 1000;//mW
+			value /= 5;//20%Ib
+			//Pr-Ps
+			value -= ((double)Prms[n] / 10);
+			//(Pr-Ps) / Pr
+			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
+			//(Pr-Ps) / Pr / 1.732
+			value /= 1.732;
+			
+			if(value >= 0)
+			{
+				value = value * 32768;
+			}
+			else
+			{
+				value = 65536 + value * 32768;
+			}
+			
+			cali->data.reg[30+n].value = (uint16_t)value;
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+		}
+
+		//已知:电流设置区域Is
+		//计算公式:Iregion =INT[Is*2^5]
+		//其中Is=Ib*N*比例设置点(额定电流对应取样信号为25mV,则N=30/Ib;额定电流对应取样信号为
+		//50mV,则N=60/Ib;) 例如,启动电流设置为15%,Ib=1.5A取样信号50mV,则Is=1.5*40*15%。
+		//N——与电流有效值计算公式中的系数N相同。
+		value = 32 * (double)(cali->data.base.current);
+		value *= (double)(cali->data.base.nrate);
+		value /= 5;
+		value /= 1000;
+		cali->data.reg[53].value = (uint16_t)value;
+
+		devspi.select(0);
+		devspi.octet.write(0x80 + cali->data.reg[53].address);
+		devspi.octet.write(0);
+		devspi.octet.write((cali->data.reg[53].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[53].value >> 0) & 0xff);
+		devspi.release(0);
+		mdelay(1);
 	}
-	//步骤五 电压校正
+	//步骤五 电压电流校正 1.0 100%Ib 100%Un
 	else if(cali->param.step == 5)
 	{
 		//实际输入电压有效值Ur
@@ -1179,8 +1255,15 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		//计算公式：Ugain=Ur/Urms-1
 		//如果Ugain≥0，则Ugain=INT[Ugain*2^15]
 		//如果Ugain<0，则Ugain=INT[2^16+ Ugain*2^15]
+
+		//已知：实际输入电流有效值Ir
+		//测量电压有效值Irms=(DataI/2^13)/N
+		//计算公式：Igain=Ir/Irms-1
+		//如果Igain≥0，则Igain=INT[Igain*2^15]
+		//如果Igain≤0，则Igain=INT[2^16+ Igain*2^15]
 		double value;
 		int32_t Urms[3] = {0, 0, 0};
+		int32_t Irms[3] = {0, 0, 0};
 		
 		//读当前计量电压
 		for(uint8_t n=0; n<10; n++)
@@ -1188,6 +1271,9 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			Urms[0] += meter_data_read(R_UA);
 			Urms[1] += meter_data_read(R_UB);
 			Urms[2] += meter_data_read(R_UC);
+			Irms[0] += meter_data_read(R_IA);
+			Irms[1] += meter_data_read(R_IB);
+			Irms[2] += meter_data_read(R_IC);
 			mdelay(500);
 			cpu.watchdog.feed();
 		}
@@ -1221,40 +1307,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			devspi.octet.write((cali->data.reg[33+n].value >> 0) & 0xff);
 			devspi.release(0);
 			mdelay(1);
-		}
-	}
-	//步骤六 电流校正
-	else if(cali->param.step == 6)
-	{
-		//已知：实际输入电流有效值Ir
-		//测量电压有效值Irms=(DataI/2^13)/N
-		//计算公式：Igain=Ir/Irms-1
-		//如果Igain≥0，则Igain=INT[Igain*2^15]
-		//如果Igain≤0，则Igain=INT[2^16+ Igain*2^15]
-		double value;
-		int32_t Irms[3] = {0, 0, 0};
-		
-		//读当前计量电流
-		for(uint8_t n=0; n<10; n++)
-		{
-			Irms[0] += meter_data_read(R_IA);
-			Irms[1] += meter_data_read(R_IB);
-			Irms[2] += meter_data_read(R_IC);
-			mdelay(500);
-			cpu.watchdog.feed();
-		}
-		
-		//使能写参数
-		devspi.select(0);
-		devspi.octet.write(0xc9);
-		devspi.octet.write(0);
-		devspi.octet.write(0);
-		devspi.octet.write(0x5a);
-		devspi.release(0);
-		mdelay(1);
-		
-		for(uint8_t n=0; n<3; n++)
-		{
+
 			value = ((double)(cali->data.base.current) / ((double)Irms[n] / 10)) - 1;
 			if(value >= 0)
 			{
@@ -1275,8 +1328,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			mdelay(1);
 		}
 	}
-	//步骤七 零线电流校正
-	else if(cali->param.step == 7)
+	//步骤六 （可选）零线电流校正 1.0 100%Ib
+	else if(cali->param.step == 6)
 	{
 		//已知：实际输入电流有效值Ir
 		//测量电压有效值Irms=(DataI/2^13)/N
