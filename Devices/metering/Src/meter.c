@@ -1019,236 +1019,8 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 		devspi.release(0);
 		mdelay(1);
 	}
-	//步骤二 功率增益校正 1.0 100%Ib 100%Un
+	//步骤二 电压电流校正 1.0 100%Ib 100%Un
 	else if(cali->param.step == 2)
-	{
-		//Pgain = -err% / (1 + err%)
-		//err% = (Ps - Pr) / Pr
-		//=> Pgain = (Pr - Ps) / Ps
-		double value;
-		
-		int32_t Prms[3] = {0, 0, 0};
-		
-		//读当前计量功率
-		for(uint8_t n=0; n<10; n++)
-		{
-			Prms[0] += meter_data_read(R_PA);
-			Prms[1] += meter_data_read(R_PB);
-			Prms[2] += meter_data_read(R_PC);
-			mdelay(500);
-			cpu.watchdog.feed();
-		}
-		
-		//使能写参数
-		devspi.select(0);
-		devspi.octet.write(0xc9);
-		devspi.octet.write(0);
-		devspi.octet.write(0);
-		devspi.octet.write(0x5a);
-		devspi.release(0);
-		mdelay(1);
-		
-		for(uint8_t n=0; n<3; n++)
-		{
-			//Pr
-			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
-			value /= 1000;//mW
-			//Pr-Ps
-			value -= ((double)Prms[n] / 10);
-			//1/Ps
-			value /= ((double)Prms[n] / 10);
-			
-			if(value >= 0)
-			{
-				value = value * 32768;
-			}
-			else
-			{
-				value = 65536 + value * 32768;
-			}
-			
-			cali->data.reg[18+n].value = (uint16_t)value;//P
-			cali->data.reg[21+n].value = (uint16_t)value;//Q
-			cali->data.reg[24+n].value = (uint16_t)value;//S
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[18+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[18+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[18+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[21+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[21+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[21+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[24+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[24+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[24+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-		}
-	}
-	//步骤三 相位校正 0.5L 100% Ib Un
-	else if(cali->param.step == 3)
-	{
-		//Q = -err% / 1.732
-		//err% = (Ps - Pr) / Pr
-		//=> Q = (Pr - Ps) / Pr / 1.732
-		double value;
-		
-		int32_t Prms[3] = {0, 0, 0};
-		
-		//读当前计量功率
-		for(uint8_t n=0; n<10; n++)
-		{
-			Prms[0] += meter_data_read(R_PA);
-			Prms[1] += meter_data_read(R_PB);
-			Prms[2] += meter_data_read(R_PC);
-			mdelay(500);
-			cpu.watchdog.feed();
-		}
-		
-		//使能写参数
-		devspi.select(0);
-		devspi.octet.write(0xc9);
-		devspi.octet.write(0);
-		devspi.octet.write(0);
-		devspi.octet.write(0x5a);
-		devspi.release(0);
-		mdelay(1);
-		
-		for(uint8_t n=0; n<3; n++)
-		{
-			//Pr
-			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;
-			value /= 1000;//mW
-			//Pr-Ps
-			value -= ((double)Prms[n] / 10);
-			//(Pr-Ps) / Pr
-			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
-			//(Pr-Ps) / Pr / 1.732
-			value /= 1.732;
-			
-			if(value >= 0)
-			{
-				value = value * 32768;
-			}
-			else
-			{
-				value = 65536 + value * 32768;
-			}
-			
-			cali->data.reg[27+n].value = (uint16_t)value;
-			cali->data.reg[30+n].value = (uint16_t)value;
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[27+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[27+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[27+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-		}
-	}
-	//步骤四 （可选）小电流相位校正 0.5L 20%Ib 100%Un
-	else if(cali->param.step == 4)
-	{
-		//Q = -err% / 1.732
-		//err% = (Ps - Pr) / Pr
-		//=> Q = (Pr - Ps) / Pr / 1.732
-		double value;
-		
-		int32_t Prms[3] = {0, 0, 0};
-		
-		//读当前计量功率
-		for(uint8_t n=0; n<10; n++)
-		{
-			Prms[0] += meter_data_read(R_PA);
-			Prms[1] += meter_data_read(R_PB);
-			Prms[2] += meter_data_read(R_PC);
-			mdelay(500);
-			cpu.watchdog.feed();
-		}
-		
-		//使能写参数
-		devspi.select(0);
-		devspi.octet.write(0xc9);
-		devspi.octet.write(0);
-		devspi.octet.write(0);
-		devspi.octet.write(0x5a);
-		devspi.release(0);
-		mdelay(1);
-		
-		for(uint8_t n=0; n<3; n++)
-		{
-			//Pr
-			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;//0.5L时有功为1.0的1/2
-			value /= 1000;//mW
-			value /= 5;//20%Ib
-			//Pr-Ps
-			value -= ((double)Prms[n] / 10);
-			//(Pr-Ps) / Pr
-			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
-			//(Pr-Ps) / Pr / 1.732
-			value /= 1.732;
-			
-			if(value >= 0)
-			{
-				value = value * 32768;
-			}
-			else
-			{
-				value = 65536 + value * 32768;
-			}
-			
-			cali->data.reg[30+n].value = (uint16_t)value;
-			
-			devspi.select(0);
-			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
-			devspi.octet.write(0);
-			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
-			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
-			devspi.release(0);
-			mdelay(1);
-		}
-
-		//已知:电流设置区域Is
-		//计算公式:Iregion =INT[Is*2^5]
-		//其中Is=Ib*N*比例设置点(额定电流对应取样信号为25mV,则N=30/Ib;额定电流对应取样信号为
-		//50mV,则N=60/Ib;) 例如,启动电流设置为15%,Ib=1.5A取样信号50mV,则Is=1.5*40*15%。
-		//N——与电流有效值计算公式中的系数N相同。
-		value = 32 * (double)(cali->data.base.current);
-		value *= (double)(cali->data.base.nrate);
-		value /= 5;
-		value /= 1000;
-		cali->data.reg[53].value = (uint16_t)value;
-
-		devspi.select(0);
-		devspi.octet.write(0x80 + cali->data.reg[53].address);
-		devspi.octet.write(0);
-		devspi.octet.write((cali->data.reg[53].value >> 8) & 0xff);
-		devspi.octet.write((cali->data.reg[53].value >> 0) & 0xff);
-		devspi.release(0);
-		mdelay(1);
-	}
-	//步骤五 电压电流校正 1.0 100%Ib 100%Un
-	else if(cali->param.step == 5)
 	{
 		//实际输入电压有效值Ur
 		//测量电压有效值Urms=DataU/2^13
@@ -1327,6 +1099,234 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			devspi.release(0);
 			mdelay(1);
 		}
+	}
+	//步骤三 功率增益校正 1.0 100%Ib 100%Un
+	else if(cali->param.step == 3)
+	{
+		//Pgain = -err% / (1 + err%)
+		//err% = (Ps - Pr) / Pr
+		//=> Pgain = (Pr - Ps) / Ps
+		double value;
+		
+		int32_t Prms[3] = {0, 0, 0};
+		
+		//读当前计量功率
+		for(uint8_t n=0; n<10; n++)
+		{
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
+			mdelay(500);
+			cpu.watchdog.feed();
+		}
+		
+		//使能写参数
+		devspi.select(0);
+		devspi.octet.write(0xc9);
+		devspi.octet.write(0);
+		devspi.octet.write(0);
+		devspi.octet.write(0x5a);
+		devspi.release(0);
+		mdelay(1);
+		
+		for(uint8_t n=0; n<3; n++)
+		{
+			//Pr
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current);
+			value /= 1000;//mW
+			//Pr-Ps
+			value -= ((double)Prms[n] / 10);
+			//1/Ps
+			value /= ((double)Prms[n] / 10);
+			
+			if(value >= 0)
+			{
+				value = value * 32768;
+			}
+			else
+			{
+				value = 65536 + value * 32768;
+			}
+			
+			cali->data.reg[18+n].value = (uint16_t)value;//P
+			cali->data.reg[21+n].value = (uint16_t)value;//Q
+			cali->data.reg[24+n].value = (uint16_t)value;//S
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[18+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[18+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[18+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[21+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[21+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[21+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[24+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[24+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[24+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+		}
+	}
+	//步骤四 相位校正 0.5L 100% Ib Un
+	else if(cali->param.step == 4)
+	{
+		//Q = -err% / 1.732
+		//err% = (Ps - Pr) / Pr
+		//=> Q = (Pr - Ps) / Pr / 1.732
+		double value;
+		
+		int32_t Prms[3] = {0, 0, 0};
+		
+		//读当前计量功率
+		for(uint8_t n=0; n<10; n++)
+		{
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
+			mdelay(500);
+			cpu.watchdog.feed();
+		}
+		
+		//使能写参数
+		devspi.select(0);
+		devspi.octet.write(0xc9);
+		devspi.octet.write(0);
+		devspi.octet.write(0);
+		devspi.octet.write(0x5a);
+		devspi.release(0);
+		mdelay(1);
+		
+		for(uint8_t n=0; n<3; n++)
+		{
+			//Pr
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;
+			value /= 1000;//mW
+			//Pr-Ps
+			value -= ((double)Prms[n] / 10);
+			//(Pr-Ps) / Pr
+			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
+			//(Pr-Ps) / Pr / 1.732
+			value /= 1.732;
+			
+			if(value >= 0)
+			{
+				value = value * 32768;
+			}
+			else
+			{
+				value = 65536 + value * 32768;
+			}
+			
+			cali->data.reg[27+n].value = (uint16_t)value;
+			cali->data.reg[30+n].value = (uint16_t)value;
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[27+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[27+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[27+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+		}
+	}
+	//步骤五 （可选）小电流相位校正 0.5L 20%Ib 100%Un
+	else if(cali->param.step == 5)
+	{
+		//Q = -err% / 1.732
+		//err% = (Ps - Pr) / Pr
+		//=> Q = (Pr - Ps) / Pr / 1.732
+		double value;
+		
+		int32_t Prms[3] = {0, 0, 0};
+		
+		//读当前计量功率
+		for(uint8_t n=0; n<10; n++)
+		{
+			Prms[0] += meter_data_read(R_PA);
+			Prms[1] += meter_data_read(R_PB);
+			Prms[2] += meter_data_read(R_PC);
+			mdelay(500);
+			cpu.watchdog.feed();
+		}
+		
+		//使能写参数
+		devspi.select(0);
+		devspi.octet.write(0xc9);
+		devspi.octet.write(0);
+		devspi.octet.write(0);
+		devspi.octet.write(0x5a);
+		devspi.release(0);
+		mdelay(1);
+		
+		for(uint8_t n=0; n<3; n++)
+		{
+			//Pr
+			value = (double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2;//0.5L时有功为1.0的1/2
+			value /= 1000;//mW
+			value /= 5;//20%Ib
+			//Pr-Ps
+			value -= ((double)Prms[n] / 10);
+			//(Pr-Ps) / Pr
+			value /= ((double)(cali->data.base.voltage) * (double)(cali->data.base.current) / 2);
+			//(Pr-Ps) / Pr / 1.732
+			value /= 1.732;
+			
+			if(value >= 0)
+			{
+				value = value * 32768;
+			}
+			else
+			{
+				value = 65536 + value * 32768;
+			}
+			
+			cali->data.reg[30+n].value = (uint16_t)value;
+			
+			devspi.select(0);
+			devspi.octet.write(0x80 + cali->data.reg[30+n].address);
+			devspi.octet.write(0);
+			devspi.octet.write((cali->data.reg[30+n].value >> 8) & 0xff);
+			devspi.octet.write((cali->data.reg[30+n].value >> 0) & 0xff);
+			devspi.release(0);
+			mdelay(1);
+		}
+
+		//已知:电流设置区域Is
+		//计算公式:Iregion =INT[Is*2^5]
+		//其中Is=Ib*N*比例设置点(额定电流对应取样信号为25mV,则N=30/Ib;额定电流对应取样信号为
+		//50mV,则N=60/Ib;) 例如,启动电流设置为15%,Ib=1.5A取样信号50mV,则Is=1.5*40*15%。
+		//N——与电流有效值计算公式中的系数N相同。
+		value = 32 * (double)(cali->data.base.current);
+		value *= (double)(cali->data.base.nrate);
+		value /= 5;
+		value /= 1000;
+		cali->data.reg[53].value = (uint16_t)value;
+
+		devspi.select(0);
+		devspi.octet.write(0x80 + cali->data.reg[53].address);
+		devspi.octet.write(0);
+		devspi.octet.write((cali->data.reg[53].value >> 8) & 0xff);
+		devspi.octet.write((cali->data.reg[53].value >> 0) & 0xff);
+		devspi.release(0);
+		mdelay(1);
 	}
 	//步骤六 （可选）零线电流校正 1.0 100%Ib
 	else if(cali->param.step == 6)
