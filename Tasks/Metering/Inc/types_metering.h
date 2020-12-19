@@ -36,7 +36,7 @@ struct __metering
     
     //将一个数据项转换为一次侧值
     //当宏定义 __USE_PRIMARY_ENERGY__ 打开时，这些函数将不对输入的数据做任何处理
-    int64_t                                 (*primary)(struct __meta_identifier id, int64_t val);
+    double                                 (*primary)(struct __meta_identifier id, int64_t val);
 	
     struct
     {

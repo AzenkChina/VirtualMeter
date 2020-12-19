@@ -28,8 +28,8 @@ struct __metering_parameter
 	uint32_t current_num; //电流变比分子
 	uint32_t current_denum; //电流变比分母
 	
-	uint32_t voltage_num; //电流变比分子
-	uint32_t voltage_denum; //电流变比分母
+	uint32_t voltage_num; //电压变比分子
+	uint32_t voltage_denum; //电压变比分母
 	
 	uint8_t demand_period; //滑差时间
 	uint8_t demand_multiple;//滑差时间倍数
@@ -55,9 +55,83 @@ static struct __metering_parameter mp;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+static void config_check(void)
+{
+	uint32_t check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+	
+	if(check != mp.check)
+	{
+		if(file.parameter.read("calibration", \
+								STRUCT_SIZE(struct __calibrates, data), \
+								sizeof(mp), \
+								(void *)&mp) != sizeof(mp))
+		{
+			TRACE(TRACE_ERR, "Task metering config_check 1.");
+			
+			mp.voltage = 220000;
+			mp.current = 1500;
+			mp.active_div = 6400;
+			mp.reactive_div = 6400;
+			mp.current_num = 1;
+			mp.current_denum = 1;
+			mp.voltage_num = 1;
+			mp.voltage_denum = 1;
+			mp.demand_period = 5;
+			mp.demand_multiple = 3;
+			mp.energy_switch = 0xff;
+			mp.rate = 1;
+			mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+			
+			file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+		}
+		else
+		{
+			check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+			if(check != mp.check)
+			{
+				TRACE(TRACE_ERR, "Task metering config_check 2.");
+				
+				mp.voltage = 220000;
+				mp.current = 1500;
+				mp.active_div = 6400;
+				mp.reactive_div = 6400;
+				mp.current_num = 1;
+				mp.current_denum = 1;
+				mp.voltage_num = 1;
+				mp.voltage_denum = 1;
+				mp.demand_period = 5;
+				mp.demand_multiple = 3;
+				mp.energy_switch = 0xff;
+				mp.rate = 1;
+				mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+				
+				file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+			}
+		}
+	}
+	
+	if(!mp.voltage || !mp.current || !mp.active_div || !mp.reactive_div)
+	{
+		TRACE(TRACE_ERR, "Task metering config_check 3.");
+		
+		mp.voltage = 220000;
+		mp.current = 1500;
+		mp.active_div = 6400;
+		mp.reactive_div = 6400;
+		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
+		
+		file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
+	}
+}
+
+
+
+
 static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *val)
 {
     int32_t read;
+
+	config_check();
     
 	if(id.item == M_VOLTAGE)
 	{
@@ -135,83 +209,32 @@ static enum __meta_item metering_recent(struct __meta_identifier id, int64_t *va
 	return(M_NULL);
 }
 
-static int64_t metering_primary(struct __meta_identifier id, int64_t val)
+static double metering_primary(struct __meta_identifier id, int64_t val)
 {
-	return(0);
+	double result;
+
+	config_check();
+	
+	if(id.item == M_VOLTAGE)
+	{
+		result = (double)val * mp.voltage_denum / mp.voltage_num;
+	}
+	else if(id.item == M_CURRENT)
+	{
+		result = (double)val * mp.current_denum / mp.current_num;
+	}
+	else if((id.item >= M_P_ENERGY) && (id.item <= M_S_POWER))
+	{
+		result = (double)val * mp.voltage_denum / mp.voltage_num;
+		result = result * mp.current_denum / mp.current_num;
+	}
+
+	return(result);
 }
 
 
 
 
-
-static void config_check(void)
-{
-	uint32_t check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-	
-	if(check != mp.check)
-	{
-		if(file.parameter.read("calibration", \
-								STRUCT_SIZE(struct __calibrates, data), \
-								sizeof(mp), \
-								(void *)&mp) != sizeof(mp))
-		{
-			TRACE(TRACE_ERR, "Task metering config_check 1.");
-			
-			mp.voltage = 220000;
-			mp.current = 1500;
-			mp.active_div = 6400;
-			mp.reactive_div = 6400;
-			mp.current_num = 1;
-			mp.current_denum = 1;
-			mp.voltage_num = 1;
-			mp.voltage_denum = 1;
-			mp.demand_period = 5;
-			mp.demand_multiple = 3;
-			mp.energy_switch = 0xff;
-			mp.rate = 1;
-			mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-			
-			file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
-		}
-		else
-		{
-			check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-			if(check != mp.check)
-			{
-				TRACE(TRACE_ERR, "Task metering config_check 2.");
-				
-				mp.voltage = 220000;
-				mp.current = 1500;
-				mp.active_div = 6400;
-				mp.reactive_div = 6400;
-				mp.current_num = 1;
-				mp.current_denum = 1;
-				mp.voltage_num = 1;
-				mp.voltage_denum = 1;
-				mp.demand_period = 5;
-				mp.demand_multiple = 3;
-				mp.energy_switch = 0xff;
-				mp.rate = 1;
-				mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-				
-				file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
-			}
-		}
-	}
-	
-	if(!mp.voltage || !mp.current || !mp.active_div || !mp.reactive_div)
-	{
-		TRACE(TRACE_ERR, "Task metering config_check 3.");
-		
-		mp.voltage = 220000;
-		mp.current = 1500;
-		mp.active_div = 6400;
-		mp.reactive_div = 6400;
-		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
-		
-		file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
-	}
-}
 
 static uint8_t config_rate_read(void)
 {

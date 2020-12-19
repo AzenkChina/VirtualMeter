@@ -246,6 +246,56 @@ static void meter_suspend(void)
 #else
     
 #if defined (BUILD_REAL_WORLD)
+    uint8_t err = 0;
+    union {
+        int32_t i;
+        uint32_t u;
+    } result[4];
+
+	uint32_t check;
+    
+    if((calibrate) && \
+	(calibase.check == crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0)) && \
+	meter_callback)
+    {
+		for(uint8_t n=0; n<4; n++)
+		{
+			devspi.select(0);
+			devspi.octet.write(0x39+n);
+			udelay(10);
+			result[n].u = devspi.octet.read();
+			result[n].u <<= 8;
+			result[n].u += devspi.octet.read();
+			result[n].u <<= 8;
+			result[n].u += devspi.octet.read();
+			devspi.release(0);
+
+			udelay(10);
+
+			devspi.select(0);
+			devspi.octet.write(0x2d);
+			udelay(10);
+			check = devspi.octet.read();
+			check <<= 8;
+			check += devspi.octet.read();
+			check <<= 8;
+			check += devspi.octet.read();
+			devspi.release(0);
+
+			if(check != result[n].u)
+			{
+				err = 0xff;
+				break;
+			}
+		}
+		if(!err)
+		{
+			meter_callback((void *)(EMU_ENG_PA + result[0].u));
+			meter_callback((void *)(EMU_ENG_PB + result[1].u));
+			meter_callback((void *)(EMU_ENG_PC + result[2].u));
+			meter_callback((void *)(EMU_ENG_PT + result[3].u));
+		}
+	}
     meter_callback = (void(*)(void *))0;
     devspi.control.suspend();
 #endif
@@ -401,6 +451,9 @@ static uint8_t meter_cmd_translate(enum __metering_meta id)
 }
 #endif
 
+/**
+  * @brief  
+  */
 static void meter_runner(uint16_t msecond)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
@@ -414,8 +467,9 @@ static void meter_runner(uint16_t msecond)
 #endif
 }
 
-
-
+/**
+  * @brief  
+  */
 static int32_t meter_data_read(enum __metering_meta id)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
@@ -493,14 +547,30 @@ static int32_t meter_data_read(enum __metering_meta id)
         int32_t i;
         uint32_t u;
     } result;
+
+	uint32_t check;
+	uint8_t times = 3;
     
     if((status == DEVICE_INIT) && (calibrate))
     {
+		if(calibase.check != crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0))
+		{
+			if(meter_callback)
+			{
+				meter_callback((void *)EMU_CALI_ERR);
+			}
+			return(0);
+		}
+
         addr = meter_cmd_translate(id);
 		if(addr == 0xff)
 		{
 			return(0);
 		}
+
+retry:
+		times -= 1;
+
         devspi.select(0);
         devspi.octet.write(addr);
         udelay(10);
@@ -510,22 +580,47 @@ static int32_t meter_data_read(enum __metering_meta id)
         result.u <<= 8;
         result.u += devspi.octet.read();
         devspi.release(0);
+
+		udelay(10);
+
+        devspi.select(0);
+        devspi.octet.write(0x2d);
+        udelay(10);
+        check = devspi.octet.read();
+        check <<= 8;
+        check += devspi.octet.read();
+        check <<= 8;
+        check += devspi.octet.read();
+        devspi.release(0);
 		
-        //电压
-		if((id >= R_UA) && (id <= R_UC))
+		if(result.u != check)
+		{
+			if(!times)
+			{
+				if(meter_callback)
+				{
+					meter_callback((void *)EMU_RD_ERR);
+				}
+				return(0);
+			}
+			mdelay(2);
+			goto retry;
+		}
+        
+		//电能
+		if((id >= R_EPT) && (id <= R_ESC))
+		{
+			//无需处理
+		}
+		//电压
+		else if((id >= R_UA) && (id <= R_UC))
 		{
 			val = (((float)result.u) * ((float)1000) / ((float)8192));
             result.u = (uint32_t)val;
 			return(result.i);
 		}
-		
-		if(calibase.check != crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0))
-		{
-			return(0);
-		}
-		
-        //电流
-		if((id >= R_IA) && (id <= R_IC))
+        //电流 / 电流矢量和
+		else if(((id >= R_IA) && (id <= R_IC)) || (id == R_IT))
 		{
 			val = (((float)result.u) * ((float)1000) / ((float)4096));
 			val = ((float)val) / ((float)calibase.nrate);
@@ -538,15 +633,8 @@ static int32_t meter_data_read(enum __metering_meta id)
 			val = ((float)val) / ((float)calibase.nrate);
 			result.u = (uint32_t)val;
 		}
-        //电流矢量和
-		else if(id == R_IT)
-		{
-			val = (((float)result.u) * ((float)1000) / ((float)4096));
-			val = ((float)val) / ((float)calibase.nrate);
-			result.u = (uint32_t)val;
-		}
-        //有功功率
-		else if((id >= R_PT) && (id <= R_PC))
+        //功率
+		else if(((id >= R_PT) && (id <= R_PC)) || ((id >= R_QT) && (id <= R_QC)) || ((id >= R_ST) && (id <= R_SC)))
 		{
             result.u <<= 8;
             result.i /= 256;
@@ -556,7 +644,7 @@ static int32_t meter_data_read(enum __metering_meta id)
 			val /= calibase.hfconst;
 			val /= calibase.pulse;
             
-            if(id == R_PT)
+            if((id == R_PT) || (id == R_QT) || (id == R_ST))
             {
                 result.i = (int32_t)(result.i * val * 2);
             }
@@ -565,45 +653,33 @@ static int32_t meter_data_read(enum __metering_meta id)
                 result.i = (int32_t)(result.i * val * 1);
             }
 		}
-        //无功功率
-		else if((id >= R_QT) && (id <= R_QC))
+        //功率因数
+		else if((id >= R_PFT) && (id <= R_PFC))
 		{
             result.u <<= 8;
             result.i /= 256;
-            
-			//K=2.592*10^10/(HFconst*EC*2^23)
-            val = 25920000000 * 1000 / 8388608;
-			val /= calibase.hfconst;
-			val /= calibase.pulse;
-            
-            if(id == R_QT)
-            {
-                result.i = (int32_t)(result.i * val * 2);
-            }
-            else
-            {
-                result.i = (int32_t)(result.i * val * 1);
-            }
+			val = result.i;
+			val *= 1000;
+			val /= 8388608;
+			result.i = (int32_t)val;
 		}
-        //视在功率
-		else if((id >= R_ST) && (id <= R_SC))
+        //角度
+		else if((id >= R_YIA) && (id <= R_YUBUC))
 		{
             result.u <<= 8;
             result.i /= 256;
-            
-			//K=2.592*10^10/(HFconst*EC*2^23)
-            val = 25920000000 * 1000 / 8388608;
-			val /= calibase.hfconst;
-			val /= calibase.pulse;
-            
-            if(id == R_ST)
-            {
-                result.i = (int32_t)(result.i * val * 2);
-            }
-            else
-            {
-                result.i = (int32_t)(result.i * val * 1);
-            }
+			val = result.i;
+			val *= 1000;
+			val /= 1048576;
+			result.i = (int32_t)val;
+		}
+		//频率
+		else if(id == R_FREQ)
+		{
+			val = result.u;
+			val *= 1000;
+			val /= 8192;
+			result.u = (int32_t)val;
 		}
     }
     else
@@ -1457,6 +1533,9 @@ static void meter_handler_filling(void(*callback)(void *buffer))
     }
 }
 
+/**
+  * @brief  
+  */
 static void meter_handler_remove(void)
 {
     meter_callback= (void(*)(void *))0;
