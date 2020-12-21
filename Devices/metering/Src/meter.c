@@ -251,7 +251,7 @@ static void meter_suspend(void)
         int32_t i;
         uint32_t u;
     } result[4];
-
+	
 	uint32_t check;
     
     if((calibrate) && \
@@ -290,10 +290,15 @@ static void meter_suspend(void)
 		}
 		if(!err)
 		{
-			meter_callback((void *)(EMU_ENG_PA + result[0].u));
-			meter_callback((void *)(EMU_ENG_PB + result[1].u));
-			meter_callback((void *)(EMU_ENG_PC + result[2].u));
-			meter_callback((void *)(EMU_ENG_PT + result[3].u));
+			//导出脉冲尾数，单位为千分之一脉冲
+			result[0].u = result[0].u * 1000 / calibase.nrate;
+			meter_callback((void *)(EMU_ENG_TAIL_PA + result[0].u));
+			result[1].u = result[1].u * 1000 / calibase.nrate;
+			meter_callback((void *)(EMU_ENG_TAIL_PB + result[1].u));
+			result[2].u = result[2].u * 1000 / calibase.nrate;
+			meter_callback((void *)(EMU_ENG_TAIL_PC + result[2].u));
+			result[3].u = result[3].u * 1000 / calibase.nrate;
+			meter_callback((void *)(EMU_ENG_TAIL_PT + result[3].u));
 		}
 	}
     meter_callback = (void(*)(void *))0;
@@ -670,6 +675,7 @@ retry:
             result.i /= 256;
 			val = result.i;
 			val *= 1000;
+			val *= 180;
 			val /= 1048576;
 			result.i = (int32_t)val;
 		}
@@ -680,6 +686,10 @@ retry:
 			val *= 1000;
 			val /= 8192;
 			result.u = (int32_t)val;
+		}
+		else
+		{
+			result.i = 0;
 		}
     }
     else
@@ -1253,7 +1263,7 @@ static bool meter_calibrate_enter(uint32_t size, void *args)
 			mdelay(1);
 		}
 	}
-	//步骤四 相位校正 0.5L 100% Ib Un
+	//步骤四 相位校正 0.5L 100%Ib 100%Un
 	else if(cali->param.step == 4)
 	{
 		//Q = -err% / 1.732
