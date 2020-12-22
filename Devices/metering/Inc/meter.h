@@ -82,8 +82,8 @@ struct __calibrates
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#define EMU_RD_ERR			(uint32_t)0x10000000
-#define EMU_CALI_ERR		(uint32_t)0x20000000
+#define EMU_ERR_RD			(uint32_t)0x10000000
+#define EMU_ERR_CALI		(uint32_t)0x20000000
 
 #if defined (BUILD_REAL_WORLD)
 #define EMU_ENG_TAIL_PA		(uint32_t)0xF1000000
@@ -91,6 +91,7 @@ struct __calibrates
 #define EMU_ENG_TAIL_PC		(uint32_t)0xF3000000
 #define EMU_ENG_TAIL_PT		(uint32_t)0xF4000000
 #endif
+
 /* Exported function prototypes ----------------------------------------------*/
 extern const struct __meter meter;
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )

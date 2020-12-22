@@ -35,6 +35,7 @@
 /* Private variables ---------------------------------------------------------*/
 static enum __dev_status status = DEVICE_NOTINIT;
 static void(*meter_callback)(void *buffer) = (void(*)(void *))0;
+static unsigned long meter_callback_check = 0;
 static uint8_t calibrate = 0;
 
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
@@ -141,9 +142,7 @@ static void meter_init(enum __dev_state state)
 {
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
 	sock = receiver.open(50002);
-    
-    (void)(meter_callback);
-
+	
 	if(sock == INVALID_SOCKET)
 	{
 		TRACE(TRACE_INFO, "Create receiver for metering failed.");
@@ -166,16 +165,16 @@ static void meter_init(enum __dev_state state)
 #endif
     }
 	
-	meter_callback= (void(*)(void *))0;
+	meter_callback = (void(*)(void *))0;
+	meter_callback_check = 0;
 	status = DEVICE_INIT;
 #else
 
 #if defined (BUILD_REAL_WORLD)
     GPIO_InitTypeDef GPIO_InitStruct;
     
-    (void)(meter_callback);
-    
-    meter_callback= (void(*)(void *))0;
+    meter_callback = (void(*)(void *))0;
+	meter_callback_check = 0;
     
     if(state == DEVICE_NORMAL)
 	{
@@ -243,6 +242,7 @@ static void meter_suspend(void)
 		sock = INVALID_SOCKET;
 	}
     meter_callback = (void(*)(void *))0;
+	meter_callback_check = 0;
 #else
     
 #if defined (BUILD_REAL_WORLD)
@@ -256,7 +256,8 @@ static void meter_suspend(void)
     
     if((calibrate) && \
 	(calibase.check == crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0)) && \
-	meter_callback)
+	meter_callback && \
+	((unsigned long)meter_callback == meter_callback_check))
     {
 		for(uint8_t n=0; n<4; n++)
 		{
@@ -302,6 +303,7 @@ static void meter_suspend(void)
 		}
 	}
     meter_callback = (void(*)(void *))0;
+	meter_callback_check = 0;
     devspi.control.suspend();
 #endif
     
@@ -560,9 +562,9 @@ static int32_t meter_data_read(enum __metering_meta id)
     {
 		if(calibase.check != crc32(&calibase, (sizeof(calibase) - sizeof(uint32_t)), 0))
 		{
-			if(meter_callback)
+			if(meter_callback && ((unsigned long)meter_callback == meter_callback_check))
 			{
-				meter_callback((void *)EMU_CALI_ERR);
+				meter_callback((void *)EMU_ERR_CALI);
 			}
 			return(0);
 		}
@@ -602,9 +604,9 @@ retry:
 		{
 			if(!times)
 			{
-				if(meter_callback)
+				if(meter_callback && ((unsigned long)meter_callback == meter_callback_check))
 				{
-					meter_callback((void *)EMU_RD_ERR);
+					meter_callback((void *)EMU_ERR_RD);
 				}
 				return(0);
 			}
@@ -1540,6 +1542,7 @@ static void meter_handler_filling(void(*callback)(void *buffer))
 	if(callback)
     {
         meter_callback = callback;
+		meter_callback_check = (unsigned long)callback;
     }
 }
 
@@ -1548,7 +1551,8 @@ static void meter_handler_filling(void(*callback)(void *buffer))
   */
 static void meter_handler_remove(void)
 {
-    meter_callback= (void(*)(void *))0;
+    meter_callback = (void(*)(void *))0;
+	meter_callback_check = 0;
 }
 
 
