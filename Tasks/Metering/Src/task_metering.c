@@ -45,10 +45,13 @@ struct __metering_parameter
   */
 struct __metering_base
 {
-	uint64_t active[MAX_PHASE];
-	uint64_t reactive[MAX_PHASE];
-	uint64_t apparent[MAX_PHASE];
-	uint32_t check;
+	struct
+	{
+		//总 A B C
+		uint64_t value[MAX_PHASE];
+		uint64_t check;
+		
+	} group[3];//有功/无功/视在
 };
 
 /**
@@ -56,8 +59,9 @@ struct __metering_base
   */
 struct __metering_data
 {
-	struct __metering_base energy[MAX_RATE][MAX_QUAD];
-	struct __metering_base demand[MAX_RATE][MAX_QUAD];
+	//费率 相限
+	struct __metering_base energy[MAX_RATE][4];
+	struct __metering_base demand[MAX_RATE][4];
 };
 
 /* Private define ------------------------------------------------------------*/
@@ -72,7 +76,8 @@ struct __metering_data
 static enum __task_status status = TASK_NOTINIT;
 
 static struct __metering_parameter mp;
-static struct __metering_base mc[MAX_QUAD];
+static struct __metering_base mc[4];
+static uint16_t flush[4][3] = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -156,76 +161,628 @@ static void config_check(void)
   */
 static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *val)
 {
-    int32_t read;
-
+    int64_t read = 0;
+	uint8_t phase;
+	uint8_t group;
+	
 	config_check();
     
-	if(id.item == M_VOLTAGE)
+	if(id.item == M_VOLTAGE)//电压
 	{
-		if(id.rate != 0)
+		if(id.phase == M_PHASE_A)
 		{
-			*val = 0;
+			read = DEV_M.read(R_UA);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_UB);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_UC);
+			*val = read;
 		}
 		else
 		{
-			if(id.phase == M_PHASE_A)
-			{
-                read = DEV_M.read(R_UA);
-				*val = read;
-			}
-			else if(id.phase == M_PHASE_B)
-			{
-                read = DEV_M.read(R_UB);
-				*val = read;
-			}
-			else if(id.phase == M_PHASE_C)
-			{
-                read = DEV_M.read(R_UC);
-				*val = read;
-			}
-			else
-			{
-				*val = 0;
-			}
+			*val = 0;
 		}
 		
 		return(M_VOLTAGE);
 	}
-	else if(id.item == M_CURRENT)
+	else if(id.item == M_CURRENT)//电流
 	{
-		if(id.rate != 0)
+		if(id.phase == M_PHASE_A)
 		{
-			*val = 0;
+			read = DEV_M.read(R_IA);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_IB);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_IC);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_N)
+		{
+			read = DEV_M.read(R_I0);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_T)
+		{
+			read = DEV_M.read(R_IT);
+			*val = read;
 		}
 		else
 		{
-			if(id.phase == M_PHASE_A)
-			{
-                read = DEV_M.read(R_IA);
-				*val = read;
-			}
-			else if(id.phase == M_PHASE_B)
-			{
-                read = DEV_M.read(R_IB);
-				*val = read;
-			}
-			else if(id.phase == M_PHASE_C)
-			{
-                read = DEV_M.read(R_IC);
-				*val = read;
-			}
-			else if(id.phase == M_PHASE_N)
-			{
-                read = DEV_M.read(R_IT);
-				*val = read;
-			}
-			else
-			{
-				*val = 0;
-			}
+			*val = 0;
 		}
 		
 		return(M_CURRENT);
+	}
+	else if(id.item == M_POWER_FACTOR)//功率因数
+	{
+		if(id.phase == M_PHASE_A)
+		{
+			read = DEV_M.read(R_PFA);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_PFB);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_PFC);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_T)
+		{
+			read = DEV_M.read(R_PFT);
+			*val = read;
+		}
+		else
+		{
+			*val = 0;
+		}
+		
+		return(M_POWER_FACTOR);
+	}
+	else if(id.item == M_ANGLE)//相角
+	{
+		if(id.phase == M_PHASE_A)
+		{
+			read = DEV_M.read(R_YIA);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_YIB);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_YIC);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_AB)
+		{
+			read = DEV_M.read(R_YUAUB);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_AC)
+		{
+			read = DEV_M.read(R_YUAUC);
+			*val = read;
+		}
+		else if(id.phase == M_PHASE_BC)
+		{
+			read = DEV_M.read(R_YUBUC);
+			*val = read;
+		}
+		else
+		{
+			*val = 0;
+		}
+		
+		return(M_ANGLE);
+	}
+	else if(id.item == M_FREQUENCY)//频率
+	{
+		read = DEV_M.read(R_FREQ);
+		*val = read;
+		
+		return(M_FREQUENCY);
+	}
+	else if((id.item == M_P_POWER) && !(id.flex & M_QUAD_DEMAND))//有功功率
+	{
+		int32_t reactive;
+		
+		if(id.phase == M_PHASE_A)
+		{
+			read = DEV_M.read(R_PA);
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_PB);
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_PC);
+		}
+		else if(id.phase == M_PHASE_T)
+		{
+			read = DEV_M.read(R_PT);
+		}
+		else
+		{
+			read = 0;
+		}
+		
+		if(read)
+		{
+			if(id.phase == M_PHASE_A)
+			{
+				reactive = DEV_M.read(R_QA);
+			}
+			else if(id.phase == M_PHASE_B)
+			{
+				reactive = DEV_M.read(R_QB);
+			}
+			else if(id.phase == M_PHASE_C)
+			{
+				reactive = DEV_M.read(R_QC);
+			}
+			else if(id.phase == M_PHASE_T)
+			{
+				reactive = DEV_M.read(R_QT);
+			}
+			else
+			{
+				reactive = 0;
+			}
+			
+			if(read >= 0)
+			{
+				if(reactive >= 0)
+				{
+					//第一相限
+					if(id.flex & M_QUAD_I)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第四相限
+					if(id.flex & M_QUAD_IV)
+					{
+						*val = read;
+					}
+				}
+			}
+			else
+			{
+				if(reactive >= 0)
+				{
+					//第二相限
+					if(id.flex & M_QUAD_II)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第三相限
+					if(id.flex & M_QUAD_III)
+					{
+						*val = read;
+					}
+				}
+			}
+		}
+		else
+		{
+			*val = 0;
+		}
+		
+		return(M_P_POWER);
+	}
+	else if((id.item == M_Q_POWER) && !(id.flex & M_QUAD_DEMAND))//无功功率
+	{
+		int32_t active;
+		
+		if(id.phase == M_PHASE_A)
+		{
+			read = DEV_M.read(R_QA);
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_QB);
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_QC);
+		}
+		else if(id.phase == M_PHASE_T)
+		{
+			read = DEV_M.read(R_QT);
+		}
+		else
+		{
+			read = 0;
+		}
+		
+		if(read)
+		{
+			if(id.phase == M_PHASE_A)
+			{
+				active = DEV_M.read(R_PA);
+			}
+			else if(id.phase == M_PHASE_B)
+			{
+				active = DEV_M.read(R_PB);
+			}
+			else if(id.phase == M_PHASE_C)
+			{
+				active = DEV_M.read(R_PC);
+			}
+			else if(id.phase == M_PHASE_T)
+			{
+				active = DEV_M.read(R_PT);
+			}
+			else
+			{
+				active = 0;
+			}
+			
+			if(active >= 0)
+			{
+				if(read >= 0)
+				{
+					//第一相限
+					if(id.flex & M_QUAD_I)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第四相限
+					if(id.flex & M_QUAD_IV)
+					{
+						*val = read;
+					}
+				}
+			}
+			else
+			{
+				if(read >= 0)
+				{
+					//第二相限
+					if(id.flex & M_QUAD_II)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第三相限
+					if(id.flex & M_QUAD_III)
+					{
+						*val = read;
+					}
+				}
+			}
+		}
+		else
+		{
+			*val = 0;
+		}
+		
+		return(M_Q_POWER);
+	}
+	else if((id.item == M_S_POWER) && !(id.flex & M_QUAD_DEMAND))//视在功率
+	{
+		int32_t active;
+		int32_t reactive;
+		
+		if(id.phase == M_PHASE_A)
+		{
+			read = DEV_M.read(R_SA);
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			read = DEV_M.read(R_SB);
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			read = DEV_M.read(R_SC);
+		}
+		else if(id.phase == M_PHASE_T)
+		{
+			read = DEV_M.read(R_ST);
+		}
+		else
+		{
+			read = 0;
+		}
+		
+		if(read)
+		{
+			if(id.phase == M_PHASE_A)
+			{
+				active = DEV_M.read(R_PA);
+				reactive = DEV_M.read(R_QA);
+			}
+			else if(id.phase == M_PHASE_B)
+			{
+				active = DEV_M.read(R_PB);
+				reactive = DEV_M.read(R_QB);
+			}
+			else if(id.phase == M_PHASE_C)
+			{
+				active = DEV_M.read(R_PC);
+				reactive = DEV_M.read(R_QC);
+			}
+			else if(id.phase == M_PHASE_T)
+			{
+				active = DEV_M.read(R_PT);
+				reactive = DEV_M.read(R_QT);
+			}
+			else
+			{
+				active = 0;
+				reactive = 0;
+			}
+			
+			if(active >= 0)
+			{
+				if(reactive >= 0)
+				{
+					//第一相限
+					if(id.flex & M_QUAD_I)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第四相限
+					if(id.flex & M_QUAD_IV)
+					{
+						*val = read;
+					}
+				}
+			}
+			else
+			{
+				if(reactive >= 0)
+				{
+					//第二相限
+					if(id.flex & M_QUAD_II)
+					{
+						*val = read;
+					}
+				}
+				else
+				{
+					//第三相限
+					if(id.flex & M_QUAD_III)
+					{
+						*val = read;
+					}
+				}
+			}
+		}
+		else
+		{
+			*val = 0;
+		}
+		
+		return(M_S_POWER);
+	}
+	else if((id.item == M_P_POWER) && (id.flex & M_QUAD_DEMAND))//有功需量
+	{
+		
+	}
+	else if((id.item == M_Q_POWER) && (id.flex & M_QUAD_DEMAND))//无功需量
+	{
+		
+	}
+	else if((id.item == M_S_POWER) && (id.flex & M_QUAD_DEMAND))//视在需量
+	{
+		
+	}
+	else if((id.item == M_P_ENERGY) || (id.item == M_Q_ENERGY) || (id.item == M_S_ENERGY))//电能
+	{
+		struct __metering_base tmc[4];
+		
+		if(id.phase == M_PHASE_T)
+		{
+			phase = 0;
+		}
+		else if(id.phase == M_PHASE_A)
+		{
+			phase = 1;
+		}
+		else if(id.phase == M_PHASE_B)
+		{
+			phase = 2;
+		}
+		else if(id.phase == M_PHASE_C)
+		{
+			phase = 3;
+		}
+		else
+		{
+			*val = 0;
+			return((enum __meta_item)(id.item));
+		}
+		
+		if(id.item == M_P_ENERGY)
+		{
+			group = 0;
+		}
+		else if(id.item == M_Q_ENERGY)
+		{
+			group = 1;
+		}
+		else if(id.item == M_S_ENERGY)
+		{
+			group = 2;
+		}
+		else
+		{
+			*val = 0;
+			return((enum __meta_item)(id.item));
+		}
+		
+		if(id.rate == mp.rate)
+		{
+			for(uint8_t n=0; n<4; n++)
+			{
+				if(id.flex & M_QUAD_I)
+				{
+					read += mc[0].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_II)
+				{
+					read += mc[1].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_III)
+				{
+					read += mc[2].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_IV)
+				{
+					read += mc[3].group[group].value[phase];
+				}
+				
+				if(id.flex & M_QUAD_NI)
+				{
+					read -= mc[0].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NII)
+				{
+					read -= mc[1].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NIII)
+				{
+					read -= mc[2].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NIV)
+				{
+					read -= mc[3].group[group].value[phase];
+				}
+			}
+		}
+		else if(id.rate < MAX_RATE)
+		{
+			if(file.parameter.read("measurements", \
+									STRUCT_OFFSET(struct __metering_data, energy[id.rate]), \
+									sizeof(tmc), \
+									(void *)&tmc) != sizeof(tmc))
+			{
+				TRACE(TRACE_ERR, "Task metering metering_instant.");
+				*val = 0;
+				return((enum __meta_item)(id.item));
+			}
+			
+			for(uint8_t n=0; n<4; n++)
+			{
+				if(id.flex & M_QUAD_I)
+				{
+					read += tmc[0].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_II)
+				{
+					read += tmc[1].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_III)
+				{
+					read += tmc[2].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_IV)
+				{
+					read += tmc[3].group[group].value[phase];
+				}
+				
+				if(id.flex & M_QUAD_NI)
+				{
+					read -= tmc[0].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NII)
+				{
+					read -= tmc[1].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NIII)
+				{
+					read -= tmc[2].group[group].value[phase];
+				}
+				if(id.flex & M_QUAD_NIV)
+				{
+					read -= tmc[3].group[group].value[phase];
+				}
+			}
+		}
+		else
+		{
+			for(uint8_t r=0; r<MAX_RATE; r++)
+			{
+				if(file.parameter.read("measurements", \
+										STRUCT_OFFSET(struct __metering_data, energy[r]), \
+										sizeof(tmc), \
+										(void *)&tmc) != sizeof(tmc))
+				{
+					TRACE(TRACE_ERR, "Task metering metering_instant.");
+					memset(&tmc, 0, sizeof(tmc));
+				}
+				
+				for(uint8_t n=0; n<4; n++)
+				{
+					if(id.flex & M_QUAD_I)
+					{
+						read += tmc[0].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_II)
+					{
+						read += tmc[1].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_III)
+					{
+						read += tmc[2].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_IV)
+					{
+						read += tmc[3].group[group].value[phase];
+					}
+					
+					if(id.flex & M_QUAD_NI)
+					{
+						read -= tmc[0].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_NII)
+					{
+						read -= tmc[1].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_NIII)
+					{
+						read -= tmc[2].group[group].value[phase];
+					}
+					if(id.flex & M_QUAD_NIV)
+					{
+						read -= tmc[3].group[group].value[phase];
+					}
+				}
+			}
+		}
 	}
 	
 	return(M_NULL);
@@ -283,7 +840,9 @@ static uint8_t config_rate_read(void)
   */
 static uint8_t config_rate_change(uint8_t rate)
 {
+	uint8_t previous;
 	config_check();
+	previous = mp.rate;
 	mp.rate = rate % (MAX_RATE + 1);
 	mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
 	
@@ -295,7 +854,41 @@ static uint8_t config_rate_change(uint8_t rate)
 		TRACE(TRACE_ERR, "Task metering config_rate_change.");
 	}
 	
-	//...费率改变之后需要写回当前费率的计量数据
+	if(mp.rate == previous)
+	{
+		return(mp.rate);
+	}
+	
+	//写回当前费率的计量数据
+	for(uint8_t n=0; n<4; n++)
+	{
+		for(uint8_t g=0; g<3; g++)
+		{
+			if(!flush[n][g])
+			{
+				continue;
+			}
+			
+			if(file.parameter.write("measurements", \
+									STRUCT_OFFSET(struct __metering_data, energy[mp.rate][n].group[g]), \
+									sizeof(mc[n].group[g]), \
+									(void *)&mc[n].group[g]) != sizeof(mc[n].group[g]))
+			{
+				TRACE(TRACE_ERR, "Task metering metering_loop.");
+			}
+			
+			flush[n][g] = 0;
+		}
+	}
+	
+	//读出新费率的计量数据
+	if(file.parameter.read("measurements", \
+							STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
+							sizeof(mc), \
+							(void *)&mc) != sizeof(mc))
+	{
+		TRACE(TRACE_ERR, "Task metering config_rate_change 2.");
+	}
 	
 	return(mp.rate);
 }
@@ -328,6 +921,10 @@ static uint32_t config_current_ratio_get(void)
   */
 static uint32_t config_current_ratio_set(uint32_t val)
 {
+	if(val > 10000)
+	{
+		return(mp.current_num);
+	}
 	config_check();
 	mp.current_num = val;
 	mp.current_denum = 1;
@@ -444,6 +1041,10 @@ static uint32_t config_voltage_ratio_get(void)
   */
 static uint32_t config_voltage_ratio_set(uint32_t val)
 {
+	if(val > 10000)
+	{
+		return(mp.voltage_num);
+	}
 	config_check();
 	mp.voltage_num = val;
 	mp.voltage_denum = 1;
@@ -600,7 +1201,27 @@ static enum __metering_status config_energy_status(void)
   */
 static void config_energy_clear(void)
 {
+	heap.set(flush, 0, sizeof(flush));
+	heap.set(mc, 0, sizeof(mc));
 	
+	for(uint8_t n=0; n<4; n++)
+	{
+		for(uint8_t g=0; g<3; g++)
+		{
+			mc[n].group[g].check = crc32(&mc[n], (sizeof(mc[n].group[g]) - sizeof(mc[n].group[g].check)), 0);
+		}
+	}
+	
+	for(uint8_t n=0; n<MAX_RATE; n++)
+	{
+		if(file.parameter.write("measurements", \
+								STRUCT_OFFSET(struct __metering_data, energy[n]), \
+								sizeof(mc), \
+								(void *)&mc) != sizeof(mc))
+		{
+			TRACE(TRACE_ERR, "Task metering metering_loop.");
+		}
+	}
 }
 
 
@@ -954,6 +1575,7 @@ static void metering_init(void)
 	
     if((system_status() == SYSTEM_RUN) || (system_status() == SYSTEM_WAKEUP))
     {
+		//读取配置信息
 		if(file.parameter.read("calibration", \
 								STRUCT_SIZE(struct __calibrates, data), \
 								sizeof(mp), \
@@ -963,6 +1585,9 @@ static void metering_init(void)
 		}
 		
 		config_check();
+		
+		//清空刷新标记
+		heap.set(flush, 0, sizeof(flush));
 	}
 	
 	//只有正常上电状态下才运行，其它状态下不运行
@@ -974,12 +1599,14 @@ static void metering_init(void)
         
         if(calibrates)
         {
+			//加载校准信息
             if(file.parameter.read("calibration", 0, sizeof(struct __calibrate_data), (void *)calibrates) != sizeof(struct __calibrate_data))
             {
                 TRACE(TRACE_ERR, "Calibrate information read faild.");
             }
             else
             {
+				//输入校准信息到计量芯片
                 if(DEV_M.calibrate.load(sizeof(struct __calibrate_data), (void *)calibrates) != true)
                 {
                     TRACE(TRACE_ERR, "Calibrate faild.");
@@ -989,6 +1616,7 @@ static void metering_init(void)
             heap.free(calibrates);
         }
 		
+		//读出当前费率的计量数据
 		if(file.parameter.read("measurements", \
 								STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
 								sizeof(mc), \
@@ -1014,7 +1642,8 @@ static void metering_init(void)
 static void metering_loop(void)
 {
 	static uint8_t step = 0;
-	static uint8_t flush = 0;
+	static uint8_t quad = 0;
+	static uint8_t group = 0;
 	static uint16_t period = 0;
 	int32_t val;
 	int32_t active;
@@ -1028,18 +1657,21 @@ static void metering_loop(void)
 		period += KERNEL_PERIOD;
 		
 		//校验当前内存中的数据
-		for(uint8_t n=0; n<MAX_QUAD; n++)
+		for(uint8_t n=0; n<4; n++)
 		{
-			if(mc[n].check != crc32(&mc[n], (sizeof(mc[n]) - sizeof(mc[n].check)), 0))
+			for(uint8_t g=0; g<3; g++)
 			{
-				config_check();
-				
-				if(file.parameter.read("measurements", \
-										STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
-										sizeof(mc), \
-										(void *)&mc) != sizeof(mc))
+				if(mc[n].group[g].check != crc32(&mc[n].group[g], (sizeof(mc[n].group[g]) - sizeof(mc[n].group[g].check)), 0))
 				{
-					TRACE(TRACE_ERR, "Task metering metering_init.");
+					config_check();
+					
+					if(file.parameter.read("measurements", \
+											STRUCT_OFFSET(struct __metering_data, energy[mp.rate][n].group[g]), \
+											sizeof(mc[n].group[g]), \
+											(void *)&(mc[n].group[g])) != sizeof(mc[n].group[g]))
+					{
+						TRACE(TRACE_ERR, "Task metering metering_init.");
+					}
 				}
 			}
 		}
@@ -1052,9 +1684,8 @@ static void metering_loop(void)
 			case 1://有功总
 			{
 				val = DEV_M.read(R_EPT);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PT);
 					reactive = DEV_M.read(R_QT);
 					
@@ -1063,12 +1694,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].active[0] += val;
+							mc[0].group[0].value[0] += val;
+							flush[0][0] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].active[0] += val;
+							mc[3].group[0].value[0] += val;
+							flush[3][0] += 1;
 						}
 					}
 					else
@@ -1076,12 +1709,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].active[0] += val;
+							mc[1].group[0].value[0] += val;
+							flush[1][0] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].active[0] += val;
+							mc[2].group[0].value[0] += val;
+							flush[2][0] += 1;
 						}
 					}
 				}
@@ -1090,9 +1725,8 @@ static void metering_loop(void)
 			case 2://有功A
 			{
 				val = DEV_M.read(R_EPA);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PA);
 					reactive = DEV_M.read(R_QA);
 					if(active >= 0)
@@ -1100,12 +1734,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].active[1] += val;
+							mc[0].group[0].value[1] += val;
+							flush[0][0] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].active[1] += val;
+							mc[3].group[0].value[1] += val;
+							flush[3][0] += 1;
 						}
 					}
 					else
@@ -1113,12 +1749,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].active[1] += val;
+							mc[1].group[0].value[1] += val;
+							flush[1][0] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].active[1] += val;
+							mc[2].group[0].value[1] += val;
+							flush[2][0] += 1;
 						}
 					}
 				}
@@ -1127,9 +1765,8 @@ static void metering_loop(void)
 			case 3://有功B
 			{
 				val = DEV_M.read(R_EPB);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PB);
 					reactive = DEV_M.read(R_QB);
 					if(active >= 0)
@@ -1137,12 +1774,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].active[2] += val;
+							mc[0].group[0].value[2] += val;
+							flush[0][0] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].active[2] += val;
+							mc[3].group[0].value[2] += val;
+							flush[3][0] += 1;
 						}
 					}
 					else
@@ -1150,12 +1789,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].active[2] += val;
+							mc[1].group[0].value[2] += val;
+							flush[1][0] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].active[2] += val;
+							mc[2].group[0].value[2] += val;
+							flush[2][0] += 1;
 						}
 					}
 				}
@@ -1164,9 +1805,8 @@ static void metering_loop(void)
 			case 4://有功C
 			{
 				val = DEV_M.read(R_EPC);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PC);
 					reactive = DEV_M.read(R_QC);
 					if(active >= 0)
@@ -1174,12 +1814,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].active[3] += val;
+							mc[0].group[0].value[3] += val;
+							flush[0][0] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].active[3] += val;
+							mc[3].group[0].value[3] += val;
+							flush[3][0] += 1;
 						}
 					}
 					else
@@ -1187,12 +1829,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].active[3] += val;
+							mc[1].group[0].value[3] += val;
+							flush[1][0] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].active[3] += val;
+							mc[2].group[0].value[3] += val;
+							flush[2][0] += 1;
 						}
 					}
 				}
@@ -1201,9 +1845,8 @@ static void metering_loop(void)
 			case 5://无功总
 			{
 				val = DEV_M.read(R_EQT);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PT);
 					reactive = DEV_M.read(R_QT);
 					
@@ -1212,12 +1855,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].reactive[0] += val;
+							mc[0].group[1].value[0] += val;
+							flush[0][1] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].reactive[0] += val;
+							mc[3].group[1].value[0] += val;
+							flush[3][1] += 1;
 						}
 					}
 					else
@@ -1225,12 +1870,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].reactive[0] += val;
+							mc[1].group[1].value[0] += val;
+							flush[1][1] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].reactive[0] += val;
+							mc[2].group[1].value[0] += val;
+							flush[2][1] += 1;
 						}
 					}
 				}
@@ -1239,9 +1886,8 @@ static void metering_loop(void)
 			case 6://无功A
 			{
 				val = DEV_M.read(R_EQA);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PA);
 					reactive = DEV_M.read(R_QA);
 					
@@ -1250,12 +1896,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].reactive[1] += val;
+							mc[0].group[1].value[1] += val;
+							flush[0][1] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].reactive[1] += val;
+							mc[3].group[1].value[1] += val;
+							flush[3][1] += 1;
 						}
 					}
 					else
@@ -1263,12 +1911,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].reactive[1] += val;
+							mc[1].group[1].value[1] += val;
+							flush[1][1] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].reactive[1] += val;
+							mc[2].group[1].value[1] += val;
+							flush[2][1] += 1;
 						}
 					}
 				}
@@ -1277,9 +1927,8 @@ static void metering_loop(void)
 			case 7://无功B
 			{
 				val = DEV_M.read(R_EQB);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PB);
 					reactive = DEV_M.read(R_QB);
 					
@@ -1288,12 +1937,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].reactive[2] += val;
+							mc[0].group[1].value[2] += val;
+							flush[0][1] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].reactive[2] += val;
+							mc[3].group[1].value[2] += val;
+							flush[3][1] += 1;
 						}
 					}
 					else
@@ -1301,12 +1952,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].reactive[2] += val;
+							mc[1].group[1].value[2] += val;
+							flush[1][1] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].reactive[2] += val;
+							mc[2].group[1].value[2] += val;
+							flush[2][1] += 1;
 						}
 					}
 				}
@@ -1315,9 +1968,8 @@ static void metering_loop(void)
 			case 8://无功C
 			{
 				val = DEV_M.read(R_EQC);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PC);
 					reactive = DEV_M.read(R_QC);
 					
@@ -1326,12 +1978,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第一相限
-							mc[0].reactive[3] += val;
+							mc[0].group[1].value[3] += val;
+							flush[0][1] += 1;
 						}
 						else
 						{
 							//第四相限
-							mc[3].reactive[3] += val;
+							mc[3].group[1].value[3] += val;
+							flush[3][1] += 1;
 						}
 					}
 					else
@@ -1339,12 +1993,14 @@ static void metering_loop(void)
 						if(reactive >= 0)
 						{
 							//第二相限
-							mc[1].reactive[3] += val;
+							mc[1].group[1].value[3] += val;
+							flush[1][1] += 1;
 						}
 						else
 						{
 							//第三相限
-							mc[2].reactive[3] += val;
+							mc[2].group[1].value[3] += val;
+							flush[2][1] += 1;
 						}
 					}
 				}
@@ -1353,19 +2009,20 @@ static void metering_loop(void)
 			case 9://视在总
 			{
 				val = DEV_M.read(R_EST);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PT);
 					if(active >= 0)
 					{
 						//正向
-						mc[0].apparent[1] += val;
+						mc[0].group[2].value[0] += val;
+						flush[0][2] += 1;
 					}
 					else
 					{
 						//反向
-						mc[2].apparent[1] += val;
+						mc[2].group[2].value[0] += val;
+						flush[2][2] += 1;
 					}
 				}
 				break;
@@ -1373,19 +2030,20 @@ static void metering_loop(void)
 			case 10://视在A
 			{
 				val = DEV_M.read(R_ESA);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PA);
 					if(active >= 0)
 					{
 						//正向
-						mc[0].apparent[1] += val;
+						mc[0].group[2].value[1] += val;
+						flush[0][2] += 1;
 					}
 					else
 					{
 						//反向
-						mc[2].apparent[1] += val;
+						mc[2].group[2].value[1] += val;
+						flush[2][2] += 1;
 					}
 				}
 				break;
@@ -1393,19 +2051,20 @@ static void metering_loop(void)
 			case 11://视在B
 			{
 				val = DEV_M.read(R_ESB);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PB);
 					if(active >= 0)
 					{
 						//正向
-						mc[0].apparent[2] += val;
+						mc[0].group[2].value[2] += val;
+						flush[0][2] += 1;
 					}
 					else
 					{
 						//反向
-						mc[2].apparent[2] += val;
+						mc[2].group[2].value[2] += val;
+						flush[2][2] += 1;
 					}
 				}
 				break;
@@ -1413,19 +2072,20 @@ static void metering_loop(void)
 			case 12://视在C
 			{
 				val = DEV_M.read(R_ESC);
-				if(val)
+				if(val && mp.energy_switch)
 				{
-					flush = 0xff;
 					active = DEV_M.read(R_PC);
 					if(active >= 0)
 					{
 						//正向
-						mc[0].apparent[3] += val;
+						mc[0].group[2].value[3] += val;
+						flush[0][2] += 1;
 					}
 					else
 					{
 						//反向
-						mc[2].apparent[3] += val;
+						mc[2].group[2].value[3] += val;
+						flush[2][2] += 1;
 					}
 				}
 				break;
@@ -1436,34 +2096,45 @@ static void metering_loop(void)
 			}
 		}
 		
-		//数据有变更，更新校验
-		if(flush)
+		//检查数据是否有变更，更新校验
+		for(uint8_t n=0; n<4; n++)
 		{
-			for(uint8_t n=0; n<MAX_QUAD; n++)
+			for(uint8_t g=0; g<3; g++)
 			{
-				mc[n].check = crc32(&mc[n], (sizeof(mc[n]) - sizeof(mc[n].check)), 0);
+				if(!flush[n][g])
+				{
+					continue;
+				}
+				
+				mc[n].group[g].check = crc32(&mc[n].group[g], (sizeof(mc[n].group[g]) - sizeof(mc[n].group[g].check)), 0);
 			}
 		}
 		
-		//最快每5秒写回一次，磨损平衡由文件系统提供支持
-		if((period >= 5*1000) && (step == 0))
+		//每12*5秒写完一次循环，磨损平衡由文件系统提供支持
+		if(period >= 5*1000)
 		{
 			period = 0;
 			
-			if(flush)
+			config_check();
+			
+			quad = quad % 4;
+			group = group % 3;
+			
+			if(flush[quad][group] > 5)
 			{
-				flush = 0;
-				
-				config_check();
-				
 				if(file.parameter.write("measurements", \
-										STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
-										sizeof(mc), \
-										(void *)&mc) != sizeof(mc))
+										STRUCT_OFFSET(struct __metering_data, energy[mp.rate][quad].group[group]), \
+										sizeof(mc[quad].group[group]), \
+										(void *)&mc[quad].group[group]) != sizeof(mc[quad].group[group]))
 				{
 					TRACE(TRACE_ERR, "Task metering metering_loop.");
 				}
+				
+				flush[quad][group] = 0;
 			}
+			
+			quad += 1;
+			group += 1;
 		}
     	
         status = TASK_RUN;
@@ -1475,7 +2146,31 @@ static void metering_loop(void)
   */
 static void metering_exit(void)
 {
-    DEV_M.control.suspend(); 
+    DEV_M.control.suspend();
+	
+	//判断是否有还没写入的电能
+	config_check();
+	
+	for(uint8_t n=0; n<4; n++)
+	{
+		for(uint8_t g=0; g<3; g++)
+		{
+			if(!flush[n][g])
+			{
+				continue;
+			}
+			
+			if(file.parameter.write("measurements", \
+									STRUCT_OFFSET(struct __metering_data, energy[mp.rate][n].group[g]), \
+									sizeof(mc[n].group[g]), \
+									(void *)&mc[n].group[g]) != sizeof(mc[n].group[g]))
+			{
+				TRACE(TRACE_ERR, "Task metering metering_loop.");
+			}
+			
+			flush[n][g] = 0;
+		}
+	}
     
     status = TASK_SUSPEND;
     
@@ -1553,6 +2248,12 @@ static void metering_reset(void)
 	DEV_M.calibrate.exit();
 	
 	heap.free(calibrates);
+	
+	config_energy_clear();
+	
+	config_demand_clear_current();
+	
+	config_demand_clear_max();
 #endif
 
 	TRACE(TRACE_INFO, "Task metering reset.");
