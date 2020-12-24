@@ -842,7 +842,7 @@ static uint16_t display_config_list_write(uint8_t channel, void *id)
         return(16);
     }
     
-	offset = STRUCT_OFFSET(struct __disp_param, list[channel].entry[3]);
+	offset = STRUCT_OFFSET(struct __disp_param, list[channel].entry[amount]);
 	file.parameter.write("display", offset, 16, id);
     
     amount += 1;

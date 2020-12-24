@@ -715,7 +715,7 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
     position = header.amount / 2;
     step = position;
     
-    for(cnt=0; cnt<fastlog2(header.amount); cnt++)
+    for(cnt=0; cnt<(fastlog2(header.amount) + 2); cnt++)
     {
         cpu.watchdog.feed();
         
@@ -730,14 +730,14 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         
         step = step / 2;
         
-        if(step == 0)
-        {
-            step = 1;
-        }
-        
         //¼üÖµ±È¶Ô
         if(key < (entry.key & 0xffffffffffffff00))
         {
+			if(step == 0)
+			{
+				step = 1;
+			}
+			
             if(position > step)
             {
                 position -= step;
@@ -751,6 +751,11 @@ void dlms_lex_parse(const struct __cosem_request_desc *desc,
         }
         else if(key > (entry.key & 0xffffffffffffff00))
         {
+			if(step == 0)
+			{
+				step = 1;
+			}
+			
             if((position + step) < header.amount)
             {
                 position += step;

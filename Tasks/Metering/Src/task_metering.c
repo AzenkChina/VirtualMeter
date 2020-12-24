@@ -77,6 +77,11 @@ static enum __task_status status = TASK_NOTINIT;
 
 static struct __metering_parameter mp;
 static struct __metering_base mc[4];
+
+static uint8_t step = 0;
+static uint8_t quad = 0;
+static uint8_t group = 0;
+static uint16_t period = 0;
 static uint16_t flush[4][3] = {0};
 
 /* Private function prototypes -----------------------------------------------*/
@@ -590,19 +595,20 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 	}
 	else if((id.item == M_P_POWER) && (id.flex & M_QUAD_DEMAND))//有功需量
 	{
-		
+		//...TODO
 	}
 	else if((id.item == M_Q_POWER) && (id.flex & M_QUAD_DEMAND))//无功需量
 	{
-		
+		//...TODO
 	}
 	else if((id.item == M_S_POWER) && (id.flex & M_QUAD_DEMAND))//视在需量
 	{
-		
+		//...TODO
 	}
 	else if((id.item == M_P_ENERGY) || (id.item == M_Q_ENERGY) || (id.item == M_S_ENERGY))//电能
 	{
 		struct __metering_base tmc[4];
+		struct __metering_base *pmc;
 		
 		if(id.phase == M_PHASE_T)
 		{
@@ -688,7 +694,7 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 			if(file.parameter.read("measurements", \
 									STRUCT_OFFSET(struct __metering_data, energy[id.rate]), \
 									sizeof(tmc), \
-									(void *)&tmc) != sizeof(tmc))
+									(void *)tmc) != sizeof(tmc))
 			{
 				TRACE(TRACE_ERR, "Task metering metering_instant.");
 				*val = 0;
@@ -736,53 +742,74 @@ static enum __meta_item metering_instant(struct __meta_identifier id, int64_t *v
 		{
 			for(uint8_t r=0; r<MAX_RATE; r++)
 			{
-				if(file.parameter.read("measurements", \
-										STRUCT_OFFSET(struct __metering_data, energy[r]), \
-										sizeof(tmc), \
-										(void *)&tmc) != sizeof(tmc))
+				if(r != mp.rate)
 				{
-					TRACE(TRACE_ERR, "Task metering metering_instant.");
-					memset(&tmc, 0, sizeof(tmc));
+					if(file.parameter.read("measurements", \
+											STRUCT_OFFSET(struct __metering_data, energy[r]), \
+											sizeof(tmc), \
+											(void *)tmc) != sizeof(tmc))
+					{
+						TRACE(TRACE_ERR, "Task metering metering_instant.");
+						memset(tmc, 0, sizeof(tmc));
+					}
+					
+					pmc = tmc;
+				}
+				else
+				{
+					pmc = mc;
 				}
 				
 				for(uint8_t n=0; n<4; n++)
 				{
 					if(id.flex & M_QUAD_I)
 					{
-						read += tmc[0].group[group].value[phase];
+						read += pmc[0].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_II)
 					{
-						read += tmc[1].group[group].value[phase];
+						read += pmc[1].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_III)
 					{
-						read += tmc[2].group[group].value[phase];
+						read += pmc[2].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_IV)
 					{
-						read += tmc[3].group[group].value[phase];
+						read += pmc[3].group[group].value[phase];
 					}
 					
 					if(id.flex & M_QUAD_NI)
 					{
-						read -= tmc[0].group[group].value[phase];
+						read -= pmc[0].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_NII)
 					{
-						read -= tmc[1].group[group].value[phase];
+						read -= pmc[1].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_NIII)
 					{
-						read -= tmc[2].group[group].value[phase];
+						read -= pmc[2].group[group].value[phase];
 					}
 					if(id.flex & M_QUAD_NIV)
 					{
-						read -= tmc[3].group[group].value[phase];
+						read -= pmc[3].group[group].value[phase];
 					}
 				}
 			}
 		}
+		
+		if(id.item == M_Q_ENERGY)
+		{
+			read = read * 1000 / mp.reactive_div;
+		}
+		else
+		{
+			read = read * 1000 / mp.active_div;
+		}
+		
+		*val = read;
+		return((enum __meta_item)(id.item));
 	}
 	
 	return(M_NULL);
@@ -872,7 +899,7 @@ static uint8_t config_rate_change(uint8_t rate)
 			if(file.parameter.write("measurements", \
 									STRUCT_OFFSET(struct __metering_data, energy[mp.rate][n].group[g]), \
 									sizeof(mc[n].group[g]), \
-									(void *)&mc[n].group[g]) != sizeof(mc[n].group[g]))
+									(void *)&(mc[n].group[g])) != sizeof(mc[n].group[g]))
 			{
 				TRACE(TRACE_ERR, "Task metering metering_loop.");
 			}
@@ -885,7 +912,7 @@ static uint8_t config_rate_change(uint8_t rate)
 	if(file.parameter.read("measurements", \
 							STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
 							sizeof(mc), \
-							(void *)&mc) != sizeof(mc))
+							(void *)mc) != sizeof(mc))
 	{
 		TRACE(TRACE_ERR, "Task metering config_rate_change 2.");
 	}
@@ -1217,7 +1244,7 @@ static void config_energy_clear(void)
 		if(file.parameter.write("measurements", \
 								STRUCT_OFFSET(struct __metering_data, energy[n]), \
 								sizeof(mc), \
-								(void *)&mc) != sizeof(mc))
+								(void *)mc) != sizeof(mc))
 		{
 			TRACE(TRACE_ERR, "Task metering metering_loop.");
 		}
@@ -1586,8 +1613,22 @@ static void metering_init(void)
 		
 		config_check();
 		
+		//读出当前费率的计量数据
+		if(file.parameter.read("measurements", \
+								STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
+								sizeof(mc), \
+								(void *)mc) != sizeof(mc))
+		{
+			TRACE(TRACE_ERR, "Task metering metering_init.");
+		}
+		
 		//清空刷新标记
 		heap.set(flush, 0, sizeof(flush));
+		
+		step = 0;
+		quad = 0;
+		group = 0;
+		period = 0;
 	}
 	
 	//只有正常上电状态下才运行，其它状态下不运行
@@ -1615,15 +1656,6 @@ static void metering_init(void)
             
             heap.free(calibrates);
         }
-		
-		//读出当前费率的计量数据
-		if(file.parameter.read("measurements", \
-								STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
-								sizeof(mc), \
-								(void *)&mc) != sizeof(mc))
-		{
-			TRACE(TRACE_ERR, "Task metering metering_init.");
-		}
 	}
 	else
 	{
@@ -1641,10 +1673,6 @@ static void metering_init(void)
   */
 static void metering_loop(void)
 {
-	static uint8_t step = 0;
-	static uint8_t quad = 0;
-	static uint8_t group = 0;
-	static uint16_t period = 0;
 	int32_t val;
 	int32_t active;
 	int32_t reactive;
@@ -2125,7 +2153,7 @@ static void metering_loop(void)
 				if(file.parameter.write("measurements", \
 										STRUCT_OFFSET(struct __metering_data, energy[mp.rate][quad].group[group]), \
 										sizeof(mc[quad].group[group]), \
-										(void *)&mc[quad].group[group]) != sizeof(mc[quad].group[group]))
+										(void *)&(mc[quad].group[group])) != sizeof(mc[quad].group[group]))
 				{
 					TRACE(TRACE_ERR, "Task metering metering_loop.");
 				}
@@ -2163,7 +2191,7 @@ static void metering_exit(void)
 			if(file.parameter.write("measurements", \
 									STRUCT_OFFSET(struct __metering_data, energy[mp.rate][n].group[g]), \
 									sizeof(mc[n].group[g]), \
-									(void *)&mc[n].group[g]) != sizeof(mc[n].group[g]))
+									(void *)&(mc[n].group[g])) != sizeof(mc[n].group[g]))
 			{
 				TRACE(TRACE_ERR, "Task metering metering_loop.");
 			}
