@@ -1291,42 +1291,44 @@ static void display_reset(void)
         file.parameter.write("display", offset, sizeof(val), &val);
         offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].amount);
         file.parameter.write("display", offset, sizeof(val), &val);
-        
-        descriptor[4] = 32;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[0]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[0]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        
-        descriptor[4] = 52;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[1]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[1]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        
-        descriptor[4] = 72;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[2]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[2]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        
-        descriptor[4] = 31;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[3]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[3]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        
-        descriptor[4] = 51;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[4]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[4]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        
-        descriptor[4] = 71;
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_SCROLL].entry[5]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
-        offset = STRUCT_OFFSET(struct __disp_param, list[DISP_CONF_CHANNEL_ALTERNATE].entry[5]);
-        file.parameter.write("display", offset, sizeof(descriptor), &descriptor);
+		
+		display.config.list.clean(0);
+		display.config.list.clean(1);
+		
+		descriptor[4] = 32;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 52;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 72;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		
+		descriptor[4] = 31;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 51;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 71;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		
+		descriptor[4] = 1;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 3;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		
+		descriptor[5] = 8;
+		descriptor[4] = 1;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
+		descriptor[4] = 3;
+		display.config.list.write(0, descriptor);
+		display.config.list.write(1, descriptor);
     }
 #endif // #if defined ( MAKE_RUN_FOR_DEBUG )
 	

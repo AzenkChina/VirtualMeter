@@ -74,7 +74,7 @@ static enum __power_status power_check(void)
     ADC_StructInit(&ADC_InitStruct);
     ADC_Init(ADC1, &ADC_InitStruct);
     ADC_VrefintCmd(ENABLE);
-    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint, ADC_SampleTime_71_5Cycles);
+    ADC_ChannelConfig(ADC1, ADC_Channel_Vrefint, ADC_SampleTime_41_5Cycles);
     /* Enable the ADC peripheral */
     ADC_Cmd(ADC1, ENABLE);
     
@@ -99,7 +99,7 @@ static enum __power_status power_check(void)
     }
 	
     ADC1->CHSELR = 0;
-	ADC_ChannelConfig(ADC1, ADC_Channel_12 , ADC_SampleTime_41_5Cycles);
+	ADC_ChannelConfig(ADC1, ADC_Channel_12 , ADC_SampleTime_13_5Cycles);
     for(cnt=0; cnt<3; cnt++)
     {
         ADC_StartOfConversion(ADC1);
