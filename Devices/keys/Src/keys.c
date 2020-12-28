@@ -263,7 +263,7 @@ static void key_runner(uint16_t msecond)
         }
         else
         {
-            key_changed(id_sample[0], KEY_RELEASE);
+            key_changed(id_before, KEY_RELEASE);
         }
         
         id_before = id_sample[0];
