@@ -274,7 +274,9 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     
 #if defined (BUILD_REAL_WORLD)
 	uint32_t addr_sent = 0;
-    
+    uint8_t timeout = 10;
+	uint8_t state;
+	
     if(block >= FLASH_BLOCK_AMOUNT)
     {
         return(0);
@@ -286,6 +288,22 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     }
     
     if(!size || (size > FLASH_BLOCK_SIZE))
+    {
+        return(0);
+    }
+	
+    do
+    {
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        state = devspi.octet.read();
+        timeout -= 1;
+        udelay(100);
+        devspi.release(0);
+    }
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
+	
+    if(((state&0x3c) != 0x34) || (!timeout))
     {
         return(0);
     }
@@ -313,6 +331,22 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
     devspi.read(size, buffer);
     
 	devspi.release(0);
+	
+    do
+    {
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        state = devspi.octet.read();
+        timeout -= 1;
+        udelay(100);
+        devspi.release(0);
+    }
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
+	
+    if(((state&0x3c) != 0x34) || (!state))
+    {
+        return(0);
+    }
     
     return(size);
 #endif
@@ -399,8 +433,8 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     
 #if defined (BUILD_REAL_WORLD)
 	uint32_t page = 0;
-    uint8_t status;
-    uint8_t timeout = 80;
+    uint8_t state;
+    uint8_t timeout = 120;
     
     if(block >= FLASH_BLOCK_AMOUNT)
     {
@@ -437,12 +471,17 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     {
         devspi.select(0);
         devspi.octet.write(AT45_CMD_SR);
-        status = devspi.octet.read();
+        state = devspi.octet.read();
         timeout -= 1;
         udelay(100);
         devspi.release(0);
     }
-    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
+	
+    if(((state&0x3c) != 0x34) || (!timeout))
+    {
+        return(0);
+    }
     
     /** 第二步，修改缓存内容 */
     devspi.select(0);
@@ -458,12 +497,28 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     devspi.write(size, (const uint8_t *)buffer);
     
 	devspi.release(0);
+	
+    do
+    {
+        devspi.select(0);
+        devspi.octet.write(AT45_CMD_SR);
+        state = devspi.octet.read();
+        timeout -= 1;
+        udelay(100);
+        devspi.release(0);
+    }
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
+	
+    if(((state&0x3c) != 0x34) || (!timeout))
+    {
+        return(0);
+    }
     
     /** 第三步，从缓存中写入整页 */
     devspi.select(0);
     
 	//写入命令
-	devspi.octet.write(AT45_CMD_WREPBF1);
+	devspi.octet.write(AT45_CMD_WRPBF1);
     
 	//写入地址
 	devspi.octet.write(page>>16);
@@ -476,14 +531,14 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     {
         devspi.select(0);
         devspi.octet.write(AT45_CMD_SR);
-        status = devspi.octet.read();
+        state = devspi.octet.read();
         timeout -= 1;
         udelay(100);
         devspi.release(0);
     }
-    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
     
-    if(((status&0x3c) != 0x34) || (!timeout))
+    if(((state&0x3c) != 0x34) || (!timeout))
     {
         return(0);
     }
@@ -554,8 +609,8 @@ static uint32_t flash_eraseblock(uint32_t block)
     
 #if defined (BUILD_REAL_WORLD)
 	uint32_t page = 0;
-    uint8_t status;
-    uint8_t timeout = 40;
+    uint8_t state;
+    uint8_t timeout = 80;
     
     if(block >= FLASH_BLOCK_AMOUNT)
     {
@@ -582,13 +637,13 @@ static uint32_t flash_eraseblock(uint32_t block)
 		mdelay(1);
         devspi.select(0);
         devspi.octet.write(AT45_CMD_SR);
-        status = devspi.octet.read();
+        state = devspi.octet.read();
         timeout -= 1;
         devspi.release(0);
     }
-    while(((status&0x3c) == 0x34) && ((status&0x80) == 0) && timeout);
+    while(((state&0x3c) == 0x34) && ((state&0x80) == 0) && timeout);
     
-    if(((status&0x3c) != 0x34) || (!timeout))
+    if(((state&0x3c) != 0x34) || (!timeout))
     {
         return(0);
     }

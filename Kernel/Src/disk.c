@@ -16,7 +16,9 @@
 #include "ecc.h"
 
 #include "cpu.h"
+#include "power.h"
 #include "flash.h"
+#include "eeprom.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /**
@@ -114,7 +116,7 @@ static const struct lfs_config lfs_cfg =
 #endif
     .read_size		= 16,
     .prog_size		= 16,
-    .cache_size		= 128,
+    .cache_size		= 256,
     .lookahead_size	= 16,
     .block_cycles	= 300,
 };
@@ -127,11 +129,22 @@ static int lfs_err = -1;
 static int lfs_low_read(const struct lfs_config *c, lfs_block_t block,
 		lfs_off_t off, void *buffer, lfs_size_t size)
 {
+	enum __power_status status;
+	
 	cpu.watchdog.feed();
 	
 	if(flash.block.read(block, off, size, buffer) != size)
 	{
-		return(LFS_ERR_IO);
+		status = power.status();
+		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		{
+			return(LFS_ERR_IO);
+		}
+		
+		if(flash.block.read(block, off, size, buffer) != size)
+		{
+			return(LFS_ERR_IO);
+		}
 	}
 	
 	return(LFS_ERR_OK);
@@ -140,11 +153,22 @@ static int lfs_low_read(const struct lfs_config *c, lfs_block_t block,
 static int lfs_low_prog(const struct lfs_config *c, lfs_block_t block,
 		lfs_off_t off, const void *buffer, lfs_size_t size)
 {
+	enum __power_status status;
+	
 	cpu.watchdog.feed();
 	
 	if(flash.block.write(block, off, size, buffer) != size)
 	{
-		return(LFS_ERR_IO);
+		status = power.status();
+		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		{
+			return(LFS_ERR_IO);
+		}
+		
+		if(flash.block.write(block, off, size, buffer) != size)
+		{
+			return(LFS_ERR_IO);
+		}
 	}
 	
 	return(LFS_ERR_OK);
@@ -152,11 +176,22 @@ static int lfs_low_prog(const struct lfs_config *c, lfs_block_t block,
 
 static int lfs_low_erase(const struct lfs_config *c, lfs_block_t block)
 {
+	enum __power_status status;
+	
 	cpu.watchdog.feed();
 	
 	if(flash.block.erase(block) != c->block_size)
 	{
-		return(LFS_ERR_IO);
+		status = power.status();
+		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		{
+			return(LFS_ERR_IO);
+		}
+		
+		if(flash.block.erase(block) != c->block_size)
+		{
+			return(LFS_ERR_IO);
+		}
 	}
 	
 	return(LFS_ERR_OK);
@@ -186,11 +221,13 @@ static void disk_ctrl_start(void)
     {
         cpu.watchdog.feed();
         flash.control.init(DEVICE_NORMAL);
+		eeprom.control.init(DEVICE_NORMAL);
     }
     else
     {
         cpu.watchdog.feed();
         flash.control.init(DEVICE_LOWPOWER);
+		eeprom.control.init(DEVICE_LOWPOWER);
     }
     
 #if 1
@@ -262,6 +299,7 @@ static void disk_ctrl_idle(void)
 	}
 	cpu.watchdog.feed();
 	flash.control.suspend();
+	eeprom.control.suspend();
 }
 
 /**

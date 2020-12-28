@@ -2249,30 +2249,6 @@ static void metering_reset(void)
 	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
 	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
 	
-	calibrates->param.step = 2;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 3;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 4;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 5;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 6;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
-	calibrates->param.step = 7;
-	DEV_M.calibrate.enter(sizeof(struct __calibrates), (void *)calibrates);
-	file.parameter.write("calibration", 0, sizeof(calibrates->data), (void *)&(calibrates->data));
-	
 	DEV_M.calibrate.exit();
 	
 	heap.free(calibrates);

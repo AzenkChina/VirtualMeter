@@ -22,8 +22,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #if defined (BUILD_REAL_WORLD)
-#define POWER_UP_VOL        (4900)
-#define POWER_DOWN_VOL      (4700)
+#define POWER_UP_VOL        (5300)
+#define POWER_DOWN_VOL      (5200)
 #endif
 
 
@@ -132,7 +132,7 @@ static enum __power_status power_check(void)
         (Voltage[1] < POWER_DOWN_VOL) && \
         (Voltage[2] < POWER_DOWN_VOL))
     {
-        mdelay(10);
+        mdelay(5);
         ADC_StartOfConversion(ADC1);
         while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET);
         Voltage[0] = ADC_GetConversionValue(ADC1);

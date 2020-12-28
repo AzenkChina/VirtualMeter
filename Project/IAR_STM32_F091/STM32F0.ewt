@@ -2331,9 +2331,15 @@
       </group>
       <group>
         <name>infrared</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\serial\Src\optical.c</name>
+        </file>
       </group>
       <group>
         <name>module</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Devices\serial\Src\module.c</name>
+        </file>
       </group>
       <group>
         <name>rs485</name>
@@ -2745,6 +2751,12 @@
       </group>
       <group>
         <name>proto_1107</name>
+      </group>
+      <group>
+        <name>proto_atcmd</name>
+        <file>
+          <name>$PROJ_DIR$\..\..\Tasks\Protocols\proto_atcmd\Src\proto_atcmd.c</name>
+        </file>
       </group>
       <group>
         <name>proto_dlms</name>
