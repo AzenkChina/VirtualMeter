@@ -755,21 +755,23 @@ static uint8_t task_ctrl_reset(const char *name)
         }
 		
         if(strcmp(task_tables[cnt].task->name, name) != 0)
-        {
-            if(task_tables[cnt].task && task_tables[cnt].task->reset && task_tables[cnt].task->init)
-            {
-				task_id = cnt;
-				disk_ctrl.unlock();
-				cpu.watchdog.feed();
-				task_tables[cnt].task->reset();
-				heap_ctrl.recycle();
-				cpu.watchdog.feed();
-                task_tables[cnt].task->init();
-				disk_ctrl.lock();
-                
-                return(0xff);
-            }
-        }
+		{
+			continue;
+		}
+		
+		if(task_tables[cnt].task->reset && task_tables[cnt].task->init)
+		{
+			task_id = cnt;
+			disk_ctrl.unlock();
+			cpu.watchdog.feed();
+			task_tables[cnt].task->reset();
+			heap_ctrl.recycle();
+			cpu.watchdog.feed();
+			task_tables[cnt].task->init();
+			disk_ctrl.lock();
+			
+			return(0xff);
+		}
     }
     
     return(0);

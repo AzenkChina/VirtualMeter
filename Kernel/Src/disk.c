@@ -462,15 +462,10 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 	lfs_ssize_t writesize;
 	int err;
 	
-	if(!name || !size || !buff || lfs_err)
+	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
 		return(0);
 	}
-    
-    if(lock != 0x5a)
-    {
-        return(0);
-    }
 	
 	//查询文件名称是否有效
     for(loop=0; loop<AMOUNT_FILE; loop++)
@@ -739,15 +734,10 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	char *info;
 	int err;
 	
-	if(!name || !size || !buff || lfs_err)
+	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
 		return(0);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(0);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -913,15 +903,10 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	char *info;
 	int err;
 	
-	if(!name || !amount || lfs_err)
+	if(!name || !amount || lfs_err || (lock != 0x5a))
 	{
 		return(0);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(0);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -1151,15 +1136,10 @@ static bool disk_ring_reset(const char *name)
 	char *info;
 	int err;
 	
-	if(!name || lfs_err)
+	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(false);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -1274,15 +1254,10 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	char *info;
 	int err;
 	
-	if(!name || lfs_err)
+	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(false);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -1494,15 +1469,10 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	char *info;
 	int err;
 	
-	if(!name || !size || !buff || lfs_err)
+	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
 		return(0);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(0);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -1626,6 +1596,11 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	{
 		return(false);
 	}
+	
+    if(lock != 0x5a)
+    {
+        return(0);
+    }
 	
 	*signature = 0;
 	
@@ -1885,15 +1860,10 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 	char *info;
 	int err;
 	
-	if(!name || lfs_err)
+	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(false);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -2079,15 +2049,10 @@ static bool disk_parallel_reset(const char *name)
 	char *info;
 	int err;
 	
-	if(!name || lfs_err)
+	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(false);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
@@ -2151,15 +2116,10 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	char *info;
 	int err;
 	
-	if(!name || lfs_err)
+	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
 	}
-	
-    if(lock != 0x5a)
-    {
-        return(false);
-    }
 	
     for(loop=0; loop<AMOUNT_FILE; loop++)
     {
