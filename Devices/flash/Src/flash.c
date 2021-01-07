@@ -308,8 +308,7 @@ static uint32_t flash_readblock(uint32_t block, uint16_t offset, uint16_t size, 
         return(0);
     }
     
-    addr_sent = (block << 10); 
-    addr_sent |= 0x00C00000;
+    addr_sent = (block << 10);
     addr_sent += offset;
     
     devspi.select(0);
@@ -452,7 +451,6 @@ static uint32_t flash_writeblock(uint32_t block, uint16_t offset, uint16_t size,
     }
     
     page = (block << 10);
-    page |= 0x00C00000;
     
     /** 第一步，读取整页到缓存中 */
     devspi.select(0);
@@ -618,7 +616,6 @@ static uint32_t flash_eraseblock(uint32_t block)
     }
     
     page = (block << 10);
-    page |= 0x00C00000;
     
     devspi.select(0);
     

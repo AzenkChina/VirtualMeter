@@ -115,8 +115,8 @@ static const struct lfs_config lfs_cfg =
 #endif
 #endif
     .read_size		= 16,
-    .prog_size		= 16,
-    .cache_size		= 256,
+    .prog_size		= 256,
+    .cache_size		= 512,
     .lookahead_size	= 16,
     .block_cycles	= 300,
 };
@@ -129,19 +129,19 @@ static int lfs_err = -1;
 static int lfs_low_read(const struct lfs_config *c, lfs_block_t block,
 		lfs_off_t off, void *buffer, lfs_size_t size)
 {
-	enum __power_status status;
+	uint8_t times = 5;
 	
+retry:
+	times -= 1;
 	cpu.watchdog.feed();
 	
 	if(flash.block.read(block, off, size, buffer) != size)
 	{
-		status = power.status();
-		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		if(times)
 		{
-			return(LFS_ERR_IO);
+			goto retry;
 		}
-		
-		if(flash.block.read(block, off, size, buffer) != size)
+		else
 		{
 			return(LFS_ERR_IO);
 		}
@@ -153,19 +153,19 @@ static int lfs_low_read(const struct lfs_config *c, lfs_block_t block,
 static int lfs_low_prog(const struct lfs_config *c, lfs_block_t block,
 		lfs_off_t off, const void *buffer, lfs_size_t size)
 {
-	enum __power_status status;
+	uint8_t times = 5;
 	
+retry:
+	times -= 1;
 	cpu.watchdog.feed();
 	
 	if(flash.block.write(block, off, size, buffer) != size)
 	{
-		status = power.status();
-		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		if(times)
 		{
-			return(LFS_ERR_IO);
+			goto retry;
 		}
-		
-		if(flash.block.write(block, off, size, buffer) != size)
+		else
 		{
 			return(LFS_ERR_IO);
 		}
@@ -176,19 +176,19 @@ static int lfs_low_prog(const struct lfs_config *c, lfs_block_t block,
 
 static int lfs_low_erase(const struct lfs_config *c, lfs_block_t block)
 {
-	enum __power_status status;
+	uint8_t times = 5;
 	
+retry:
+	times -= 1;
 	cpu.watchdog.feed();
 	
 	if(flash.block.erase(block) != c->block_size)
 	{
-		status = power.status();
-		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		if(times)
 		{
-			return(LFS_ERR_IO);
+			goto retry;
 		}
-		
-		if(flash.block.erase(block) != c->block_size)
+		else
 		{
 			return(LFS_ERR_IO);
 		}
