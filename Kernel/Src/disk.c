@@ -98,6 +98,9 @@ static const struct __file_entry file_entry[] =
 
 static uint8_t lock = 0;
 
+/**
+  * @brief  芯片的前1M Bytes划分给lfs文件系统，单文件最大支持10K Bytes
+  */
 static const struct lfs_config lfs_cfg = 
 {
 	.read			= lfs_low_read,
@@ -107,24 +110,55 @@ static const struct lfs_config lfs_cfg =
 	
 #if defined ( _WIN32 ) || defined ( _WIN64 ) || defined ( __linux )
     .block_size = 4096,
-    .block_count = 1024,
+    .block_count = 256,
 #else
 #if defined (BUILD_REAL_WORLD)
     .block_size = 512,
-    .block_count = 8192,
+    .block_count = 2048,
 #endif
 #endif
-    .read_size		= 16,
+    .read_size		= 128,
     .prog_size		= 256,
     .cache_size		= 512,
     .lookahead_size	= 16,
     .block_cycles	= 300,
+	
+    .name_max		= 64,
+    .file_max		= 10*1024,
 };
 static lfs_t lfs_lfs;
 static int lfs_err = -1;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+static void lfs_low_restart(void)
+{
+	enum __power_status status;
+	
+	if(lfs_err == -1)
+	{
+		status = power.status();
+		
+		if((status == SUPPLY_AC) || (status == SUPPLY_DC) || (status == SUPPLY_AUX))
+		{
+			lfs_err = lfs_mount(&lfs_lfs, &lfs_cfg);
+		}
+	}
+}
+
+static void lfs_low_checkup(void)
+{
+	enum __power_status status = power.status();
+	
+	if(lfs_err == LFS_ERR_OK)
+	{
+		if((status != SUPPLY_AC) && (status != SUPPLY_DC) && (status != SUPPLY_AUX))
+		{
+			lfs_unmount(&lfs_lfs);
+			lfs_err = -1;
+		}
+	}
+}
 
 static int lfs_low_read(const struct lfs_config *c, lfs_block_t block,
 		lfs_off_t off, void *buffer, lfs_size_t size)
@@ -263,6 +297,7 @@ static void disk_ctrl_start(void)
     ASSERT((flash_size * 7) > (flash.info.chipsize() * 8));
 	ASSERT(lfs_cfg.block_size > flash.info.blocksize());
 	ASSERT(lfs_cfg.block_count > flash.info.blockcount());
+	ASSERT((lfs_cfg.block_size * lfs_cfg.block_count) != 1*1024*1024);
 	
 	if(lfs_err)
 	{
@@ -355,6 +390,8 @@ static uint32_t disk_parameter_read(const char *name, uint32_t offset, uint32_t 
 	lfs_ssize_t readsize;
 	int err;
 	
+	lfs_low_restart();
+	
 	if(!name || !size || !buff || lfs_err)
 	{
 		return(0);
@@ -392,6 +429,7 @@ static uint32_t disk_parameter_read(const char *name, uint32_t offset, uint32_t 
 		err = lfs_file_open(&lfs_lfs, &lfs_file, file_entry[loop].name, LFS_O_RDONLY);
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -408,12 +446,17 @@ static uint32_t disk_parameter_read(const char *name, uint32_t offset, uint32_t 
 		}
 		
 		readsize = lfs_file_read(&lfs_lfs, &lfs_file, buff, size);
-		
-		lfs_file_close(&lfs_lfs, &lfs_file);
-		
 		if(readsize <= 0)
 		{
+			lfs_file_close(&lfs_lfs, &lfs_file);
+			lfs_low_checkup();
 			return(0);
+		}
+		
+		err = lfs_file_close(&lfs_lfs, &lfs_file);
+		if(err)
+		{
+			lfs_low_checkup();
 		}
 		
 		return(readsize);
@@ -424,6 +467,7 @@ static uint32_t disk_parameter_read(const char *name, uint32_t offset, uint32_t 
 		err = lfs_file_open(&lfs_lfs, &lfs_file, file_entry[loop].name, LFS_O_RDONLY);
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -440,12 +484,17 @@ static uint32_t disk_parameter_read(const char *name, uint32_t offset, uint32_t 
 		}
 		
 		readsize = lfs_file_read(&lfs_lfs, &lfs_file, buff, size);
-		
-		lfs_file_close(&lfs_lfs, &lfs_file);
-		
 		if(readsize <= 0)
 		{
+			lfs_file_close(&lfs_lfs, &lfs_file);
+			lfs_low_checkup();
 			return(0);
+		}
+		
+		err = lfs_file_close(&lfs_lfs, &lfs_file);
+		if(err)
+		{
+			lfs_low_checkup();
 		}
 		
 		return(readsize);
@@ -461,6 +510,8 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 	lfs_file_t lfs_file;
 	lfs_ssize_t writesize;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
@@ -499,6 +550,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		err = lfs_file_open(&lfs_lfs, &lfs_file, file_entry[loop].name, LFS_O_RDWR | LFS_O_CREAT);
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -513,6 +565,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		if(writesize <= 0)
 		{
 			lfs_file_close(&lfs_lfs, &lfs_file);
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -520,6 +573,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -531,6 +585,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		err = lfs_file_open(&lfs_lfs, &lfs_file, file_entry[loop].name, LFS_O_RDWR | LFS_O_CREAT);
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -545,6 +600,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		if(writesize <= 0)
 		{
 			lfs_file_close(&lfs_lfs, &lfs_file);
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -552,6 +608,7 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 		
 		if(err)
 		{
+			lfs_low_checkup();
 			return(0);
 		}
 		
@@ -565,6 +622,8 @@ static uint32_t disk_parameter_write(const char *name, uint32_t offset, uint32_t
 static uint32_t disk_parameter_size(const char *name)
 {
 	uint16_t loop;
+	
+	lfs_low_restart();
 	
 	if(!name)
 	{
@@ -601,6 +660,8 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	char *info;
 	int err;
 	
+	lfs_low_restart();
+	
 	if(!name || !size || !buff || lfs_err)
 	{
 		return(0);
@@ -636,6 +697,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -644,6 +706,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -660,6 +723,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	if(readsize != sizeof(struct __ring_queue_header))
 	{
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -702,6 +766,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	if(err)
 	{
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -709,6 +774,7 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -717,6 +783,10 @@ static uint32_t disk_ring_read(const char *name, uint32_t index, uint32_t size, 
 	
 	lfs_file_close(&lfs_lfs, &lfs_file);
 	heap.free(queue_header);
+	if(readsize != (size<queue_header->length?size:queue_header->length))
+	{
+		lfs_low_checkup();
+	}
 	return(readsize);
 }
 
@@ -733,6 +803,8 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	uint32_t offset;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
@@ -769,6 +841,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -777,6 +850,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file_info) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -793,6 +867,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -832,6 +907,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -840,6 +916,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 		lfs_file_close(&lfs_lfs, &lfs_file_data);
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -851,6 +928,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -858,6 +936,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -882,6 +961,7 @@ static uint32_t disk_ring_append(const char *name, uint32_t size, const void *bu
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file_info);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -902,6 +982,8 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	uint32_t check, calc;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !amount || lfs_err || (lock != 0x5a))
 	{
@@ -938,6 +1020,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -946,6 +1029,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -962,6 +1046,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1003,6 +1088,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1019,6 +1105,7 @@ static uint32_t disk_ring_truncate(const char *name, uint32_t amount, bool rever
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1039,6 +1126,8 @@ static bool disk_ring_info(const char *name, struct __ring_info *ring_info)
 	uint32_t check, calc;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !ring_info || lfs_err)
 	{
@@ -1075,6 +1164,7 @@ static bool disk_ring_info(const char *name, struct __ring_info *ring_info)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1083,6 +1173,7 @@ static bool disk_ring_info(const char *name, struct __ring_info *ring_info)
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1099,6 +1190,7 @@ static bool disk_ring_info(const char *name, struct __ring_info *ring_info)
 	if(readsize != sizeof(struct __ring_queue_header))
 	{
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1136,6 +1228,8 @@ static bool disk_ring_reset(const char *name)
 	char *info;
 	int err;
 	
+	lfs_low_restart();
+	
 	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
@@ -1171,6 +1265,7 @@ static bool disk_ring_reset(const char *name)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1179,6 +1274,7 @@ static bool disk_ring_reset(const char *name)
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1193,6 +1289,7 @@ static bool disk_ring_reset(const char *name)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1218,6 +1315,7 @@ static bool disk_ring_reset(const char *name)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1234,6 +1332,7 @@ static bool disk_ring_reset(const char *name)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1253,6 +1352,8 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	uint32_t check;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || lfs_err || (lock != 0x5a))
 	{
@@ -1289,6 +1390,7 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1297,6 +1399,7 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1314,6 +1417,7 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1329,6 +1433,7 @@ static bool disk_ring_init(const char *name, uint32_t length)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(queue_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1352,6 +1457,8 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	uint32_t offset;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !size || !buff || lfs_err)
 	{
@@ -1388,6 +1495,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1396,6 +1504,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1412,6 +1521,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	if(readsize != sizeof(struct __parallel_buffer_header))
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1437,6 +1547,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	if(err)
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1444,6 +1555,7 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1452,6 +1564,10 @@ static uint32_t disk_parallel_read(const char *name, uint32_t index, uint32_t si
 	
 	lfs_file_close(&lfs_lfs, &lfs_file);
 	heap.free(buffer_header);
+	if(readsize != (size<buffer_header->length?size:buffer_header->length))
+	{
+		lfs_low_checkup();
+	}
 	return(readsize);
 }
 
@@ -1468,6 +1584,8 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	uint32_t offset;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !size || !buff || lfs_err || (lock != 0x5a))
 	{
@@ -1512,6 +1630,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1528,6 +1647,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	if(operatesize != sizeof(struct __parallel_buffer_header))
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1551,6 +1671,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	if(err)
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1558,6 +1679,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 	
@@ -1575,6 +1697,7 @@ static uint32_t disk_parallel_write(const char *name, uint32_t index, uint32_t s
 	else
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(0);
 	}
 }
@@ -1591,6 +1714,8 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	uint32_t index;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !signature || lfs_err)
 	{
@@ -1634,6 +1759,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1642,6 +1768,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1655,6 +1782,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1680,6 +1808,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	if(err)
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1692,6 +1821,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	if(lfs_file_seek(&lfs_lfs, &lfs_file, 0, LFS_SEEK_SET) < 0)
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1711,6 +1841,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 			heap.free(buffer_header);
 			heap.free(info);
 			*signature = 0;
+			lfs_low_checkup();
 			return(false);
 		}
 		
@@ -1736,6 +1867,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	{
 		heap.free(buffer_header);
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1745,6 +1877,7 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1757,12 +1890,14 @@ static bool disk_parallel_signature(const char *name, uint32_t *signature)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_close(&lfs_lfs, &lfs_file) < 0)
 	{
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1780,6 +1915,8 @@ static bool disk_parallel_status(const char *name, uint32_t index)
 	uint8_t buff[2];
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || lfs_err)
 	{
@@ -1816,6 +1953,7 @@ static bool disk_parallel_status(const char *name, uint32_t index)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1824,18 +1962,21 @@ static bool disk_parallel_status(const char *name, uint32_t index)
 	if(lfs_file_size(&lfs_lfs, &lfs_file) < (index / 2))
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_seek(&lfs_lfs, &lfs_file, (index / 2), LFS_SEEK_SET) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_read(&lfs_lfs, &lfs_file, (void *)buff, 1) != 1)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1859,6 +2000,8 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 	uint8_t buff[2];
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || lfs_err || (lock != 0x5a))
 	{
@@ -1895,6 +2038,7 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1909,12 +2053,14 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 	if(lfs_file_seek(&lfs_lfs, &lfs_file, (index / 2), LFS_SEEK_SET) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_read(&lfs_lfs, &lfs_file, (void *)buff, 1) != 1)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1929,17 +2075,20 @@ static bool disk_parallel_renew(const char *name, uint32_t index)
 	if(lfs_file_seek(&lfs_lfs, &lfs_file, (index / 2), LFS_SEEK_SET) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_write(&lfs_lfs, &lfs_file, (void *)buff, 1) != 1)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
 	if(lfs_file_close(&lfs_lfs, &lfs_file) < 0)
 	{
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -1957,6 +2106,8 @@ static bool disk_parallel_info(const char *name, struct __parallel_info *paralle
 	uint32_t check, calc;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || !parallel_info || lfs_err)
 	{
@@ -1993,6 +2144,7 @@ static bool disk_parallel_info(const char *name, struct __parallel_info *paralle
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2001,6 +2153,7 @@ static bool disk_parallel_info(const char *name, struct __parallel_info *paralle
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2014,6 +2167,7 @@ static bool disk_parallel_info(const char *name, struct __parallel_info *paralle
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2049,6 +2203,8 @@ static bool disk_parallel_reset(const char *name)
 	char *info;
 	int err;
 	
+	lfs_low_restart();
+	
 	if(!name || lfs_err || (lock != 0x5a))
 	{
 		return(false);
@@ -2073,6 +2229,7 @@ static bool disk_parallel_reset(const char *name)
 	err = lfs_file_open(&lfs_lfs, &lfs_file, file_entry[loop].name, LFS_O_RDWR | LFS_O_CREAT);
 	if(err)
 	{
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2093,6 +2250,7 @@ static bool disk_parallel_reset(const char *name)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2115,6 +2273,8 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	uint32_t check;
 	char *info;
 	int err;
+	
+	lfs_low_restart();
 	
 	if(!name || lfs_err || (lock != 0x5a))
 	{
@@ -2151,6 +2311,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2159,6 +2320,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	if(lfs_file_rewind(&lfs_lfs, &lfs_file) < 0)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2166,6 +2328,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	if(!buffer_header)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2176,6 +2339,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2191,6 +2355,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	{
 		lfs_file_close(&lfs_lfs, &lfs_file);
 		heap.free(buffer_header);
+		lfs_low_checkup();
 		return(false);
 	}
 	
@@ -2211,6 +2376,7 @@ static bool disk_parallel_init(const char *name, uint32_t length)
 	if(err)
 	{
 		heap.free(info);
+		lfs_low_checkup();
 		return(false);
 	}
 	

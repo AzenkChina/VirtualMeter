@@ -268,7 +268,7 @@ uint64_t info_get_address(void)
 					sizeof(address), \
 					&address) != sizeof(address))
 	{
-		return(0);
+		return(1);
 	}
     
     return(address);

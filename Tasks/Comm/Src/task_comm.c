@@ -549,6 +549,9 @@ static void comm_init(void)
 						 (void *)&parameter) != sizeof(parameter))
 			{
 				port_table[cnt].serial->timeout.set(50);
+				port_table[cnt].serial->uart->baudrate.set(BDRT_9600);
+				port_table[cnt].serial->uart->parity.set(PARI_NONE);
+				port_table[cnt].serial->uart->stop.set(STOP_ONE);
 				continue;
 			}
 			

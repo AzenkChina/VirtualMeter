@@ -152,6 +152,14 @@ static void config_check(void)
 		mp.current = 1500;
 		mp.active_div = 6400;
 		mp.reactive_div = 6400;
+		mp.current_num = 1;
+		mp.current_denum = 1;
+		mp.voltage_num = 1;
+		mp.voltage_denum = 1;
+		mp.demand_period = 5;
+		mp.demand_multiple = 3;
+		mp.energy_switch = 0xff;
+		mp.rate = 0;
 		mp.check = crc32(&mp, (sizeof(mp) - sizeof(mp.check)), 0);
 		
 		file.parameter.write("calibration", STRUCT_SIZE(struct __calibrates, data), sizeof(mp), (void *)&mp);
@@ -1614,6 +1622,7 @@ static void metering_init(void)
 		config_check();
 		
 		//读出当前费率的计量数据
+		heap.set(mc, 0, sizeof(mc));
 		if(file.parameter.read("measurements", \
 								STRUCT_OFFSET(struct __metering_data, energy[mp.rate]), \
 								sizeof(mc), \
@@ -1636,7 +1645,7 @@ static void metering_init(void)
     {
         DEV_M.control.init(DEVICE_NORMAL);
         
-        calibrates = heap.dalloc(sizeof(struct __calibrate_data));
+        calibrates = heap.dzalloc(sizeof(struct __calibrate_data));
         
         if(calibrates)
         {
